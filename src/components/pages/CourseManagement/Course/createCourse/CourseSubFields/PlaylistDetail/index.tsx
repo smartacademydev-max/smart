@@ -1,9 +1,8 @@
-import { Box, Skeleton, Button } from "@mui/material";
+import { Box, Skeleton } from "@mui/material";
 import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useGetSinglePlaylistQuery } from "../../../../../../../services/courseApi";
 import type { courseTabType } from "../../../../../../../types/course";
-import { PATH } from "../../../../../../../routes/PATH";
 import TablePagination from "../../../../../../molecules/Table/Pagination";
 import MediaCard from "../../../../../../organism/Cards/MediaCard";
 import EmptyRoute from "../../../../../../organism/EmptyRoute";
