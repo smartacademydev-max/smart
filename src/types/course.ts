@@ -3,6 +3,9 @@ import type { MediaProps } from "./media";
 import type { Pagination } from "./roleAndPermission";
 import type { GlobalResponse } from "./user";
 
+export const PackageTypeValue = ["course", "notes", "video", "audio", "test", "live_class"] as const;
+
+export type PackageType = typeof PackageTypeValue[number];
 export interface SelectionType {
     mega_category: number[];
     category: { [megaCategoryId: number]: number[] };
@@ -50,7 +53,8 @@ export interface CourseProps {
     selections: SelectionType;
     about_this_course: string;
     teachers: number[];
-    course_type: CourseTypeProps
+    course_type: CourseTypeProps;
+    package_type?: PackageType;
     course_expiry: CourseExpiry;
     free_type_description?: string;
     subjects?: number;

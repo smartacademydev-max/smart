@@ -17,6 +17,10 @@ export const createCourseFormData = (values: CourseProps): FormData => {
         formData.append("free_type_description", values.free_type_description.toString());
     }
 
+    if (values.package_type) {
+        formData.append("package_type", values.package_type);
+    }
+
     if (values.thumbnail) {
         formData.append("thumbnail", values.thumbnail);
     }

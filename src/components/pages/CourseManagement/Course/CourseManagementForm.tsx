@@ -1,4 +1,4 @@
-import { Box, Divider, FormHelperText, InputLabel, OutlinedInput, Typography } from "@mui/material";
+import { Box, Divider, FormHelperText, InputLabel, MenuItem, OutlinedInput, Select, Typography } from "@mui/material";
 import { useFormik } from "formik";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -11,7 +11,7 @@ import { useGetAllPositionQuery } from "../../../../services/positionApi";
 import { useGetAllUserQuery } from "../../../../services/userApi";
 import { showToast } from "../../../../slice/toastSlice";
 import { useAppDispatch } from "../../../../store/hook";
-import { initialCourseState, type courseTabType } from "../../../../types/course";
+import { initialCourseState, PackageTypeValue, type courseTabType } from "../../../../types/course";
 import type { RegisterUserProps } from "../../../../types/user";
 import { createCourseFormData } from "../../../../utils/courseFormData";
 import TextEditor from "../../../atoms/TextEditor";
@@ -98,6 +98,9 @@ const validationSchema = (id?: string) => Yup.object().shape({
     course_type: Yup.string()
         .oneOf(["free", "subscription", "expiry"], "Invalid course type")
         .required("Course type is required"),
+    package_type: Yup.string()
+        .oneOf(PackageTypeValue, "Invalid package type")
+        .required("Package type is required"),
 
     course_expiry: Yup.object().when("course_type", {
         is: "expiry",
@@ -360,6 +363,36 @@ export default function CourseManagementForm() {
                             {formik.touched.name && formik.errors.name && (
                                 <FormHelperText error={true} sx={{ mt: 0.5 }}>
                                     {formik.errors.name}
+                                </FormHelperText>
+                            )}
+                        </div>
+                        <div className="input__field">
+                            <InputLabel className="required">Package Type</InputLabel>
+                            <Select
+                                fullWidth
+                                name="package_type"
+                                value={formik.values.package_type}
+                                onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
+                                error={formik.touched.package_type && Boolean(formik.errors.package_type)}
+                            >
+                                {[
+                                    { label: "Course", value: "course" },
+                                    { label: "Notes", value: "notes" },
+                                    { label: "Video", value: "video" },
+                                    { label: "Audio", value: "audio" },
+                                    { label: "Test", value: "test" },
+                                    { label: "Live Class", value: "live_class" },
+
+                                ].map((type) => (
+                                    <MenuItem key={type.value} value={type.value}>
+                                        {type.label}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                            {formik.touched.package_type && formik.errors.package_type && (
+                                <FormHelperText error={true} sx={{ mt: 0.5 }}>
+                                    {formik.errors.package_type}
                                 </FormHelperText>
                             )}
                         </div>
