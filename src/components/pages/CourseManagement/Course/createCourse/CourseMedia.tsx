@@ -1,17 +1,17 @@
-import { Box, Checkbox, Skeleton } from "@mui/material";
+import { Box, Skeleton } from "@mui/material";
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { useAddCourseMediaByTypeMutation, useGetCourseMediaByTypeQuery, useRemoveCourseMediaByTypeMutation } from "../../../../../services/courseApi";
+import { useAddCourseMediaByTypeMutation, useGetCourseMediaPlaylistQuery } from "../../../../../services/courseApi";
 import { showToast } from "../../../../../slice/toastSlice";
 import { useAppDispatch } from "../../../../../store/hook";
 import SelectFromMedia from "../../../../molecules/MediaFileDragDrop/SelectFromMedia";
 import TablePagination from "../../../../molecules/Table/Pagination";
-import MediaCard from "../../../../organism/Cards/MediaCard";
+import PlaylistCard from "../../../../organism/Cards/PlaylistCard";
 import EmptyRoute from "../../../../organism/EmptyRoute";
 import PageHeader from "../../../../organism/PageHeader";
 import TableFilter from "../../../../organism/TableFilter";
 
-type MediaType = "audios" | "notes" | "videos";
+export type MediaType = "audios" | "notes" | "videos";
 
 interface MediaConfig {
     title: string;
@@ -67,28 +67,28 @@ const mediaConfigs: Record<MediaType, MediaConfig> = {
 };
 
 interface Props {
-    type: MediaType;
+    type?: MediaType;
     allowMultiple?: boolean;
 }
 
-export default function CourseMedia({ type, allowMultiple = true }: Props) {
-    const { id } = useParams();
+export default function CourseMedia({ type: typeProp }: Props) {
+    const { id, type: typeParam } = useParams<{ id?: string; type?: string }>();
+    const type = (typeProp || typeParam) as MediaType;
     const dispatch = useAppDispatch();
     const [qp, setQp] = useState({
         pageIndex: 1,
         pageSize: 10,
     })
     const [open, setOpen] = React.useState(false);
-    const [search, setSearch] = useState("");
-    const [selectedItems, setSelectedItems] = React.useState<Set<number>>(new Set());
     const config = mediaConfigs[type];
 
     const handleMediaAddition = () => {
         setOpen((prev) => !prev);
     };
-    const { data, isLoading } = useGetCourseMediaByTypeQuery({ type, id: id || null, qp, search }, { skip: !id || !type });
+
+    const { data, isLoading } = useGetCourseMediaPlaylistQuery({ type, id: id ? Number(id) : null, qp }, { skip: !id || !type });
     const [addMediaToCourse] = useAddCourseMediaByTypeMutation();
-    const [removeMediaFromCourse] = useRemoveCourseMediaByTypeMutation();
+
     const handleMediaAssign = async (ids: number[]) => {
         if (!ids.length) {
             return dispatch(
@@ -117,42 +117,7 @@ export default function CourseMedia({ type, allowMultiple = true }: Props) {
         }
     }
 
-    const handleMediaRemoval = async () => {
-        try {
-            const response = await removeMediaFromCourse({ id: id || null, type, body: Array.from(selectedItems) }).unwrap();
-            dispatch(
-                showToast({
-                    message: response?.message || `Successfully removed ${type}`,
-                    severity: "success"
-                })
-            )
-        }
-        catch (e: any) {
-            dispatch(
-                showToast({
-                    message: e?.data?.message || `Unable to remove ${type}`,
-                    severity: "error"
-                })
-            )
-        }
-    }
-
-    const medias = data?.data?.data || [];
-
-    const handleToggleItem = (id: number) => {
-        setSelectedItems(prev => {
-            const newSet = new Set(prev);
-
-            if (!allowMultiple) {
-                return new Set([id]);
-            }
-
-            if (newSet.has(id)) newSet.delete(id);
-            else newSet.add(id);
-
-            return newSet;
-        });
-    };
+    const playlists = data?.data?.data || [];
 
     return (
         <div className="media__root">
@@ -163,19 +128,19 @@ export default function CourseMedia({ type, allowMultiple = true }: Props) {
                     }
                 ]}
                 description={config.description}
-                cta={config.buttonLabel ? {
-                    label: config.buttonLabel,
-                    url: ""
-                } : undefined}
-                handleOpenPopup={config.buttonLabel ? handleMediaAddition : undefined}
+            // cta={config.buttonLabel ? {
+            //     label: config.buttonLabel,
+            //     url: ""
+            // } : undefined}
+            // handleOpenPopup={config.buttonLabel ? handleMediaAddition : undefined}
             />
             <TableFilter
-                search={search}
-                setSearch={setSearch}
-                selectedRows={selectedItems}
-                handleRoleDelete={handleMediaRemoval}
+                search=""
+                setSearch={() => { }}
+                selectedRows={new Set()}
+                handleRoleDelete={() => { }}
             />
-            {!isLoading && !medias?.length && <EmptyRoute
+            {!isLoading && !playlists?.length && <EmptyRoute
                 title={config.emptyTitle}
                 message={config.emptyMessage}
                 cta={config.buttonLabel ? {
@@ -186,29 +151,23 @@ export default function CourseMedia({ type, allowMultiple = true }: Props) {
                 icon={config.icon}
                 handleClick={config.buttonLabel ? handleMediaAddition : undefined}
             />}
-            <div className="flex flex-col gap-4 md:grid grid-cols-2 xl:grid-cols-3 2xl:gap-9">
+            <div className="flex flex-col gap-6 md:grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {isLoading ? (
                     [...Array(6)].map((_, idx) => (
                         <div key={idx} className="col-span-1">
-                            <div className="flex gap-3 items-center">
-                                <Box className="w-full">
-                                    <Skeleton variant="rectangular" height={120} className="rounded-xl" />
-                                </Box>
-                            </div>
+                            <Box className="w-full">
+                                <Skeleton variant="rectangular" height={220} className="rounded-md" />
+                            </Box>
                         </div>
                     ))
                 ) :
-                    (medias.map((media) => (
-                        <div className="flex gap-3 items-center" key={media.id} >
-                            <Checkbox
-                                color="primary"
-                                checked={selectedItems.has(media.id)}
-                                onChange={() => handleToggleItem(media.id)}
-                            />
-                            {/* <div onClick={() => handleToggleItem(media.id)} className="cursor-pointer flex-1"> */}
-                            <MediaCard media={media} type={type} />
-                            {/* </div> */}
-                        </div>
+                    (playlists.map((playlist) => (
+                        <PlaylistCard
+                            key={playlist.chapter_id}
+                            data={playlist}
+                            courseId={id ? Number(id) : undefined}
+                            type={type}
+                        />
                     )))}
             </div>
             <TablePagination

@@ -1,7 +1,7 @@
 import type { CurriculumType } from "../components/pages/CourseManagement/Course/createCourse/CourseSubFields/Curriculum";
 import type { CategoryFilterParams, QueryParams } from "../types";
 import type { AnalyticsProps, courseClonePropertyProps, CourseList, CourseProps, courseTabType, CurriculumList, CurriculumProps } from "../types/course";
-import type { MediaList } from "../types/media";
+import type { MediaList, PlaylistDetail, PlaylistListing } from "../types/media";
 import type { TestList } from "../types/question";
 import type { TransactionList } from "../types/transaction";
 import type { GlobalResponse } from "../types/user";
@@ -196,6 +196,37 @@ export const courseApi = baseApi.injectEndpoints({
                 { type: "Media", id: "LIST" }
             ],
         }),
+        getCourseMediaPlaylist: builder.query<PlaylistListing, { id: number | null; type: courseTabType; qp: QueryParams }>({
+            query: ({ id, type, qp }) => {
+                return ({
+                    url: `/course/${id}/playlist?${buildQueryParams({
+                        type,
+                        page: qp.pageIndex,
+                        page_size: qp.pageSize,
+                    })}`,
+                    method: "GET",
+                })
+            },
+            providesTags: (result) =>
+                result?.data?.data
+                    ? [
+                        ...result.data.data.map((media) => ({ type: "Media" as const, id: media.chapter_id })),
+                        { type: "Media" as const, id: "LIST" },
+                    ]
+                    : [{ type: "Media" as const, id: "LIST" }],
+        }),
+        getSinglePlaylist: builder.query<PlaylistDetail, QueryParams & { id: number, playlistId?: number, type: courseTabType }>({
+            query: ({ id, playlistId, type, pageIndex, pageSize, search }) => ({
+                url: `/course/${id}/playlist/${playlistId}?${buildQueryParams({
+                    type: type,
+                    search: search,
+                    page_size: pageSize,
+                    page: pageIndex
+                })}`,
+                method: "GET"
+            }),
+            providesTags: (_result, _error, { id }) => [{ type: "Media" as const, id }],
+        }),
         assignMediaToCourse: builder.mutation<GlobalResponse, { course_ids: number[]; type: courseTabType, media_ids: number[] }>({
             query: ({ course_ids, type, media_ids }) => {
                 return {
@@ -332,4 +363,6 @@ export const {
     useGetEnrolledStudentsQuery,
     useEnrolledStudentsMutation,
     useArchiveEnrolledStudentMutation,
+    useGetCourseMediaPlaylistQuery,
+    useGetSinglePlaylistQuery,
 } = courseApi;

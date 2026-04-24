@@ -1,3 +1,4 @@
+import type { PlaylistProps } from "./course";
 import type { Pagination } from "./roleAndPermission";
 
 export interface MediaProps {
@@ -10,6 +11,20 @@ export interface MediaProps {
 }
 
 export interface MediaList {
+    data: {
+        data: MediaProps[],
+        pagination: Pagination
+    }
+}
+
+export interface PlaylistListing {
+    data: {
+        data: PlaylistProps[],
+        pagination: Pagination
+    }
+}
+
+export interface PlaylistDetail {
     data: {
         data: MediaProps[],
         pagination: Pagination

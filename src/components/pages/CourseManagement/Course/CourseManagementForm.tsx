@@ -144,10 +144,14 @@ export default function CourseManagementForm() {
 
     const getInitialTab = (): courseTabType => {
         const pathSegments = pathname.split('/').filter(Boolean);
-        const lastSegment = pathSegments[pathSegments.length - 1];
-        if (lastSegment === id) {
-            return "overview";
+        const playlistIdx = pathSegments.indexOf('playlist');
+        if (playlistIdx > 0) {
+            const type = pathSegments[playlistIdx - 1];
+            const mediaTypes: courseTabType[] = ["videos", "notes", "audios"];
+            if (mediaTypes.includes(type as courseTabType)) return type as courseTabType;
         }
+        const lastSegment = pathSegments[pathSegments.length - 1];
+        if (lastSegment === id) return "overview";
         const validTabs: courseTabType[] = ["overview", "curriculum", "videos", "notes", "test", "audios"];
         return validTabs.includes(lastSegment as courseTabType) ? (lastSegment as courseTabType) : "overview";
     };
@@ -310,6 +314,7 @@ export default function CourseManagementForm() {
         }
     };
     const handleTabChange = (newValue: courseTabType) => {
+
         if (!id) {
             dispatch(
                 showToast({
@@ -319,9 +324,11 @@ export default function CourseManagementForm() {
             );
             return;
         }
-
         setActiveTab(newValue);
     };
+
+    const isFormVisible = !id || activeTab === "overview";
+
     return (
         <form onSubmit={formik.handleSubmit} className="course__management__form__root h-full flex flex-col">
             <PageHeader
@@ -539,12 +546,12 @@ export default function CourseManagementForm() {
                         {
                             label: "Videos",
                             value: "videos",
-                            redirect_url: id && PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.VIDEOS.ROOT(Number(id))
+                            redirect_url: id && PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.PLAYLIST.ROOT(Number(id), "videos")
                         },
                         {
                             label: "Notes",
                             value: "notes",
-                            redirect_url: id && PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.NOTES.ROOT(Number(id))
+                            redirect_url: id && PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.PLAYLIST.ROOT(Number(id), "notes")
                         },
                         {
                             label: "Test",
@@ -554,7 +561,7 @@ export default function CourseManagementForm() {
                         {
                             label: "Audios",
                             value: "audios",
-                            redirect_url: id && PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.AUDIOS.ROOT(Number(id))
+                            redirect_url: id && PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.PLAYLIST.ROOT(Number(id), "audios")
                         },
                     ]}
                 />
@@ -574,18 +581,18 @@ export default function CourseManagementForm() {
                 {activeTab === "test" ? <CourseTest id={id} /> : ""} */}
                 <Outlet />
             </div>
-            <FooterAction
+            {isFormVisible && <FooterAction
                 handleConfirmationChange={() => navigate(PATH.COURSE_MANAGEMENT.COURSES.ROOT)}
                 isLoading={isLoading}
                 isUpdating={updating}
                 isEditMode={!!id}
                 replaceLabel={id ? isLoading
-                    ? "Updating Course..."
-                    : "Update Course"
+                    ? "Updating Package..."
+                    : "Update Package"
                     : isLoading
-                        ? "Creating Course..."
-                        : "Create Course"}
-            />
+                        ? "Creating Package..."
+                        : "Create Package"}
+            />}
         </form >
     )
 }

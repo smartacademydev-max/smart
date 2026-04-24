@@ -23,6 +23,7 @@ import CourseAnalyticsRootLayout from "../components/pages/CourseManagement/Cour
 import CreateCourseRoot from "../components/pages/CourseManagement/Course/createCourse";
 import CourseMedia from "../components/pages/CourseManagement/Course/createCourse/CourseMedia";
 import CourseCurriculumForm from "../components/pages/CourseManagement/Course/createCourse/CourseSubFields/Curriculum";
+import PlaylistDetailPage from "../components/pages/CourseManagement/Course/createCourse/CourseSubFields/PlaylistDetail";
 import CourseTest from "../components/pages/CourseManagement/Course/createCourse/CourseSubFields/Test";
 import LiveClassRoot from "../components/pages/CourseManagement/LiveClass";
 import AllLiveClass from "../components/pages/CourseManagement/LiveClass/allLiveClass";
@@ -55,20 +56,20 @@ import CreateNotificationRoot from "../components/pages/NotificationManagement/c
 import RoleManagementRoot from "../components/pages/RoleManagement";
 import AllRoles from "../components/pages/RoleManagement/allRoles";
 import CreateRoleRoot from "../components/pages/RoleManagement/createRole";
-import AppSettingRoot from "../components/pages/Setting/AppSetting";
-import ChangePassword from "../components/pages/Setting/ChangePassword";
-import LinkedDevices from "../components/pages/Setting/LinkedDevices";
-import ProfilePageRoot from "../components/pages/Setting/Profile";
+import SettingRoot from "../components/pages/Setting";
 import EsewaSettingRoot from "../components/pages/Setting/ApiSetting/Esewa";
 import KhaltiSettingRoot from "../components/pages/Setting/ApiSetting/Khalti";
 import SmsGatewayRoot from "../components/pages/Setting/ApiSetting/SmsGateway";
 import ZoomSettingRoot from "../components/pages/Setting/ApiSetting/Zoom";
+import AppSettingRoot from "../components/pages/Setting/AppSetting";
+import ChangePassword from "../components/pages/Setting/ChangePassword";
 import CourseSettingRoot from "../components/pages/Setting/CourseSetting";
 import EmailTemplatesRoot from "../components/pages/Setting/EmailTemplates";
+import LinkedDevices from "../components/pages/Setting/LinkedDevices";
 import LoginTypeRoot from "../components/pages/Setting/LoginType";
+import ProfilePageRoot from "../components/pages/Setting/Profile";
 import SiteInfoRoot from "../components/pages/Setting/SiteInfo";
 import SmtpSettingRoot from "../components/pages/Setting/Smtp";
-import SettingRoot from "../components/pages/Setting";
 import SubscriptionManagementRoot from "../components/pages/SubscriptionManagement";
 import TestAndQuestionManagementRoot from "../components/pages/TestAndQuestionManagement";
 import OmrSheetRoot from "../components/pages/TestAndQuestionManagement/OmrSheets";
@@ -100,13 +101,13 @@ import UserManagementRoot from "../components/pages/userManagement";
 import AllUsers from "../components/pages/userManagement/allUsers";
 import CreateUser from "../components/pages/userManagement/createUser";
 import ViewUserRoot from "../components/pages/userManagement/viewUser";
-import ProfileTab from "../components/pages/userManagement/viewUser/tabs/ProfileTab";
+import UserActivityHistory from "../components/pages/userManagement/viewUser/UserActivityHistory";
+import UserLoginHistory from "../components/pages/userManagement/viewUser/UserLoginHistory";
 import CoursesTab from "../components/pages/userManagement/viewUser/tabs/CoursesTab";
-import TransactionsTab from "../components/pages/userManagement/viewUser/tabs/TransactionsTab";
 import DeviceRequestsTab from "../components/pages/userManagement/viewUser/tabs/DeviceRequestsTab";
 import PerformanceTab from "../components/pages/userManagement/viewUser/tabs/PerformanceTab";
-import UserLoginHistory from "../components/pages/userManagement/viewUser/UserLoginHistory";
-import UserActivityHistory from "../components/pages/userManagement/viewUser/UserActivityHistory";
+import ProfileTab from "../components/pages/userManagement/viewUser/tabs/ProfileTab";
+import TransactionsTab from "../components/pages/userManagement/viewUser/tabs/TransactionsTab";
 import { PATH } from "./PATH";
 import Private from "./Private";
 import Unauthorized from "./Unauthorized";
@@ -149,9 +150,8 @@ const router = createBrowserRouter([
 						path: PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.ROOT(), element: <CreateCourseRoot />,
 						children: [
 							{ path: PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.CURRICULUM.ROOT(), element: <CourseCurriculumForm /> },
-							{ path: PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.VIDEOS.ROOT(), element: <CourseMedia type="videos" /> },
-							{ path: PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.NOTES.ROOT(), element: <CourseMedia type="notes" /> },
-							{ path: PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.AUDIOS.ROOT(), element: <CourseMedia type="audios" /> },
+							{ path: PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.PLAYLIST.ROOT(), element: <CourseMedia /> },
+							{ path: PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.PLAYLIST.VIEW_PLAYLIST.ROOT(), element: <PlaylistDetailPage /> },
 							{ path: PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.TEST.ROOT(), element: <CourseTest /> },
 						]
 					},

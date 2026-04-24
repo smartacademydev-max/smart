@@ -89,6 +89,7 @@ export const initialCourseState: CourseProps = {
     about_this_course: "",
     teachers: [],
     course_type: "free",
+    package_type: "course",
     course_expiry: {
         start_date: "",
         end_date: "",
@@ -178,4 +179,10 @@ export interface AnalyticsProps {
     title: string;
     value: string;
     description: string;
+}
+
+export interface PlaylistProps {
+    chapter_id: number;
+    chapter_name: string;
+    count: number;
 }

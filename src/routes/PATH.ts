@@ -37,7 +37,13 @@ export const PATH = {
 					ROOT: (id?: number) =>
 						id ? `/courses/${id}/curriculum` : "/courses/:id/curriculum"
 				},
-
+				PLAYLIST: {
+					ROOT: (id?: number, type?: string) => id && type ? `/courses/${id}/${type}/playlist` : "/courses/:id/:type/playlist",
+					VIEW_PLAYLIST: {
+						ROOT: (id?: number, type?: string, playlistId?: number) =>
+							id && playlistId ? `/courses/${id}/${type}/playlist/${playlistId}` : "/courses/:id/:type/playlist/:playlistId"
+					}
+				},
 				VIDEOS: {
 					ROOT: (id?: number) =>
 						id ? `/courses/${id}/videos` : "/courses/:id/videos"
