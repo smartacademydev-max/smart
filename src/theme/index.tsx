@@ -1,5 +1,5 @@
 import type { ThemeOptions } from "@mui/material/styles";
-import { createTheme } from "@mui/material/styles";
+import { createTheme, responsiveFontSizes } from "@mui/material/styles";
 import { darkPalette } from "./palette/darkPalette";
 import { lightPalette } from "./palette/lightPalette";
 
@@ -117,116 +117,47 @@ declare module "@mui/material/styles" {
 // Common theme options
 const commonThemeOptions: ThemeOptions = {
     typography: {
-        fontFamily: '"Helvetica Neue", sans-serif',
+        fontFamily: '"Helvetica Neue", "Noto Sans", sans-serif',
 
         h1: {
             fontSize: "48px",
-            lineHeight: 1.4,
-            "@media (max-width:1600px)": { fontSize: "42px" },
-            "@media (max-width:1440px)": { fontSize: "38px" },
-            "@media (max-width:1280px)": { fontSize: "34px" },
-            "@media (max-width:1200px)": { fontSize: "30px" },
-            "@media (max-width:900px)": { fontSize: "26px" },
-            "@media (max-width:600px)": { fontSize: "22px" },
+            lineHeight: 1.4
         },
         h2: {
-            fontSize: "36px",
-            lineHeight: 1.38,
-            "@media (max-width:1600px)": { fontSize: "32px" },
-            "@media (max-width:1440px)": { fontSize: "28px" },
-            "@media (max-width:1280px)": { fontSize: "26px" },
-            "@media (max-width:1200px)": { fontSize: "24px" },
-            "@media (max-width:900px)": { fontSize: "22px" },
-            "@media (max-width:600px)": { fontSize: "20px" },
+            fontSize: "36px", lineHeight: 1.38
         },
+
         h3: {
-            fontSize: "28px",
-            lineHeight: 1.4,
-            "@media (max-width:1600px)": { fontSize: "26px" },
-            "@media (max-width:1440px)": { fontSize: "24px" },
-            "@media (max-width:1280px)": { fontSize: "22px" },
-            "@media (max-width:1200px)": { fontSize: "20px" },
-            "@media (max-width:900px)": { fontSize: "18px" },
-            "@media (max-width:600px)": { fontSize: "16px" },
+            fontSize: "28px", lineHeight: 1.4
         },
         h4: {
-            fontSize: "24px",
-            lineHeight: 1.42,
-            "@media (max-width:1600px)": { fontSize: "22px" },
-            "@media (max-width:1440px)": { fontSize: "20px" },
-            "@media (max-width:1280px)": { fontSize: "18px" },
-            "@media (max-width:1200px)": { fontSize: "17px" },
-            "@media (max-width:900px)": { fontSize: "16px" },
-            "@media (max-width:600px)": { fontSize: "15px" },
+            fontSize: "24px", lineHeight: 1.42
         },
         h5: {
-            fontSize: "20px",
-            lineHeight: 1.5,
-            "@media (max-width:1600px)": { fontSize: "18px" },
-            "@media (max-width:1440px)": { fontSize: "17px" },
-            "@media (max-width:1280px)": { fontSize: "16px" },
-            "@media (max-width:1200px)": { fontSize: "15px" },
-            "@media (max-width:900px)": { fontSize: "14px" },
-            "@media (max-width:600px)": { fontSize: "14px" },
+            fontSize: "20px", lineHeight: 1.5
         },
         h6: {
-            fontSize: "16px",
-            lineHeight: 1.5,
-            "@media (max-width:1600px)": { fontSize: "15px" },
-            "@media (max-width:1440px)": { fontSize: "14px" },
-            "@media (max-width:1280px)": { fontSize: "14px" },
-            "@media (max-width:1200px)": { fontSize: "13px" },
-            "@media (max-width:900px)": { fontSize: "13px" },
-            "@media (max-width:600px)": { fontSize: "12px" },
+            fontSize: "16px", lineHeight: 1.5
         },
         body1: {
-            fontSize: "16px",
-            lineHeight: 1.5,
-            "@media (max-width:1600px)": { fontSize: "15px" },
-            "@media (max-width:1440px)": { fontSize: "14px" },
-            "@media (max-width:1280px)": { fontSize: "14px" },
-            "@media (max-width:1200px)": { fontSize: "13px" },
-            "@media (max-width:900px)": { fontSize: "13px" },
-            "@media (max-width:600px)": { fontSize: "12px" },
+            fontSize: "16px", lineHeight: 1.5
         },
+
         body2: {
-            fontSize: "14px",
-            lineHeight: 1.5,
-            "@media (max-width:1440px)": { fontSize: "13px" },
-            "@media (max-width:1200px)": { fontSize: "12px" },
-            "@media (max-width:900px)": { fontSize: "12px" },
-            "@media (max-width:600px)": { fontSize: "11px" },
+            fontSize: "14px", lineHeight: 1.5
         },
         subtitle1: {
-            fontSize: "14px",
-            lineHeight: 1.5,
-            "@media (max-width:1440px)": { fontSize: "13px" },
-            "@media (max-width:1200px)": { fontSize: "12px" },
-            "@media (max-width:900px)": { fontSize: "12px" },
-            "@media (max-width:600px)": { fontSize: "11px" },
+            fontSize: "14px", lineHeight: 1.5
         },
         subtitle2: {
-            fontSize: "13px",
-            lineHeight: 1.4,
-            "@media (max-width:1440px)": { fontSize: "12px" },
-            "@media (max-width:1200px)": { fontSize: "12px" },
-            "@media (max-width:900px)": { fontSize: "11px" },
-            "@media (max-width:600px)": { fontSize: "11px" },
+            fontSize: "13px", lineHeight: 1.4
         },
         caption: {
-            fontSize: "12px",
-            lineHeight: 1.4,
-            "@media (max-width:1440px)": { fontSize: "11px" },
-            "@media (max-width:1200px)": { fontSize: "11px" },
-            "@media (max-width:900px)": { fontSize: "10px" },
-            "@media (max-width:600px)": { fontSize: "10px" },
+            fontSize: "12px", lineHeight: 1.4
         },
+
         overline: {
-            fontSize: "10px",
-            lineHeight: 1.4,
-            "@media (max-width:1200px)": { fontSize: "10px" },
-            "@media (max-width:900px)": { fontSize: "9px" },
-            "@media (max-width:600px)": { fontSize: "9px" },
+            fontSize: "10px", lineHeight: 1.4
         },
     },
 
@@ -236,99 +167,6 @@ const commonThemeOptions: ThemeOptions = {
     components: {
         MuiCssBaseline: {
             styleOverrides: (theme) => ({
-                ".general__content__box": {
-                    '& h1': {
-                        ...theme.typography.h2,
-                        fontWeight: 700,
-                        margin: '1.5rem 0 1rem 0',
-                    },
-                    '& h2': {
-                        ...theme.typography.h3,
-                        fontWeight: 700,
-                        margin: '1.5rem 0 1rem 0',
-                    },
-                    '& h3': {
-                        ...theme.typography.h4,
-                        fontWeight: 600,
-                        margin: '1.25rem 0 0.75rem 0',
-                    },
-                    '& h4': {
-                        ...theme.typography.h5,
-                        fontWeight: 600,
-                        margin: '1rem 0 0.5rem 0',
-                    },
-                    '& p': {
-                        ...theme.typography.subtitle1,
-                        margin: '0.75rem 0',
-                    },
-                    '& ul': {
-                        paddingLeft: '1.5rem',
-                        margin: '0.75rem 0',
-                        '& li': {
-                            ...theme.typography.subtitle1,
-                            margin: '0.25rem 0',
-                        },
-                    },
-                    '& ol': {
-                        paddingLeft: '1.5rem',
-                        margin: '0.75rem 0',
-                        '& li': {
-                            ...theme.typography.subtitle1,
-                            margin: '0.25rem 0',
-                        },
-                    },
-                    '& strong': {
-                        fontWeight: 700,
-                    },
-                    '& a': {
-                        color: theme.palette.primary.main,
-                        textDecoration: 'underline',
-                        '&:hover': {
-                            textDecoration: 'none',
-                        },
-                    },
-                    '& blockquote': {
-                        borderLeft: `4px solid ${theme.palette.primary.main}`,
-                        padding: '0.75rem',
-                        margin: '1rem 0',
-                        fontStyle: 'italic',
-                        backgroundColor: theme.palette.action.hover,
-                        borderRadius: "8px"
-                    },
-                    '& img': {
-                        maxWidth: {
-                            xs: '100%',
-                            md: "50%"
-                        },
-                        height: 'auto',
-                    },
-                    '& table': {
-                        width: '100%',
-                        borderCollapse: 'collapse',
-                        margin: '1rem 0',
-                        '& th, & td': {
-                            border: `1px solid ${theme.palette.divider}`,
-                            padding: '0.5rem',
-                            textAlign: 'left',
-                        },
-                    },
-                    '& hr': {
-                        border: 'none',
-                        borderTop: `1px solid ${theme.palette.divider}`,
-                        margin: '2rem 0',
-                    },
-                },
-                ".styled__list": {
-                    "ul": {
-                        ">li": {
-                            listStyleType: "disc"
-                        }
-                    }, "ol": {
-                        ">li": {
-                            listStyleType: "decimal"
-                        }
-                    }
-                },
                 ".subscription__description": {
                     "ul": {
                         display: "flex",
@@ -382,7 +220,6 @@ const commonThemeOptions: ThemeOptions = {
                     padding: "10px 16px",
                     boxShadow: "none",
                     textTransform: "none",
-                    fontWeight: 400,
                     "&.black__btn": {
                         backgroundColor: theme.palette.primary.black,
                         color: theme.palette.primary.white,
@@ -408,12 +245,13 @@ const commonThemeOptions: ThemeOptions = {
                 }),
             },
         },
+
         MuiInputLabel: {
             styleOverrides: {
                 root: ({ theme }) => ({
                     ...theme.typography.subtitle2,
                     color: theme.palette.textField.name,
-                    marginBottom: "4px",
+                    marginBottom: "8px",
                     fontWeight: 400,
                     lineHeight: "1.5",
 
@@ -438,13 +276,14 @@ const commonThemeOptions: ThemeOptions = {
                 }),
             },
         },
+
         MuiOutlinedInput: {
             styleOverrides: {
                 root: ({ theme }) => ({
                     ...theme.typography.subtitle1,
                     padding: "14px 16px",
                     borderRadius: "8px",
-                    fontWeight: "400",
+                    fontWeight: "500",
                 }),
                 input: {
                     padding: "2px",
@@ -564,10 +403,9 @@ const commonThemeOptions: ThemeOptions = {
                     },
 
                     "&.active__tab__controller": {
-                        borderBottom: `2px solid ${theme.palette.primary.main}`,
                         ".MuiTypography-root": {
-                            color: theme.palette.primary.main,
-                            // fontWeight: 600,
+                            background: theme.palette.primary.black,
+                            color: theme.palette.primary.contrastText
                         }
                     },
 
@@ -603,6 +441,7 @@ const commonThemeOptions: ThemeOptions = {
                 }),
             },
         },
+
         MuiListItemButton: {
             styleOverrides: {
                 root: () => ({
@@ -696,6 +535,7 @@ const commonThemeOptions: ThemeOptions = {
                 },
             },
         },
+
         MuiFormControlLabel: {
             styleOverrides: {
                 root: ({ theme }) => ({
@@ -766,17 +606,23 @@ const commonThemeOptions: ThemeOptions = {
                 }),
             },
         },
+
     },
 
 };
 
 export const createAppTheme = (mode: "light" | "dark") => {
-    return createTheme({
+
+
+    const theme = createTheme({
         ...commonThemeOptions,
         palette: {
             mode,
             ...(mode === "light" ? lightPalette : darkPalette),
         },
     });
+
+    return responsiveFontSizes(theme);
 };
+
 
