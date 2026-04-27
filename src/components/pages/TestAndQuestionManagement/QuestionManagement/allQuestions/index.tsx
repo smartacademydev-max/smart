@@ -144,6 +144,15 @@ export default function AllQuestionListing({ open, setOpen }: Props) {
             ),
         },
         {
+            header: "Points",
+            accessorKey: "points",
+            cell: ({ row }) => (
+                <Typography fontWeight={500} >
+                    {row.original.points?.toString() || "N/A"}
+                </Typography>
+            ),
+        },
+        {
             header: "Actions",
             accessorKey: "actions",
             cell: ({ row }) => (
