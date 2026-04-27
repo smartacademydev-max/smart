@@ -57,6 +57,7 @@ export const baseApi = createApi({
         "EmailTemplate",
         "ApiSetting",
         "ZoomAccount",
+        "QuestionLabel",
     ],
     endpoints: () => ({}),
 });

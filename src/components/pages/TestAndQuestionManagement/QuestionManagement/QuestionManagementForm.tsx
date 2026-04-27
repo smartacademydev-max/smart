@@ -113,7 +113,10 @@ export default function QuestionManagementForm({ setOpen, editData }: Props) {
     // Reset form when modal closes or editData changes
     useEffect(() => {
         if (editData) {
-            formik.setValues(editData);
+            formik.setValues({
+                ...editData,
+                options: editData.options?.map((opt) => ({ ...opt })) ?? []
+            });
         } else {
             formik.resetForm();
         }
@@ -134,8 +137,9 @@ export default function QuestionManagementForm({ setOpen, editData }: Props) {
     };
 
     const handleOptionChange = (index: number, value: string) => {
-        const newOptions = [...formik.values.options];
-        newOptions[index].option = value;
+        const newOptions = formik.values.options.map((opt, i) =>
+            i === index ? { ...opt, option: value } : opt
+        );
         formik.setFieldValue("options", newOptions);
     };
 
@@ -149,12 +153,10 @@ export default function QuestionManagementForm({ setOpen, editData }: Props) {
 
     const isMCQ = formik.values.question_type === "mcq";
 
-    // Get selected question type for Autocomplete
     const selectedQuestionType = questionTypes.find(
         (qt) => qt.value === formik.values.question_type
     );
 
-    // Get selected mega category for Autocomplete
     const selectedMegaCategory = megaCategories.find(
         (mc: any) => mc.id === formik.values.megacategory_id
     );

@@ -1,5 +1,5 @@
 import type { CategoryFilterParams, QueryParams } from "../types";
-import type { OmrFormatList, OmrFormatProps, OmrList, OMRType, QuestionLabelList, QuestionList, QuestionProps, QuestionTypeProps, SetList, SetProps, StudentSubmitTestList, StudentSubmitTestProps, TestList, TestOverviewResponse, TestProps, TestTypeProps } from "../types/question";
+import type { OmrFormatList, OmrFormatProps, OmrList, OMRType, QuestionLabelDetailResponse, QuestionLabelFormProps, QuestionLabelList, QuestionList, QuestionProps, QuestionTypeProps, SetList, SetProps, StudentSubmitTestList, StudentSubmitTestProps, TestList, TestOverviewResponse, TestProps, TestTypeProps } from "../types/question";
 import type { TransactionList } from "../types/transaction";
 import type { GlobalResponse } from "../types/user";
 import { buildQueryParams } from "../utils/buildQueryParams";
@@ -503,7 +503,75 @@ export const questionApi = baseApi.injectEndpoints({
                 })}`,
                 method: "GET",
             }),
-            providesTags: [{ type: "Questions", id: "LIST" }],
+            providesTags: [{ type: "QuestionLabel", id: "LIST" }],
+        }),
+        createQuestionLabel: builder.mutation<GlobalResponse, { body: QuestionLabelFormProps }>({
+            query: ({ body }) => ({
+                url: `/admin/question-labels`,
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: [{ type: "QuestionLabel", id: "LIST" }],
+        }),
+        updateQuestionLabel: builder.mutation<GlobalResponse, { id: number; body: QuestionLabelFormProps }>({
+            query: ({ id, body }) => ({
+                url: `/admin/question-labels/${id}`,
+                method: "PUT",
+                body,
+            }),
+            invalidatesTags: (_result, _error, { id }) => [
+                { type: "QuestionLabel", id },
+                { type: "QuestionLabel", id: "LIST" },
+            ],
+        }),
+        deleteQuestionLabel: builder.mutation<GlobalResponse, { body: number[] }>({
+            query: ({ body }) => ({
+                url: `/admin/question-labels`,
+                method: "DELETE",
+                body: { label_ids: body },
+            }),
+            invalidatesTags: [{ type: "QuestionLabel", id: "LIST" }],
+        }),
+        getQuestionLabelById: builder.query<QuestionLabelDetailResponse, { id: number }>({
+            query: ({ id }) => ({
+                url: `/admin/question-labels/${id}`,
+                method: "GET",
+            }),
+            providesTags: (_result, _error, { id }) => [{ type: "QuestionLabel", id }],
+        }),
+        getQuestionsByLabel: builder.query<QuestionList, QueryParams & { id: number; type?: QuestionTypeProps }>({
+            query: ({ id, pageIndex, pageSize, search, type }) => ({
+                url: `/admin/question-labels/${id}/questions?${buildQueryParams({
+                    page: pageIndex,
+                    page_size: pageSize,
+                    search,
+                    type,
+                })}`,
+                method: "GET",
+            }),
+            providesTags: (_result, _error, { id }) => [{ type: "QuestionLabel", id }],
+        }),
+        addQuestionsToLabel: builder.mutation<GlobalResponse, { id: number; question_ids: number[] }>({
+            query: ({ id, question_ids }) => ({
+                url: `/admin/question-labels/${id}/questions`,
+                method: "POST",
+                body: { question_ids },
+            }),
+            invalidatesTags: (_result, _error, { id }) => [
+                { type: "QuestionLabel", id },
+                { type: "QuestionLabel", id: "LIST" },
+            ],
+        }),
+        removeQuestionsFromLabel: builder.mutation<GlobalResponse, { id: number; question_ids: number[] }>({
+            query: ({ id, question_ids }) => ({
+                url: `/admin/question-labels/${id}/questions`,
+                method: "DELETE",
+                body: { question_ids },
+            }),
+            invalidatesTags: (_result, _error, { id }) => [
+                { type: "QuestionLabel", id },
+                { type: "QuestionLabel", id: "LIST" },
+            ],
         }),
     })
 });
@@ -560,4 +628,11 @@ export const {
     useEnrollStudentToBundleMutation,
     useArchiveStudentFromBundleMutation,
     useGetAllQuestionSetsQuery,
+    useCreateQuestionLabelMutation,
+    useUpdateQuestionLabelMutation,
+    useDeleteQuestionLabelMutation,
+    useGetQuestionLabelByIdQuery,
+    useGetQuestionsByLabelQuery,
+    useAddQuestionsToLabelMutation,
+    useRemoveQuestionsFromLabelMutation, 
 } = questionApi;

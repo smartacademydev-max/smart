@@ -25,6 +25,19 @@ export interface QuestionLabelList extends GlobalResponse {
     }
 }
 
+export interface QuestionLabelFormProps {
+    id?: number;
+    name: string;
+}
+
+export interface QuestionLabelDetailProps extends QuestionLabelProps {
+    questions: QuestionProps[];
+}
+
+export interface QuestionLabelDetailResponse extends GlobalResponse {
+    data: QuestionLabelDetailProps;
+}
+
 export interface QuestionProps {
     id: number | null;
     points: number;

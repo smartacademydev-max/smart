@@ -65,6 +65,7 @@ export default function PrimaryMenu({ collapsed = false }: PrimaryMenuProps) {
         if (
             p.startsWith(PATH.TEST_QUESTION_MANAGEMENT.QUESTIONS.ROOT) ||
             p.startsWith(PATH.TEST_QUESTION_MANAGEMENT.TEST.ROOT) ||
+            p.startsWith(PATH.TEST_QUESTION_MANAGEMENT.QUESTION_LABELS.ROOT) ||
             p.startsWith(PATH.SET.ROOT) ||
             p.startsWith(PATH.OMR.ROOT)
         ) setOpenTest(true);
@@ -92,6 +93,7 @@ export default function PrimaryMenu({ collapsed = false }: PrimaryMenuProps) {
     const isTestGroupActive = () =>
         location.pathname.startsWith(PATH.TEST_QUESTION_MANAGEMENT.QUESTIONS.ROOT) ||
         location.pathname.startsWith(PATH.TEST_QUESTION_MANAGEMENT.TEST.ROOT) ||
+        location.pathname.startsWith(PATH.TEST_QUESTION_MANAGEMENT.QUESTION_LABELS.ROOT) ||
         location.pathname.startsWith(PATH.SET.ROOT) ||
         location.pathname.startsWith(PATH.OMR.ROOT);
 
@@ -287,6 +289,13 @@ export default function PrimaryMenu({ collapsed = false }: PrimaryMenuProps) {
                                             onClick={() => navigate(PATH.TEST_QUESTION_MANAGEMENT.QUESTIONS.ROOT)}
                                             className={location.pathname.startsWith(PATH.TEST_QUESTION_MANAGEMENT.QUESTIONS.ROOT) ? "active-nested" : ""}>
                                             <ListItemText primary={t("menus.test_question_management.question.root")} />
+                                        </ListItemButton>
+                                    </ListItem>
+                                    <ListItem disablePadding className="menu__item">
+                                        <ListItemButton
+                                            onClick={() => navigate(PATH.TEST_QUESTION_MANAGEMENT.QUESTION_LABELS.ROOT)}
+                                            className={location.pathname.startsWith(PATH.TEST_QUESTION_MANAGEMENT.QUESTION_LABELS.ROOT) ? "active-nested" : ""}>
+                                            <ListItemText primary={t("menus.test_question_management.question_labels.root")} />
                                         </ListItemButton>
                                     </ListItem>
                                 </CAN>

@@ -77,6 +77,8 @@ import OmrFormatForm from "../components/pages/TestAndQuestionManagement/OmrShee
 import AllOmrSheets from "../components/pages/TestAndQuestionManagement/OmrSheets/allOmr";
 import AllOmrFormats from "../components/pages/TestAndQuestionManagement/OmrSheets/allOmrFormat";
 import QuestionManagementRoot from "../components/pages/TestAndQuestionManagement/QuestionManagement";
+import QuestionLabelsRoot from "../components/pages/TestAndQuestionManagement/QuestionLabels";
+import QuestionLabelDetail from "../components/pages/TestAndQuestionManagement/QuestionLabels/detail";
 import TestManagementRoot from "../components/pages/TestAndQuestionManagement/TestManagement";
 import AllIndividualTestListing from "../components/pages/TestAndQuestionManagement/TestManagement/allIndividualTest";
 import SingleStudentSingleQuestion from "../components/pages/TestAndQuestionManagement/TestManagement/checkSinlgeQuestion";
@@ -209,6 +211,14 @@ const router = createBrowserRouter([
 					{
 						path: PATH.TEST_QUESTION_MANAGEMENT.QUESTIONS.ROOT,
 						element: <QuestionManagementRoot />,
+					},
+					{
+						path: PATH.TEST_QUESTION_MANAGEMENT.QUESTION_LABELS.ROOT,
+						element: <QuestionLabelsRoot />,
+					},
+					{
+						path: PATH.TEST_QUESTION_MANAGEMENT.QUESTION_LABELS.DETAIL.ROOT(),
+						element: <QuestionLabelDetail />,
 					},
 					{
 						path: PATH.TEST_QUESTION_MANAGEMENT.TEST.ROOT,

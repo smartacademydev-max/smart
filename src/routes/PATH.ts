@@ -196,6 +196,13 @@ export const PATH = {
 		QUESTIONS: {
 			ROOT: "/questions",
 		},
+		QUESTION_LABELS: {
+			ROOT: "/question-labels",
+			DETAIL: {
+				ROOT: (id?: number) =>
+					id ? `/question-labels/${id}` : "/question-labels/:id",
+			},
+		},
 		TEST: {
 			ROOT: "/test",
 			CREATE_TEST: {

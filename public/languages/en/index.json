@@ -51,6 +51,9 @@
             "question": {
                 "root": "Questions"
             },
+            "question_labels": {
+                "root": "All Sets"
+            },
             "test": {
                 "root": "Test",
                 "individual": {
