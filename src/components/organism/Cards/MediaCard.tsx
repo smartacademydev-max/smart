@@ -78,7 +78,7 @@ export default function MediaCard({ media, type }: { media: MediaProps; type?: c
         catch (e: any) {
             dispatch(
                 showToast({
-                    messsage: e?.data?.message || "Unable to mark media for Download",
+                    message: e?.data?.message || "Unable to mark media for Download",
                     severity: "error"
                 })
             )

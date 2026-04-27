@@ -52,7 +52,7 @@ export default function AllMediaRoot() {
             }).unwrap();
             dispatch(
                 showToast({
-                    messsage: response?.message || "Media Deleted Successfully",
+                    message: response?.message || "Media Deleted Successfully",
                     severity: "success"
                 })
             )
@@ -62,7 +62,7 @@ export default function AllMediaRoot() {
         catch (e: any) {
             dispatch(
                 showToast({
-                    messsage: e?.data?.message || "Unable to delete Media",
+                    message: e?.data?.message || "Unable to delete Media",
                     severity: "error"
                 })
             )
@@ -77,7 +77,7 @@ export default function AllMediaRoot() {
             setSelectedItems(new Set());
             dispatch(
                 showToast({
-                    messsage: response?.message || "Media Availabe For Download Successfully",
+                    message: response?.message || "Media Availabe For Download Successfully",
                     severity: "success"
                 })
             )
@@ -85,7 +85,7 @@ export default function AllMediaRoot() {
         catch (e: any) {
             dispatch(
                 showToast({
-                    messsage: e?.data?.message || "Unable to mark media for Download",
+                    message: e?.data?.message || "Unable to mark media for Download",
                     severity: "error"
                 })
             )
