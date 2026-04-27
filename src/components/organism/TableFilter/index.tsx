@@ -34,11 +34,11 @@ interface TableFilterProps {
     onStatusChange?: () => void;
     donwloading?: boolean;
     redirectUrl?: string;
-
+    onAssignMarks?: () => void;
 }
 export default function TableFilter({
     search, setSearch, selectedRows, handleRoleDelete, onFilter, layout, categoryLayout, title, setLayout, onPublish, customRange, setCustomRange, assignToCourse, setDays, handleResetFilter, onDownload, donwloading, redirectUrl,
-    onStatusChange
+    onStatusChange, onAssignMarks,
 }: TableFilterProps) {
     const theme = useTheme();
     const [open, setOpen] = useState(false);
@@ -118,6 +118,15 @@ export default function TableFilter({
                             <path d="M19.2302 8.14C18.9902 7.89 18.6602 7.75 18.3202 7.75H5.68024C5.34024 7.75 5.00024 7.89 4.77024 8.14C4.54024 8.39 4.41024 8.73 4.43024 9.08L5.05024 19.34C5.16024 20.86 5.30024 22.76 8.79024 22.76H15.2102C18.7002 22.76 18.8402 20.87 18.9502 19.34L19.5702 9.09C19.5902 8.73 19.4602 8.39 19.2302 8.14ZM13.6602 17.75H10.3302C9.92024 17.75 9.58024 17.41 9.58024 17C9.58024 16.59 9.92024 16.25 10.3302 16.25H13.6602C14.0702 16.25 14.4102 16.59 14.4102 17C14.4102 17.41 14.0702 17.75 13.6602 17.75ZM14.5002 13.75H9.50024C9.09024 13.75 8.75024 13.41 8.75024 13C8.75024 12.59 9.09024 12.25 9.50024 12.25H14.5002C14.9102 12.25 15.2502 12.59 15.2502 13C15.2502 13.41 14.9102 13.75 14.5002 13.75Z" fill="#111827" />
                         </svg>
                     </IconButton> : ""}
+                    {onAssignMarks && selectedRows && selectedRows.size > 0 && (
+                        <Button
+                            onClick={onAssignMarks}
+                            sx={{ border: `1px solid ${theme.palette.separator.dark}` }}
+                            className="py-2.5! px-3.5! rounded-md!"
+                        >
+                            <Typography variant="subtitle1" color="text.dark">Assign Marks</Typography>
+                        </Button>
+                    )}
 
                     {categoryLayout && setSearch ? <OutlinedInput
                         placeholder="Search"

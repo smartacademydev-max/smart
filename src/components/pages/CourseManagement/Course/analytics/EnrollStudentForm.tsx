@@ -272,7 +272,6 @@ export default function EnrollStudentForm({ open, setOpen, id }: Props) {
 
                         <Divider />
 
-                        {/* Action Buttons */}
                         <Box className="flex justify-end gap-4 py-6 sticky bottom-0 left-0 right-0" bgcolor={theme.palette.primary.contrastText}>
                             <Button variant="outlined" onClick={handleClose}>
                                 Cancel

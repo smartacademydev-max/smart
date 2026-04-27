@@ -573,6 +573,14 @@ export const questionApi = baseApi.injectEndpoints({
                 { type: "QuestionLabel", id: "LIST" },
             ],
         }),
+        bulkUpdateQuestionMarks: builder.mutation<GlobalResponse, { question_ids: number[]; points: number }>({
+            query: (body) => ({
+                url: `admin/questions/bulk-marks`,
+                method: "PUT",
+                body,
+            }),
+            invalidatesTags: [{ type: "Questions", id: "LIST" }],
+        }),
     })
 });
 
@@ -634,5 +642,6 @@ export const {
     useGetQuestionLabelByIdQuery,
     useGetQuestionsByLabelQuery,
     useAddQuestionsToLabelMutation,
-    useRemoveQuestionsFromLabelMutation, 
+    useRemoveQuestionsFromLabelMutation,
+    useBulkUpdateQuestionMarksMutation,
 } = questionApi;
