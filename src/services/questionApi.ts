@@ -581,6 +581,7 @@ export const questionApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: [{ type: "Questions", id: "LIST" }],
         }),
+        
     })
 });
 
