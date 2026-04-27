@@ -21,7 +21,8 @@ const billingCycleOptions: { value: BillingCycle; label: string }[] = [
 export default function SubscriptionCourseType({ handleClick, formik }: Props) {
     const { data } = useGetAllSubscriptionQuery({
         pageIndex: 1,
-        pageSize: 10,
+        pageSize: 100,
+        search: "",
     });
 
     const subscriptionPlans: SubscriptionPlanProps[] = data?.data?.data || [];

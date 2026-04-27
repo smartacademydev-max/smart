@@ -321,11 +321,14 @@ export const courseApi = baseApi.injectEndpoints({
                     ]
                     : [{ type: "Archive", id: "LIST" }],
         }),
-        enrolledStudents: builder.mutation<GlobalResponse, { id: number | null; user_id: number | null; }>({
-            query: ({ id, user_id }) => ({
+        enrolledStudents: builder.mutation<GlobalResponse, { id: number | null; user_id: number | null; subscription_id?: number | null }>({
+            query: ({ id, user_id, subscription_id }) => ({
                 url: `/admin/course/${id}/user`,
                 method: "POST",
-                body: { user_id }
+                body: {
+                    user_id,
+                    ...(subscription_id ? { subscription_id } : {}),
+                }
             }),
             invalidatesTags: [{ type: "Archive", id: "LIST" }]
         }),

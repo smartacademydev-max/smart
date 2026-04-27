@@ -1,15 +1,19 @@
 
-import { Box, Button, Checkbox, Dialog, DialogContent, Divider, IconButton, InputLabel, OutlinedInput, Typography, useTheme } from "@mui/material";
+import { Box, Button, Checkbox, Dialog, DialogContent, Divider, FormHelperText, IconButton, InputLabel, OutlinedInput, Stack, Typography, useTheme } from "@mui/material";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useFormik } from "formik";
 import { useEffect, useMemo, useState } from "react";
 import * as Yup from "yup";
 import SearchIcon from "../../../../../icons/SearchIcon";
-import { useEnrolledStudentsMutation } from "../../../../../services/courseApi";
+import { useEnrolledStudentsMutation, useGetCourseByIdQuery } from "../../../../../services/courseApi";
+import { useGetAllSubscriptionQuery } from "../../../../../services/subscriptionPlanApi";
 import { useGetAllUserQuery } from "../../../../../services/userApi";
 import { showToast } from "../../../../../slice/toastSlice";
 import { useAppDispatch } from "../../../../../store/hook";
+import type { CourseSubscription } from "../../../../../types/course";
+import type { SubscriptionPlanProps } from "../../../../../types/subscriptionPlan";
 import type { RegisterUserProps } from "../../../../../types/user";
+import { renderHtml } from "../../../../../utils/renderHtml";
 import CustomTable from "../../../../molecules/Table";
 import TablePagination from "../../../../molecules/Table/Pagination";
 
@@ -23,7 +27,6 @@ const validationSchema = Yup.object({
     student_id: Yup.number()
         .min(1, "Please select a student")
         .required("Please select a student"),
-
 });
 
 export default function EnrollStudentForm({ open, setOpen, id }: Props) {
@@ -43,7 +46,19 @@ export default function EnrollStudentForm({ open, setOpen, id }: Props) {
         return () => clearTimeout(timer);
     }, [search]);
 
+    const { data: courseData } = useGetCourseByIdQuery({ id: String(id) }, { skip: !id });
+    const { data: subscriptionData } = useGetAllSubscriptionQuery({ pageIndex: 1, pageSize: 100, search: "" });
     const { data, isLoading } = useGetAllUserQuery({ ...qp, search: debounceSearch });
+
+    const course = courseData?.data;
+    const isSubscriptionCourse = course?.course_type === "subscription";
+    const coursePlans: CourseSubscription[] = course?.course_subscription || [];
+    const subscriptionPlans: SubscriptionPlanProps[] = subscriptionData?.data?.data || [];
+    const formattedCoursePlans = coursePlans.map((plan) => ({
+        ...plan,
+        name: subscriptionPlans.find((item) => Number(item.id) === plan.subscription_id)?.name || `Plan ${plan.subscription_id}`,
+        description: subscriptionPlans.find((item) => Number(item.id) === plan.subscription_id)?.description || "",
+    }));
 
     const handleClose = () => {
         formik.resetForm();
@@ -54,14 +69,24 @@ export default function EnrollStudentForm({ open, setOpen, id }: Props) {
     const [enrollStudent, { isLoading: enrollingStudent }] = useEnrolledStudentsMutation();
 
     const formik = useFormik({
-        initialValues: { id: null, student_id: null },
+        initialValues: { id: null, student_id: null, subscription_id: null },
         validationSchema,
+        validateOnBlur: true,
+        validateOnChange: false,
+        validate: (values) => {
+            const errors: Record<string, string> = {};
+            if (isSubscriptionCourse && (!values.subscription_id || values.subscription_id < 1)) {
+                errors.subscription_id = "Please select a subscription plan";
+            }
+            return errors;
+        },
         enableReinitialize: true,
         onSubmit: async (values) => {
             try {
                 const response = await enrollStudent({
                     id: Number(id),
-                    user_id: Number(values.student_id)
+                    user_id: Number(values.student_id),
+                    subscription_id: isSubscriptionCourse ? Number(values.subscription_id) : undefined,
                 }).unwrap();
                 dispatch(showToast({
                     message: response?.message || "Enrolled User Successfully",
@@ -82,6 +107,10 @@ export default function EnrollStudentForm({ open, setOpen, id }: Props) {
 
     const handleSelectRow = (id: number) => {
         formik.setFieldValue("student_id", Number(id));
+    };
+
+    const handleSelectSubscription = (subscriptionId: number) => {
+        formik.setFieldValue("subscription_id", subscriptionId);
     };
 
     const columns = useMemo<ColumnDef<RegisterUserProps>[]>(() => [
@@ -181,6 +210,66 @@ export default function EnrollStudentForm({ open, setOpen, id }: Props) {
                             setQp={setQp}
                             totalPages={data?.data?.pagination?.total_pages || 0}
                         />
+
+                        {isSubscriptionCourse && (
+                            <Box className="subscription__plan__wrapper">
+                                <InputLabel className="required mb-2">Select Subscription Plan</InputLabel>
+                                {formattedCoursePlans.length > 0 ? (
+                                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} flexWrap="wrap" useFlexGap>
+                                        {formattedCoursePlans.map((plan, index) => (
+                                            <Box
+                                                key={`${plan.subscription_id}-${index}`}
+                                                onClick={() => handleSelectSubscription(plan.subscription_id)}
+                                                sx={{
+                                                    border: formik.values.subscription_id === plan.subscription_id ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
+                                                    borderRadius: 2,
+                                                    p: 2,
+                                                    flex: '1 1 200px',
+                                                    cursor: 'pointer',
+                                                    transition: 'border-color 0.15s ease',
+                                                    backgroundColor: formik.values.subscription_id === plan.subscription_id ? theme.palette.action.selected : theme.palette.background.paper,
+                                                    '&:hover': {
+                                                        borderColor: theme.palette.primary.main,
+                                                    }
+                                                }}
+                                            >
+                                                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                                                    <Typography variant="subtitle2" fontWeight={600}>
+                                                        {plan.name || `Plan ${plan.subscription_id}`}
+                                                    </Typography>
+                                                    {formik.values.subscription_id === plan.subscription_id && (
+                                                        <Typography variant="caption" sx={{ color: theme.palette.primary.main }}>
+                                                            Selected
+                                                        </Typography>
+                                                    )}
+                                                </Stack>
+                                                {plan.description && (
+                                                    <Typography variant="body2" color="text.secondary" mb={1}>
+                                                        {renderHtml(plan.description)}
+                                                    </Typography>
+                                                )}
+                                                <Stack gap={0.5} mt={1}>
+                                                    <Typography variant="body2">
+                                                        <strong>Price:</strong> {plan.price || "N/A"}
+                                                    </Typography>
+                                                    <Typography variant="body2">
+                                                        <strong>Duration:</strong> {plan.number} {plan.billing_cycle}
+                                                    </Typography>
+                                                </Stack>
+                                            </Box>
+                                        ))}
+                                    </Stack>
+                                ) : (
+                                    <Typography color="error" variant="body2">
+                                        No subscription plans configured for this course. Add plans before enrolling.
+                                    </Typography>
+                                )}
+                                {(formik.touched.subscription_id || formik.submitCount > 0) && formik.errors.subscription_id && (
+                                    <FormHelperText error sx={{ mt: 1 }}>{formik.errors.subscription_id}</FormHelperText>
+                                )}
+                            </Box>
+                        )}
+
                         <Divider />
 
                         {/* Action Buttons */}
