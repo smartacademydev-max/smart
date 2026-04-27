@@ -1,13 +1,13 @@
 import { CssBaseline, ThemeProvider } from '@mui/material';
-import React from 'react'
+import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useGetThemeSettingsQuery } from './services/settingApi';
+import { ThemeMode } from './slice/themeSlice';
 import { useAppSelector } from './store/hook';
 import type { RootState } from './store/store';
-import { ThemeMode } from './slice/themeSlice';
 import { createAppTheme } from './theme';
-import { useGetThemeSettingsQuery } from './services/settingApi';
 
-export default function UdaanThemeProvider({ children }: { children: React.ReactNode }) {
+export default function CustomThemeProvider({ children }: { children: React.ReactNode }) {
     const { i18n } = useTranslation();
     const { i18n: lang, mode } = useAppSelector(
         (state: RootState) => state.theme

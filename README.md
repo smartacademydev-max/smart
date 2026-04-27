@@ -1,4 +1,4 @@
-# Udaan
+# smart
 
 A modern React application built with TypeScript, Material-UI, and RTK Query for efficient state management and API handling.
 
@@ -10,6 +10,7 @@ Before you begin, ensure you have the following installed:
 - **npm**: 11.6.0 or higher
 
 Check your versions:
+
 ```bash
 node -v
 npm -v
@@ -20,17 +21,20 @@ npm -v
 ### Installation
 
 1. Clone the repository:
+
 ```bash
-git clone git@gitlab.makuracreations.xyz:arjunjhukal/udaan.git ./
-cd udaan
+git clone git@gitlab.makuracreations.xyz:arjunjhukal/smart.git ./
+cd smart
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -38,7 +42,7 @@ npm run dev
 ## 📁 Project Structure
 
 ```
-udaan/
+smart/
 ├── public/
 │   └── languages/           # i18n translation files
 │       ├── en/
@@ -72,6 +76,7 @@ udaan/
 ## 🎨 Styling
 
 This project uses a combination of:
+
 - **Pure CSS**: Custom styles for specific components
 - **Material-UI (MUI)**: Component library with custom theming
 - **Theme Configuration**: Centralized in `theme/index.ts` for consistent design system
@@ -85,6 +90,7 @@ This project uses a combination of:
 ## 🌐 Internationalization
 
 The application supports multiple languages:
+
 - Translation files are located in `public/languages/`
 - Organized by language code (e.g., `en/`, `ne/`)
 
@@ -120,6 +126,7 @@ VITE_APP_URL=live_site_url
 ### Theme Customization
 
 Modify `src/theme/index.ts` to customize:
+
 - Color palette
 - Typography
 - Component styles
@@ -155,9 +162,6 @@ Modify `src/theme/index.ts` to customize:
 
 ## 📄 License
 
-
 ## 👥 Team
-
-
 
 For more information, please contact [arjunjhukal.makura@gmail.com]

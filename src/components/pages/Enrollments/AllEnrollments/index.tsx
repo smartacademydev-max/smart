@@ -13,7 +13,7 @@ import type { EnrollmentType } from "../../../../types/transaction";
 import { formatDate } from "../../../../utils/dateFormat";
 import ActionIconVisible from "../../../molecules/Action/ActionIconVisible";
 import TabController from "../../../molecules/TabController";
-import UdaanTable from "../../../molecules/Table";
+import CustomTable from "../../../molecules/Table";
 import TablePagination from "../../../molecules/Table/Pagination";
 import EmptyRoute from "../../../organism/EmptyRoute";
 import { CourseFilter } from "../../../organism/Filter/CourseFilter";
@@ -326,13 +326,13 @@ export default function AllEntrollments() {
                 <>
                     <Box className="table__wrapper h-full" sx={{ overflow: "auto" }}>
                         {activeTab === "course" && (
-                            <UdaanTable data={courses} columns={courseColumns} loading={loadingCourses} />
+                            <CustomTable data={courses} columns={courseColumns} loading={loadingCourses} />
                         )}
                         {activeTab === "test" && (
-                            <UdaanTable data={tests} columns={testColumns} loading={loadingTests} />
+                            <CustomTable data={tests} columns={testColumns} loading={loadingTests} />
                         )}
                         {activeTab === "bundle" && (
-                            <UdaanTable data={bundles} columns={bundleColumns} loading={loadingBundles} />
+                            <CustomTable data={bundles} columns={bundleColumns} loading={loadingBundles} />
                         )}
                     </Box>
                     <TablePagination qp={qp} setQp={setQp} totalPages={totalPages} />

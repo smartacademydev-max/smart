@@ -13,7 +13,7 @@ import type { UserEnrolledBundle, UserEnrolledTest } from "../../../../../types/
 import { formatDateForDisplay } from "../../../../../utils/dateFormat";
 import { getCourseStatus } from "../../../../../utils/statusMap";
 import StatusPill from "../../../../atoms/StatusPill";
-import UdaanTable from "../../../../molecules/Table";
+import CustomTable from "../../../../molecules/Table";
 import TablePagination from "../../../../molecules/Table/Pagination";
 import DashboardAnalyticsCard from "../../../../organism/Cards/DashboardAnalyticsCard";
 import DashboardAnalyticsLoading from "../../../../organism/Cards/DashboardAnalyticsCard/Loading";
@@ -202,7 +202,7 @@ export default function CoursesTab() {
                 {!courseLoading && !courses.length
                     ? <EmptyRoute title="No Enrolled Courses" message="This user has not enrolled in any courses yet." />
                     : <>
-                        <UdaanTable data={courses} columns={courseColumns} loading={courseLoading} />
+                        <CustomTable data={courses} columns={courseColumns} loading={courseLoading} />
                         <TablePagination qp={courseQp} setQp={setCourseQp} totalPages={courseData?.data?.pagination?.total_pages ?? 0} />
                     </>
                 }
@@ -213,7 +213,7 @@ export default function CoursesTab() {
                 {!testLoading && !tests.length
                     ? <EmptyRoute title="No Enrolled Tests" message="This user has not enrolled in any tests yet." />
                     : <>
-                        <UdaanTable data={tests} columns={testColumns} loading={testLoading} />
+                        <CustomTable data={tests} columns={testColumns} loading={testLoading} />
                         <TablePagination qp={testQp} setQp={setTestQp} totalPages={testData?.data?.pagination?.total_pages ?? 0} />
                     </>
                 }
@@ -224,7 +224,7 @@ export default function CoursesTab() {
                 {!bundleLoading && !bundles.length
                     ? <EmptyRoute title="No Enrolled Bundles" message="This user has not enrolled in any bundles yet." />
                     : <>
-                        <UdaanTable data={bundles} columns={bundleColumns} loading={bundleLoading} />
+                        <CustomTable data={bundles} columns={bundleColumns} loading={bundleLoading} />
                         <TablePagination qp={bundleQp} setQp={setBundleQp} totalPages={bundleData?.data?.pagination?.total_pages ?? 0} />
                     </>
                 }

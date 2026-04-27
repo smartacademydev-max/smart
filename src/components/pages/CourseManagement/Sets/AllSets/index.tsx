@@ -10,7 +10,7 @@ import { useAppDispatch } from "../../../../../store/hook";
 import { useCourseFilter } from "../../../../../store/useCourseFilter";
 import type { SetProps } from "../../../../../types/question";
 import Actions from "../../../../molecules/Action";
-import UdaanTable from "../../../../molecules/Table";
+import CustomTable from "../../../../molecules/Table";
 import TablePagination from "../../../../molecules/Table/Pagination";
 import ConfirmationDialog from "../../../../organism/ConfirmationDialog";
 import EmptyRoute from "../../../../organism/EmptyRoute";
@@ -283,7 +283,7 @@ export default function AllSets() {
                 /> : (
                     <>
                         <Box className="table__wrapper h-full overflow-auto">
-                            <UdaanTable
+                            <CustomTable
                                 columns={columns}
                                 data={tests || []}
                                 loading={isLoading}

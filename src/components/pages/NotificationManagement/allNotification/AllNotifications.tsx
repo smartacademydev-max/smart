@@ -12,7 +12,7 @@ import { formatDateCustom } from "../../../../utils/dateFormat";
 import { renderHtml } from "../../../../utils/renderHtml";
 import Actions from "../../../molecules/Action";
 import ScheduleNotification from "../../../molecules/Action/ScheduleNotification";
-import UdaanTable from "../../../molecules/Table";
+import CustomTable from "../../../molecules/Table";
 import TablePagination from "../../../molecules/Table/Pagination";
 import ConfirmationDialog from "../../../organism/ConfirmationDialog";
 import EmptyRoute from "../../../organism/EmptyRoute";
@@ -257,7 +257,7 @@ export default function AllNotifications() {
                 /> : (
                     <>
                         <Box className="table__wrapper h-full overflow-auto">
-                            <UdaanTable
+                            <CustomTable
                                 data={notifications || []}
                                 columns={columns}
                                 loading={isLoading}

@@ -8,7 +8,7 @@ import { showToast } from "../../../../slice/toastSlice";
 import { useAppDispatch } from "../../../../store/hook";
 import type { positionProps } from "../../../../types/position";
 import ActionIconVisible from "../../../molecules/Action/ActionIconVisible";
-import UdaanTable from "../../../molecules/Table";
+import CustomTable from "../../../molecules/Table";
 import TablePagination from "../../../molecules/Table/Pagination";
 import ConfirmationDialog from "../../../organism/ConfirmationDialog";
 import EmptyRoute from "../../../organism/EmptyRoute";
@@ -189,7 +189,7 @@ export default function AllPositions() {
                         />
                     ) : (
                         <div className="position__listing">
-                            <UdaanTable
+                            <CustomTable
                                 data={positions}
                                 columns={columns}
                                 loading={isLoading}

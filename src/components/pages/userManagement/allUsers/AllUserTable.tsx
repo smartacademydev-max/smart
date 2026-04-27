@@ -13,7 +13,7 @@ import { useCourseFilter } from "../../../../store/useCourseFilter";
 import type { UserStatus } from "../../../../types";
 import type { RegisterUserProps } from "../../../../types/user";
 import Actions from "../../../molecules/Action";
-import UdaanTable from "../../../molecules/Table";
+import CustomTable from "../../../molecules/Table";
 import TablePagination from "../../../molecules/Table/Pagination";
 import ConfirmationDialog from "../../../organism/ConfirmationDialog";
 import OtpDialog from "../../../organism/Dialog/OtpDialog";
@@ -460,7 +460,7 @@ export default function AllUserTable() {
                             />
                         ) : (
                             <Box className=" table__wrapper">
-                                <UdaanTable
+                                <CustomTable
                                     loading={isLoading || isFetching}
                                     data={user}
                                     columns={columns}

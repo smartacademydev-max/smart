@@ -13,7 +13,7 @@ import type { EnrollmentType, TransactionResponse } from '../../../../types/tran
 import { formatDate } from '../../../../utils/dateFormat';
 import Actions from '../../../molecules/Action';
 import TabController from '../../../molecules/TabController';
-import UdaanTable from '../../../molecules/Table';
+import CustomTable from '../../../molecules/Table';
 import TablePagination from '../../../molecules/Table/Pagination';
 import ConfirmationDialog from '../../../organism/ConfirmationDialog';
 import EmptyRoute from '../../../organism/EmptyRoute';
@@ -345,7 +345,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
                 /> : (
                     <>
                         <Box className="table__wrapper h-full overflow-auto">
-                            <UdaanTable
+                            <CustomTable
                                 data={transactions}
                                 columns={columns}
                                 loading={isLoading || isFetching}

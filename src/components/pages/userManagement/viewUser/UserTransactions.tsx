@@ -8,9 +8,9 @@ import { useGetUserTransactionAnalyticsQuery, useGetUserTransactionPaymentMethod
 import type { TransactionProps } from "../../../../types/transaction";
 import { formatDateForDisplay } from "../../../../utils/dateFormat";
 import { getTransactionStatus } from "../../../../utils/statusMap";
-import ActionIconVisible from "../../../molecules/Action/ActionIconVisible";
 import StatusPill from "../../../atoms/StatusPill";
-import UdaanTable from "../../../molecules/Table";
+import ActionIconVisible from "../../../molecules/Action/ActionIconVisible";
+import CustomTable from "../../../molecules/Table";
 import TablePagination from "../../../molecules/Table/Pagination";
 import DashboardAnalyticsCard from "../../../organism/Cards/DashboardAnalyticsCard";
 import DashboardAnalyticsLoading from "../../../organism/Cards/DashboardAnalyticsCard/Loading";
@@ -121,7 +121,7 @@ export default function UserTransactions() {
                 title="No Transactions"
                 message="This user has not made any transactions yet."
             /> : <>
-                <UdaanTable
+                <CustomTable
                     data={courses}
                     columns={columns}
                     loading={isLoading} />

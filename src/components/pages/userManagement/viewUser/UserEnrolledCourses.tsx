@@ -7,7 +7,7 @@ import { useGetUserPurchasedCourseQuery } from "../../../../services/transaction
 import type { CourseProps } from "../../../../types/course";
 import { getCourseStatus } from "../../../../utils/statusMap";
 import StatusPill from "../../../atoms/StatusPill";
-import UdaanTable from "../../../molecules/Table";
+import CustomTable from "../../../molecules/Table";
 import TablePagination from "../../../molecules/Table/Pagination";
 import EmptyRoute from "../../../organism/EmptyRoute";
 
@@ -103,7 +103,7 @@ export default function UserEnrolledCourses() {
                 title="No Enrolled Courses"
                 message="This user has not enrolled in any courses yet."
             /> : <>
-                <UdaanTable
+                <CustomTable
                     data={courses}
                     columns={columns}
                     loading={isLoading} />

@@ -10,7 +10,7 @@ import PreviewPDF from "./components/organism/Dialog/PreviewPDF.tsx";
 import Toast from "./components/organism/Toast/index.tsx";
 import GlobalRoutes from "./routes/Routes.tsx";
 import { store } from "./store/store.ts";
-import UdaanThemeProvider from "./ThemeProvider.tsx";
+import CustomThemeProvider from "./ThemeProvider.tsx";
 i18n
 	.use(HttpApi)
 	.use(LanguageDetector)
@@ -38,13 +38,13 @@ createRoot(document.getElementById("root")!).render(
 			{/* <BrowserRouter> */}
 			<I18nextProvider i18n={i18n}>
 				<Suspense fallback={<div>Loading...</div>}>
-					<UdaanThemeProvider>
+					<CustomThemeProvider>
 						{/* <ScreenProtectionGate> */}
 						<GlobalRoutes />
 						<Toast />
 						<PreviewPDF />
 						{/* </ScreenProtectionGate> */}
-					</UdaanThemeProvider>
+					</CustomThemeProvider>
 				</Suspense>
 			</I18nextProvider>
 			{/* </BrowserRouter> */}

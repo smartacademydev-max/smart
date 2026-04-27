@@ -21,7 +21,7 @@ import type { RegisterUserProps } from "../../../types/user";
 import { calcHasMore } from "../../../utils/calculateHasMore";
 import FileDragDrop from "../../molecules/FileDragDrop";
 import TabController from "../../molecules/TabController";
-import UdaanTable from "../../molecules/Table";
+import CustomTable from "../../molecules/Table";
 import CategoryFilter from "../../organism/CategoryFilter";
 
 interface Props {
@@ -104,7 +104,7 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         const timestamp = Date.now();
-        return `UDAAN-INVOICE-${year}${month}${day}-${timestamp}${studentId ? `-${studentId}` : ''}`;
+        return `SMART-INVOICE-${year}${month}${day}-${timestamp}${studentId ? `-${studentId}` : ''}`;
     };
 
     const validationSchema = useMemo(() => Yup.object({
@@ -387,7 +387,7 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                                 )}
                             </div>
 
-                            <UdaanTable
+                            <CustomTable
                                 columns={columns}
                                 loading={isLoading}
                                 data={data?.data?.data || []}

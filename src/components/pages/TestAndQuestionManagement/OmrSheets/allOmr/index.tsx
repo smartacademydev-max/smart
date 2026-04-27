@@ -9,7 +9,7 @@ import { useAppDispatch } from "../../../../../store/hook";
 import type { OmrSheetProps } from "../../../../../types/question";
 import { formatDateCustom } from "../../../../../utils/dateFormat";
 import Actions from "../../../../molecules/Action";
-import UdaanTable from "../../../../molecules/Table";
+import CustomTable from "../../../../molecules/Table";
 import TablePagination from "../../../../molecules/Table/Pagination";
 import ConfirmationDialog from "../../../../organism/ConfirmationDialog";
 import EmptyRoute from "../../../../organism/EmptyRoute";
@@ -46,7 +46,7 @@ export default function AllOmrSheets() {
         ...qp, search: debouncedSearch, ...customRange,
         days,
     });
-   
+
     const [deleteOmr, { isLoading: deleting }] = useDeleteOmrSheetMutation();
 
     const Omrs = data?.data?.data || [];
@@ -232,7 +232,7 @@ export default function AllOmrSheets() {
                 /> : (
                     <>
                         <Box className="table__wrapper h-full overflow-auto">
-                            <UdaanTable
+                            <CustomTable
                                 columns={columns}
                                 data={Omrs || []}
                                 loading={isLoading}

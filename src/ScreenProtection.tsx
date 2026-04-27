@@ -111,7 +111,7 @@ const ScreenProtection: React.FC<Props> = ({ children }) => {
         >
           <img
             src={mode === 'dark' ? '/logo.svg' : '/logo-dark.svg'}
-            alt="UDAAN LMS"
+            alt="SMART LMS"
             style={{ height: 52, objectFit: 'contain' }}
           />
           <CircularProgress size={36} thickness={3.5} />

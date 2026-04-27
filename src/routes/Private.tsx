@@ -30,7 +30,7 @@ function PrivateContent() {
     if (!user) return null;
 
     return (
-        <div className="udaan__root">
+        <div className="smart__root">
             <SocketBridge />
             <ResponsiveDrawer>
                 <Outlet />

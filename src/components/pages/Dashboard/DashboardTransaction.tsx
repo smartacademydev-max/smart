@@ -7,7 +7,7 @@ import { PATH } from "../../../routes/PATH";
 import { useGetAllTransactionsQuery } from "../../../services/transactionApi";
 import type { TransactionResponse } from "../../../types/transaction";
 import { formatDate } from "../../../utils/dateFormat";
-import UdaanTable from "../../molecules/Table";
+import CustomTable from "../../molecules/Table";
 import EmptyRoute from "../../organism/EmptyRoute";
 import TableFilter from "../../organism/TableFilter";
 
@@ -155,7 +155,7 @@ export default function DashboardTransaction() {
                 /> : (
                     <>
                         <Box className="table__wrapper h-full overflow-auto">
-                            <UdaanTable
+                            <CustomTable
                                 data={transactions}
                                 columns={columns}
                                 loading={isLoading || isFetching}

@@ -11,7 +11,7 @@ import { useCourseFilter } from '../../../../../store/useCourseFilter';
 import type { TestProps } from '../../../../../types/question';
 import StatusPill from '../../../../atoms/StatusPill';
 import Actions from '../../../../molecules/Action';
-import UdaanTable from '../../../../molecules/Table';
+import CustomTable from '../../../../molecules/Table';
 import TablePagination from '../../../../molecules/Table/Pagination';
 import ConfirmationDialog from '../../../../organism/ConfirmationDialog';
 import EmptyRoute from '../../../../organism/EmptyRoute';
@@ -309,7 +309,7 @@ export default function AllTestListing() {
                 /> : (
                     <>
                         <Box className="table__wrapper h-full overflow-auto">
-                            {layout === "table" ? <UdaanTable
+                            {layout === "table" ? <CustomTable
                                 columns={columns}
                                 data={tests || []}
                                 loading={isLoading}

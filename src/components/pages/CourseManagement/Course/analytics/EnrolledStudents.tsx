@@ -12,7 +12,7 @@ import { getTransactionStatusVariant } from "../../../../../utils/statusMap";
 import StatusPill from "../../../../atoms/StatusPill";
 import ActionIconVisible from "../../../../molecules/Action/ActionIconVisible";
 import TabController from "../../../../molecules/TabController";
-import UdaanTable from "../../../../molecules/Table";
+import CustomTable from "../../../../molecules/Table";
 import TablePagination from "../../../../molecules/Table/Pagination";
 import ConfirmationDialog from "../../../../organism/ConfirmationDialog";
 import EmptyRoute from "../../../../organism/EmptyRoute";
@@ -214,7 +214,7 @@ export default function EnrolledStudents({ id }: { id: number }) {
                 />
             ) : (
                 <Box className=" table__wrapper">
-                    <UdaanTable
+                    <CustomTable
                         loading={isLoading}
                         data={user}
                         columns={columns}

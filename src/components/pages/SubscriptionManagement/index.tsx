@@ -9,7 +9,7 @@ import { useAppDispatch } from "../../../store/hook";
 import type { SubscriptionPlanProps } from "../../../types/subscriptionPlan";
 import { renderHtml } from "../../../utils/renderHtml";
 import Actions from "../../molecules/Action";
-import UdaanTable from "../../molecules/Table";
+import CustomTable from "../../molecules/Table";
 import TablePagination from "../../molecules/Table/Pagination";
 import SubscriptionCard from "../../organism/Cards/SubscriptionCard";
 import ConfirmationDialog from "../../organism/ConfirmationDialog";
@@ -196,7 +196,7 @@ export default function SubscriptionManagementRoot() {
             /> :
                 (layout === "table" ?
                     <>
-                        <UdaanTable
+                        <CustomTable
                             data={data?.data?.data || []}
                             columns={columns}
                             loading={isLoading}

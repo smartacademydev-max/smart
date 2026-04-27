@@ -8,7 +8,7 @@ import { showToast } from "../../../../slice/toastSlice";
 import { useAppDispatch } from "../../../../store/hook";
 import type { LinkedDeviceProps } from "../../../../types/setting";
 import { formatDateTime } from "../../../../utils/dateFormat";
-import UdaanTable from "../../../molecules/Table";
+import CustomTable from "../../../molecules/Table";
 import TablePagination from "../../../molecules/Table/Pagination";
 
 export default function LinkedDevices() {
@@ -138,7 +138,7 @@ export default function LinkedDevices() {
 
             <Divider className="mt-4! mb-6!" />
 
-            <UdaanTable
+            <CustomTable
                 loading={isLoading}
                 data={data?.data?.data || []}
                 columns={columns}

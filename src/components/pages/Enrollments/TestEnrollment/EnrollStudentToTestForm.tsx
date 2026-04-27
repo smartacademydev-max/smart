@@ -9,7 +9,7 @@ import { useGetAllUserQuery } from "../../../../services/userApi";
 import { showToast } from "../../../../slice/toastSlice";
 import { useAppDispatch } from "../../../../store/hook";
 import type { RegisterUserProps } from "../../../../types/user";
-import UdaanTable from "../../../molecules/Table";
+import CustomTable from "../../../molecules/Table";
 import TablePagination from "../../../molecules/Table/Pagination";
 
 interface Props {
@@ -137,7 +137,7 @@ export default function EnrollStudentToTestForm({ open, setOpen, id }: Props) {
                     </div>
 
                     <div className="h-full overflow-auto">
-                        <UdaanTable columns={columns} loading={isLoading} data={data?.data?.data || []} />
+                        <CustomTable columns={columns} loading={isLoading} data={data?.data?.data || []} />
                     </div>
                     <TablePagination qp={qp} setQp={setQp} totalPages={data?.data?.pagination?.total_pages || 0} />
                     <Divider />

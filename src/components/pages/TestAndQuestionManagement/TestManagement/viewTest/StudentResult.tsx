@@ -9,7 +9,7 @@ import { useAppDispatch } from "../../../../../store/hook";
 import type { StudentSubmitTestProps } from "../../../../../types/question";
 import { msToHMS } from "../../../../../utils/parseDateTime";
 import ActionIconVisible from "../../../../molecules/Action/ActionIconVisible";
-import UdaanTable from "../../../../molecules/Table";
+import CustomTable from "../../../../molecules/Table";
 import TablePagination from "../../../../molecules/Table/Pagination";
 import ConfirmationDialog from "../../../../organism/ConfirmationDialog";
 import EmptyRoute from "../../../../organism/EmptyRoute";
@@ -317,7 +317,7 @@ export default function StudentResult({ id }: { id: string }) {
 			{!isLoading && !results.length ? (
 				<EmptyRoute title="No Results Found" />
 			) : (
-				<UdaanTable loading={isLoading} data={results} columns={columns} />
+				<CustomTable loading={isLoading} data={results} columns={columns} />
 			)}
 
 			<TablePagination

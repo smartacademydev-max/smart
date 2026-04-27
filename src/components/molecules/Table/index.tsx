@@ -21,7 +21,7 @@ import {
     getSortedRowModel,
     useReactTable
 } from "@tanstack/react-table";
-interface UdaanTableProps<T extends object> {
+interface CustomTableProps<T extends object> {
     data: T[];
     columns: ColumnDef<T, any>[];
     pagination?: boolean;
@@ -32,7 +32,7 @@ interface UdaanTableProps<T extends object> {
     maxHeight?: string;
 }
 
-export default function UdaanTable<T extends object>({
+export default function CustomTable<T extends object>({
     data,
     columns,
     pagination = false,
@@ -40,7 +40,7 @@ export default function UdaanTable<T extends object>({
     className,
     loading,
     skeletonRows = 8,
-}: UdaanTableProps<T>) {
+}: CustomTableProps<T>) {
     const table = useReactTable({
         data,
         columns,

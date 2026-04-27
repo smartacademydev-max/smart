@@ -10,7 +10,7 @@ import type { TransactionResponse } from "../../../../types/transaction";
 import { formatDate } from "../../../../utils/dateFormat";
 import ActionIconVisible from "../../../molecules/Action/ActionIconVisible";
 import TabController from "../../../molecules/TabController";
-import UdaanTable from "../../../molecules/Table";
+import CustomTable from "../../../molecules/Table";
 import TablePagination from "../../../molecules/Table/Pagination";
 import ConfirmationDialog from "../../../organism/ConfirmationDialog";
 import EmptyRoute from "../../../organism/EmptyRoute";
@@ -166,7 +166,7 @@ export default function BundleEnrolledStudents({ id }: { id: number }) {
                 />
             ) : (
                 <Box className="table__wrapper">
-                    <UdaanTable loading={isLoading} data={users} columns={columns} />
+                    <CustomTable loading={isLoading} data={users} columns={columns} />
                 </Box>
             )}
 

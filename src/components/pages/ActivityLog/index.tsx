@@ -7,7 +7,7 @@ import { useAppDispatch } from '../../../store/hook';
 import { DeviceFilter, StatusFilter, type DeviceType, type Status } from '../../../types';
 import { ActivityTypes, type ActivityProps, type ActivityType } from '../../../types/activity';
 import SortableHeader from '../../molecules/SortableHeader';
-import UdaanTable from '../../molecules/Table';
+import CustomTable from '../../molecules/Table';
 import TablePagination from '../../molecules/Table/Pagination';
 import EmptyRoute from '../../organism/EmptyRoute';
 import PageHeader from '../../organism/PageHeader';
@@ -246,7 +246,7 @@ export default function ActivityRoot() {
                         message="There are currently no logs available for this transaction. Please check back later or verify the transaction process."
                     />
                 ) : (
-                    <UdaanTable
+                    <CustomTable
                         data={data?.data?.data || []}
                         loading={isLoading}
                         columns={columns}

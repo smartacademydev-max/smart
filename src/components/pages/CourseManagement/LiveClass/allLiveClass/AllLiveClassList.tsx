@@ -13,7 +13,7 @@ import { formatDate } from "../../../../../utils/dateFormat";
 import { useGetStatusStyle } from "../../../../../utils/getStyleBasedOnStatus";
 import Actions from "../../../../molecules/Action";
 import TabController from "../../../../molecules/TabController";
-import UdaanTable from "../../../../molecules/Table";
+import CustomTable from "../../../../molecules/Table";
 import TablePagination from "../../../../molecules/Table/Pagination";
 import ConfirmationDialog from "../../../../organism/ConfirmationDialog";
 import EmptyRoute from "../../../../organism/EmptyRoute";
@@ -313,7 +313,7 @@ export default function AllLiveClassList() {
           }}>
 
             {layout === "table" ? (
-              <UdaanTable
+              <CustomTable
                 data={data?.data?.data || []}
                 columns={columns}
                 loading={isLoading || isFetching}

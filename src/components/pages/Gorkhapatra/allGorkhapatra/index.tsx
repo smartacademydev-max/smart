@@ -14,7 +14,7 @@ import { getPublishedStatus, type PublishedStatus } from "../../../../utils/stat
 import StatusPill from "../../../atoms/StatusPill";
 import Actions from "../../../molecules/Action";
 import TabController from "../../../molecules/TabController";
-import UdaanTable from "../../../molecules/Table";
+import CustomTable from "../../../molecules/Table";
 import TablePagination from "../../../molecules/Table/Pagination";
 import GorkhapatraCard from "../../../organism/Cards/GorkhapatraCard";
 import ConfirmationDialog from "../../../organism/ConfirmationDialog";
@@ -315,7 +315,7 @@ export default function AllGorkhapatraRoot() {
                         }}>
                             {layout === "table" ?
                                 <>
-                                    <UdaanTable
+                                    <CustomTable
                                         data={gorkhapatras}
                                         columns={columns}
                                         loading={isLoading}

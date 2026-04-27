@@ -10,7 +10,7 @@ import type { QuestionProps, QuestionTypeProps } from '../../../../../types/ques
 import { renderHtml } from '../../../../../utils/renderHtml';
 import Actions from '../../../../molecules/Action';
 import TabController from '../../../../molecules/TabController';
-import UdaanTable from '../../../../molecules/Table';
+import CustomTable from '../../../../molecules/Table';
 import TablePagination from '../../../../molecules/Table/Pagination';
 import ConfirmationDialog from '../../../../organism/ConfirmationDialog';
 import EmptyRoute from '../../../../organism/EmptyRoute';
@@ -219,7 +219,7 @@ export default function AllQuestionListing({ open, setOpen }: Props) {
                             overflow: "auto"
                         }}>
 
-                            <UdaanTable
+                            <CustomTable
                                 data={questions || []}
                                 columns={columns}
                                 loading={isLoading}

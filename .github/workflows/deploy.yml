@@ -1,4 +1,4 @@
-name: Udaan Deployment Pipeline
+name: SMART Deployment Pipeline
 
 on:
   push:
@@ -50,11 +50,11 @@ jobs:
       - name: Deploy to server
         run: |
           rsync -avz --delete dist/ \
-          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/udaan
+          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/smart
       - name: Deploy to server
         run: |
           rsync -avz --delete dist/ \
-          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/udaan
+          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/smart
 
       - name: Notify Slack on Success
         if: success()

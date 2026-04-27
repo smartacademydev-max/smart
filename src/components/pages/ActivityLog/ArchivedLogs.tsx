@@ -1,4 +1,3 @@
-import { ArchiveBox } from "iconsax-reactjs";
 import {
     Box,
     Button,
@@ -9,8 +8,8 @@ import {
     DialogTitle,
     Typography,
 } from "@mui/material";
-import ActionIconVisible from "../../molecules/Action/ActionIconVisible";
 import type { ColumnDef } from "@tanstack/react-table";
+import { ArchiveBox } from "iconsax-reactjs";
 import { useMemo, useState } from "react";
 import {
     useDeleteActivityLogBackupMutation,
@@ -20,7 +19,8 @@ import {
 } from "../../../services/activityApi";
 import { showToast } from "../../../slice/toastSlice";
 import { useAppDispatch } from "../../../store/hook";
-import UdaanTable from "../../molecules/Table";
+import ActionIconVisible from "../../molecules/Action/ActionIconVisible";
+import CustomTable from "../../molecules/Table";
 import EmptyRoute from "../../organism/EmptyRoute";
 import PageHeader from "../../organism/PageHeader";
 
@@ -131,7 +131,7 @@ export default function ArchivedLogs() {
                         message="There are no backup files available at the moment."
                     />
                 ) : (
-                    <UdaanTable
+                    <CustomTable
                         data={data?.data || []}
                         loading={isLoading}
                         columns={columns}

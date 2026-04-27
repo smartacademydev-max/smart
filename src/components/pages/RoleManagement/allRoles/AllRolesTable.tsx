@@ -10,7 +10,7 @@ import { useAppDispatch } from '../../../../store/hook';
 import type { RoleProps } from '../../../../types/roleAndPermission';
 import { formatDateForDisplay } from '../../../../utils/dateFormat';
 import Actions from '../../../molecules/Action';
-import UdaanTable from '../../../molecules/Table';
+import CustomTable from '../../../molecules/Table';
 import TablePagination from '../../../molecules/Table/Pagination';
 import ConfirmationDialog from '../../../organism/ConfirmationDialog';
 import EmptyRoles from '../../../organism/EmptyRoute';
@@ -31,7 +31,7 @@ export default function AllRolesTable() {
     })
     const [openConfirm, setOpenConfirm] = React.useState(false);
     const [rolesToDelete, setRolesToDelete] = React.useState<string[]>([]);
-    
+
     const { data, isLoading } = useGetAllRolesQuery({ pageIndex: qp.pageIndex, pageSize: qp.pageSize, search: debouncedSearch });
     const [deleteRole, { isLoading: deleting }] = useDeleteRoleMutation();
 
@@ -200,7 +200,7 @@ export default function AllRolesTable() {
                 />
             </div>
             {!isLoading && !roles.length ? <EmptyRoles /> : <Box className="table__wrapper  overflow-auto flex flex-col justify-start">
-                <UdaanTable
+                <CustomTable
                     loading={isLoading}
                     data={roles}
                     columns={columns}

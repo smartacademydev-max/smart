@@ -15,7 +15,7 @@ import type { courseClonePropertyProps, CourseProps } from "../../../../../types
 import { formatDate } from "../../../../../utils/dateFormat";
 import Actions from "../../../../molecules/Action";
 import TabController from "../../../../molecules/TabController";
-import UdaanTable from "../../../../molecules/Table";
+import CustomTable from "../../../../molecules/Table";
 import TablePagination from "../../../../molecules/Table/Pagination";
 import ConfirmationDialog from "../../../../organism/ConfirmationDialog";
 import EmptyRoute from "../../../../organism/EmptyRoute";
@@ -373,7 +373,7 @@ export default function AllCourse() {
                         }}>
                             {layout === "table" ?
                                 <>
-                                    <UdaanTable
+                                    <CustomTable
                                         data={courses}
                                         columns={columns}
                                         loading={isLoading || isFetching}

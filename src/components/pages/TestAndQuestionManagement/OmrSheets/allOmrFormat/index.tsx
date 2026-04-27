@@ -10,7 +10,7 @@ import { useAppDispatch } from "../../../../../store/hook";
 import type { OmrFormatProps } from "../../../../../types/question";
 import { formatDateCustom } from "../../../../../utils/dateFormat";
 import Actions from "../../../../molecules/Action";
-import UdaanTable from "../../../../molecules/Table";
+import CustomTable from "../../../../molecules/Table";
 import TablePagination from "../../../../molecules/Table/Pagination";
 import ConfirmationDialog from "../../../../organism/ConfirmationDialog";
 import EmptyRoute from "../../../../organism/EmptyRoute";
@@ -152,7 +152,7 @@ export default function AllOmrFormats() {
             ) : (
                 <>
                     <Box className="table__wrapper h-full overflow-auto">
-                        <UdaanTable columns={columns} data={formats} loading={isLoading} />
+                        <CustomTable columns={columns} data={formats} loading={isLoading} />
                     </Box>
                     <TablePagination
                         qp={qp}

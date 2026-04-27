@@ -13,7 +13,7 @@ interface DateRangePickerProps {
     onReset: () => void;
 }
 
-export default function UdaanDatePicker({
+export default function CustomDatePicker({
     startDate,
     endDate,
     onStartDateChange,

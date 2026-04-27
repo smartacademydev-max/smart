@@ -6,7 +6,7 @@ import { Add, Send, Status } from "iconsax-reactjs";
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import FilterIcon from "../../../icons/FilterIcon";
 import SearchIcon from "../../../icons/SearchIcon";
-import UdaanDatePicker from "../DatePicker";
+import CustomDatePicker from "../DatePicker";
 
 export type LayoutProps = "table" | "grid"
 interface TableFilterProps {
@@ -292,7 +292,7 @@ export default function TableFilter({
                                 }}
                             >
                                 <DialogContent sx={{ p: 0 }}>
-                                    <UdaanDatePicker
+                                    <CustomDatePicker
                                         startDate={startDate}
                                         endDate={endDate}
                                         onStartDateChange={setStartDate}

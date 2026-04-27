@@ -23,7 +23,7 @@ import {
 import { showToast } from "../../../slice/toastSlice";
 import { useAppDispatch } from "../../../store/hook";
 import type { PermissionProps } from "../../../types/roleAndPermission";
-import UdaanTable from "../../molecules/Table";
+import CustomTable from "../../molecules/Table";
 import ConfirmationDialog from "../../organism/ConfirmationDialog";
 
 const validationSchema = Yup.object({
@@ -289,7 +289,7 @@ export default function RoleManagementForm() {
                     </div>
                 </div>
                 <div className="top h-full overflow-auto">
-                    <UdaanTable columns={columns} data={formik.values.permissions || []} loading={isLoading || loadingRole} />
+                    <CustomTable columns={columns} data={formik.values.permissions || []} loading={isLoading || loadingRole} />
                 </div>
                 <Box
                     className="footer__action flex justify-end items-center gap-2 py-6 mt-8 sticky -bottom-5"
