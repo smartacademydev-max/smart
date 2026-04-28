@@ -9,7 +9,7 @@ import {
     ListItemText,
     Tooltip,
 } from "@mui/material";
-import { AttachSquare, Brodcast, Mobile, Setting2 } from "iconsax-reactjs";
+import { AttachSquare, Brodcast, Gift, Mobile, Setting2 } from "iconsax-reactjs";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -31,6 +31,7 @@ export default function PrimaryMenu({ collapsed = false }: PrimaryMenuProps) {
     const [openTest, setOpenTest] = React.useState<boolean>(false);
     const [openOmr, setOpenOmr] = React.useState<boolean>(false);
     const [openDiscussion, setOpenDiscussion] = React.useState<boolean>(false);
+    const [openReferral, setOpenReferral] = React.useState<boolean>(false);
     const [openTicket, setOpenTicket] = React.useState<boolean>(false);
     const [openActivityLog, setOpenActivityLog] = React.useState<boolean>(false);
     const counts = useMenuCounts();
@@ -42,6 +43,7 @@ export default function PrimaryMenu({ collapsed = false }: PrimaryMenuProps) {
             setOpenTest(false);
             setOpenOmr(false);
             setOpenDiscussion(false);
+            setOpenReferral(false);
             setOpenTicket(false);
             setOpenActivityLog(false);
         }
@@ -71,6 +73,7 @@ export default function PrimaryMenu({ collapsed = false }: PrimaryMenuProps) {
         ) setOpenTest(true);
         if (p.startsWith(PATH.OMR.ROOT)) setOpenOmr(true);
         if (p.startsWith(PATH.DISCUSSION.ROOT) || p.startsWith(PATH.MODERATION.ROOT)) setOpenDiscussion(true);
+        if (p.startsWith(PATH.REFERRAL_POINTS.ROOT) || p.startsWith(PATH.MARKETING_LINKS.ROOT) || p.startsWith(PATH.COUPON_CODES.ROOT)) setOpenReferral(true);
         if (p.startsWith(PATH.TICKET.ROOT)) setOpenTicket(true);
         if (p.startsWith(PATH.ACTIVITY_LOG.ROOT)) setOpenActivityLog(true);
     }, [location.pathname]);
@@ -104,6 +107,11 @@ export default function PrimaryMenu({ collapsed = false }: PrimaryMenuProps) {
         location.pathname.startsWith(PATH.MODERATION.ROOT);
 
     const isTicketGroupActive = () => location.pathname.startsWith(PATH.TICKET.ROOT);
+
+    const isReferralGroupActive = () =>
+        location.pathname.startsWith(PATH.REFERRAL_POINTS.ROOT) ||
+        location.pathname.startsWith(PATH.MARKETING_LINKS.ROOT) ||
+        location.pathname.startsWith(PATH.COUPON_CODES.ROOT);
 
     const isSettingGroupActive = () => location.pathname.startsWith(PATH.SETTINGS.ROOT);
 
@@ -406,6 +414,72 @@ export default function PrimaryMenu({ collapsed = false }: PrimaryMenuProps) {
                                 {!collapsed && <MenuBadge count={counts.transaction} />}
                             </ListItemButton>
                         </Tooltip>
+                    </ListItem>
+                </CAN>
+
+                {/* Referral & Points */}
+                <CAN permissions={["view_referrals", "add_referrals", "edit_referrals", "delete_referrals"]}>
+                    <ListItem disablePadding className="menu__item">
+                        <Tooltip title={collapsed ? "Referral & Points" : ""} placement="right" arrow>
+                            <ListItemButton
+                                onClick={() => collapsed
+                                    ? navigate(PATH.REFERRAL_POINTS.ROOT)
+                                    : setOpenReferral((prev) => !prev)
+                                }
+                                className={isReferralGroupActive() ? "active" : ""}
+                                sx={btnSx}
+                            >
+                                <ListItemIcon sx={iconSx}>
+                                    <Gift size={20} color="#9CA3B0" />
+                                </ListItemIcon>
+                                {!collapsed && <ListItemText primary="Referral & Points" />}
+                                {!collapsed && (openReferral ? <ExpandLess /> : <ExpandMore />)}
+                            </ListItemButton>
+                        </Tooltip>
+                        <Collapse in={openReferral && !collapsed} timeout="auto" unmountOnExit>
+                            <List component="div" disablePadding sx={{ pl: 3 }}>
+                                <ListItem disablePadding className="menu__item">
+                                    <ListItemButton
+                                        onClick={() => navigate(PATH.REFERRAL_POINTS.ROOT)}
+                                        className={location.pathname === PATH.REFERRAL_POINTS.ROOT ? "active-nested" : ""}
+                                    >
+                                        <ListItemText primary="Overview" />
+                                    </ListItemButton>
+                                </ListItem>
+                                <ListItem disablePadding className="menu__item">
+                                    <ListItemButton
+                                        onClick={() => navigate(PATH.REFERRAL_POINTS.REFERRALS.ROOT)}
+                                        className={location.pathname.startsWith(PATH.REFERRAL_POINTS.REFERRALS.ROOT) ? "active-nested" : ""}
+                                    >
+                                        <ListItemText primary="All Referrals" />
+                                    </ListItemButton>
+                                </ListItem>
+                                <ListItem disablePadding className="menu__item">
+                                    <ListItemButton
+                                        onClick={() => navigate(PATH.REFERRAL_POINTS.TRANSACTIONS.ROOT)}
+                                        className={location.pathname.startsWith(PATH.REFERRAL_POINTS.TRANSACTIONS.ROOT) ? "active-nested" : ""}
+                                    >
+                                        <ListItemText primary="Points Transactions" />
+                                    </ListItemButton>
+                                </ListItem>
+                                <ListItem disablePadding className="menu__item">
+                                    <ListItemButton
+                                        onClick={() => navigate(PATH.MARKETING_LINKS.ROOT)}
+                                        className={location.pathname.startsWith(PATH.MARKETING_LINKS.ROOT) ? "active-nested" : ""}
+                                    >
+                                        <ListItemText primary="Marketing Links" />
+                                    </ListItemButton>
+                                </ListItem>
+                                <ListItem disablePadding className="menu__item">
+                                    <ListItemButton
+                                        onClick={() => navigate(PATH.COUPON_CODES.ROOT)}
+                                        className={location.pathname.startsWith(PATH.COUPON_CODES.ROOT) ? "active-nested" : ""}
+                                    >
+                                        <ListItemText primary="Coupon Codes" />
+                                    </ListItemButton>
+                                </ListItem>
+                            </List>
+                        </Collapse>
                     </ListItem>
                 </CAN>
 

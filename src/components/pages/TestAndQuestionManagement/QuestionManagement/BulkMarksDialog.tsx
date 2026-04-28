@@ -39,11 +39,11 @@ export default function BulkMarksDialog({ open, onClose, onApply, count, isLoadi
         <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
             <DialogTitle>Assign Marks</DialogTitle>
             <DialogContent>
-                <Typography variant="body2" color="text.secondary" mb={2}>
+                <Typography variant="subtitle2" fontWeight={400} color="text.secondary" mb={2}>
                     Assign the same marks to <strong>{count}</strong> selected question{count !== 1 ? "s" : ""}.
                 </Typography>
                 <div className="input__field">
-                    <InputLabel required>Marks per Question</InputLabel>
+                    <InputLabel className="required">Marks per Question</InputLabel>
                     <OutlinedInput
                         fullWidth
                         type="number"

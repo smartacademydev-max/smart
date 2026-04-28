@@ -58,6 +58,12 @@ export const baseApi = createApi({
         "ApiSetting",
         "ZoomAccount",
         "QuestionLabel",
+        "Referral",
+        "PointsConfig",
+        "PointsTransaction",
+        "ReferralOverview",
+        "MarketingLink",
+        "CouponCode",
     ],
     endpoints: () => ({}),
 });

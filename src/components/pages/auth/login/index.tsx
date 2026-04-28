@@ -1,7 +1,7 @@
 import { Typography } from "@mui/material";
 import { Link } from "react-router-dom";
+import { useBrandSettings } from "../../../../hooks/useBrandSettings";
 import { PATH } from "../../../../routes/PATH";
-import { useGetThemeSettingsQuery } from "../../../../services/settingApi";
 import AuthHeader from "../../../molecules/AuthHeader";
 import LoginForm from "../../../organism/LoginForm";
 
@@ -10,8 +10,7 @@ export default function Login({
 }: {
 	requirePassword?: boolean;
 }) {
-	const { data: themeSettings } = useGetThemeSettingsQuery();
-	const brandName = themeSettings?.data?.brand_name || themeSettings?.data?.company_name || "";
+	const { brandName } = useBrandSettings();
 	return (
 		<>
 			<AuthHeader

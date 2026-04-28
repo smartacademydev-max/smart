@@ -1,7 +1,7 @@
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useGetThemeSettingsQuery } from './services/settingApi';
+import { useBrandSettings } from './hooks/useBrandSettings';
 import { ThemeMode } from './slice/themeSlice';
 import { useAppSelector } from './store/hook';
 import type { RootState } from './store/store';
@@ -13,10 +13,9 @@ export default function CustomThemeProvider({ children }: { children: React.Reac
         (state: RootState) => state.theme
     );
 
-    const { data: themeSettings } = useGetThemeSettingsQuery();
-    const branding = themeSettings?.data;
+    const { brandName, companyName, tagline, metaDescription, favIconUrl } = useBrandSettings();
 
-    // Create theme based on current mode
+
     const theme = React.useMemo(() => {
         const themeMode =
             mode === ThemeMode.AUTO
@@ -27,12 +26,10 @@ export default function CustomThemeProvider({ children }: { children: React.Reac
         return createAppTheme(themeMode as "light" | "dark");
     }, [mode]);
 
-    // Whenever Redux language changes, update i18next too
     React.useEffect(() => {
         i18n.changeLanguage(lang);
     }, [lang, i18n]);
 
-    // Handle AUTO mode - listen to system preference changes
     React.useEffect(() => {
         if (mode === ThemeMode.AUTO) {
             const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -45,36 +42,35 @@ export default function CustomThemeProvider({ children }: { children: React.Reac
         }
     }, [mode]);
 
-    // Apply dynamic meta title, description, and favicon from theme settings
     React.useEffect(() => {
-        if (branding?.company_name) {
-            document.title = branding.tagline
-                ? `${branding.company_name} — ${branding.tagline}`
-                : branding.company_name;
+        if (companyName) {
+            document.title = tagline
+                ? `${brandName} — ${tagline}`
+                : brandName;
         }
-    }, [branding?.company_name, branding?.tagline]);
+    }, [brandName, tagline]);
 
     React.useEffect(() => {
-        if (!branding?.meta_description) return;
+        if (!metaDescription) return;
         let tag = document.querySelector<HTMLMetaElement>('meta[name="description"]');
         if (!tag) {
             tag = document.createElement("meta");
             tag.setAttribute("name", "description");
             document.head.appendChild(tag);
         }
-        tag.setAttribute("content", branding.meta_description);
-    }, [branding?.meta_description]);
+        tag.setAttribute("content", metaDescription);
+    }, [metaDescription]);
 
     React.useEffect(() => {
-        if (!branding?.favicon_url) return;
+        if (!favIconUrl) return;
         let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
         if (!link) {
             link = document.createElement("link");
             link.setAttribute("rel", "icon");
             document.head.appendChild(link);
         }
-        link.setAttribute("href", branding.favicon_url);
-    }, [branding?.favicon_url]);
+        link.setAttribute("href", favIconUrl);
+    }, [favIconUrl]);
 
     return (
         <ThemeProvider theme={theme}>

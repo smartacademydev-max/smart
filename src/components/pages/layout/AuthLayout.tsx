@@ -1,19 +1,16 @@
 import { Box, Typography } from "@mui/material";
 import { Outlet } from "react-router-dom";
-import { useGetThemeSettingsQuery } from "../../../services/settingApi";
+import { useBrandSettings } from "../../../hooks/useBrandSettings";
 
 export default function AuthLayout() {
-	const { data: themeSettings } = useGetThemeSettingsQuery();
-	// Auth pages always have a light background — always use the light logo
-	const logoSrc = themeSettings?.data?.logo_dark_url || "/logo.svg";
-	const brandName = themeSettings?.data?.brand_name || themeSettings?.data?.company_name || "";
+	const { brandName, logoDarkUrl, logoUrl } = useBrandSettings();
 
 	return (
 		<Box className="lg:grid lg:grid-cols-2 lg:gap-10 2xl:gap-20">
 			<div className="auth__image__wrapper col-span-1 hidden lg:flex lg:flex-col">
 				<div className="flex items-center gap-3 mb-[104px]">
 					<img
-						src={logoSrc}
+						src={logoDarkUrl || logoUrl}
 						alt={brandName}
 						width={132}
 						height={70}

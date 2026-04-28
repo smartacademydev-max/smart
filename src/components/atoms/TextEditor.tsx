@@ -20,7 +20,7 @@ function createUploadAdapterPlugin(uploadImage: any) {
                         throw err;
                     }
                 },
-                abort: () => {},
+                abort: () => { },
             };
         };
     };
@@ -65,7 +65,6 @@ const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(function TextEd
                 const position = editor.model.document.selection.getFirstPosition();
                 if (position) writer.insertText(text, position);
             });
-            // Sync the new content back
             const updated = editor.getData();
             setData(updated);
             onChange?.(updated);
@@ -93,11 +92,18 @@ const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(function TextEd
                     data={data}
                     config={{
                         extraPlugins: [uploadPlugin],
+                        // toolbar: [
+                        //     "heading", "|",
+                        //     "bold", "italic", "link", "|",
+                        //     "bulletedList", "numberedList", "|",
+                        //     "imageUpload", "blockQuote", "|",
+                        //     "undo", "redo",
+                        // ],
                         toolbar: [
-                            "heading", "|",
+                            "heading", "MathType", "ChemType", "|",
                             "bold", "italic", "link", "|",
                             "bulletedList", "numberedList", "|",
-                            "imageUpload", "blockQuote", "|",
+                            "imageUpload", "blockQuote", "insertTable", "|",
                             "undo", "redo",
                         ],
                     }}

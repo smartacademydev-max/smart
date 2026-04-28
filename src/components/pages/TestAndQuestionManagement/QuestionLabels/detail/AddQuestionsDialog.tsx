@@ -1,3 +1,4 @@
+import { Search } from "@mui/icons-material";
 import {
     Box,
     Button,
@@ -9,15 +10,14 @@ import {
     InputAdornment,
     OutlinedInput,
     Stack,
-    Tab,
-    Tabs,
     Typography,
 } from "@mui/material";
-import { Search } from "@mui/icons-material";
 import { useState } from "react";
 import { useGetAllQuestionQuery } from "../../../../../services/questionApi";
-import { renderHtml } from "../../../../../utils/renderHtml";
 import type { QuestionTypeProps } from "../../../../../types/question";
+import { renderHtml } from "../../../../../utils/renderHtml";
+import TablePagination from "../../../../molecules/Table/Pagination";
+import EmptyRoute from "../../../../organism/EmptyRoute";
 
 interface Props {
     open: boolean;
@@ -25,25 +25,30 @@ interface Props {
     onAdd: (questionIds: number[]) => void;
     existingIds: Set<number>;
     isLoading?: boolean;
+    questionType: QuestionTypeProps;
 }
 
-export default function AddQuestionsDialog({ open, onClose, onAdd, existingIds, isLoading }: Props) {
+export default function AddQuestionsDialog({ open, onClose, onAdd, existingIds, isLoading, questionType }: Props) {
     const [search, setSearch] = useState("");
-    const [tab, setTab] = useState<QuestionTypeProps>("mcq");
     const [qp, setQp] = useState({ pageIndex: 1, pageSize: 20 });
     const [selected, setSelected] = useState<Set<number>>(new Set());
 
     const { data, isLoading: fetching } = useGetAllQuestionQuery({
         ...qp,
         search,
-        type: tab,
+        type: questionType,
     });
 
     const questions = data?.data?.data || [];
+    const totalPages = data?.data?.pagination?.total_pages || 0;
 
     const handleToggle = (id: number) => {
         const next = new Set(selected);
-        next.has(id) ? next.delete(id) : next.add(id);
+        if (next.has(id)) {
+            next.delete(id);
+        } else {
+            next.add(id);
+        }
         setSelected(next);
     };
 
@@ -62,7 +67,7 @@ export default function AddQuestionsDialog({ open, onClose, onAdd, existingIds, 
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle>Add Questions to Set</DialogTitle>
             <DialogContent dividers>
-                <Stack gap={2}>
+                <Stack flexDirection={"column"} gap={2}>
                     <OutlinedInput
                         fullWidth
                         size="small"
@@ -78,15 +83,11 @@ export default function AddQuestionsDialog({ open, onClose, onAdd, existingIds, 
                             </InputAdornment>
                         }
                     />
-                    <Tabs value={tab} onChange={(_, v) => { setTab(v); setQp((p) => ({ ...p, pageIndex: 1 })); }}>
-                        <Tab label="MCQ" value="mcq" />
-                        <Tab label="Subjective" value="subjective" />
-                    </Tabs>
 
                     {fetching ? (
                         <Typography color="text.secondary">Loading questions...</Typography>
                     ) : !questions.length ? (
-                        <Typography color="text.secondary">No questions found.</Typography>
+                        <EmptyRoute title="No questions found" message="Try a different search term." />
                     ) : (
                         <Box sx={{ maxHeight: 400, overflowY: "auto" }}>
                             {questions.map((q) => {
@@ -125,27 +126,11 @@ export default function AddQuestionsDialog({ open, onClose, onAdd, existingIds, 
                         </Box>
                     )}
 
-                    {(data?.data?.pagination?.total_pages ?? 0) > 1 && (
-                        <Stack direction="row" justifyContent="center" gap={1}>
-                            <Button
-                                size="small"
-                                disabled={qp.pageIndex === 1}
-                                onClick={() => setQp((p) => ({ ...p, pageIndex: p.pageIndex - 1 }))}
-                            >
-                                Prev
-                            </Button>
-                            <Typography alignSelf="center" variant="body2">
-                                {qp.pageIndex} / {data?.data?.pagination?.total_pages}
-                            </Typography>
-                            <Button
-                                size="small"
-                                disabled={qp.pageIndex >= (data?.data?.pagination?.total_pages ?? 1)}
-                                onClick={() => setQp((p) => ({ ...p, pageIndex: p.pageIndex + 1 }))}
-                            >
-                                Next
-                            </Button>
-                        </Stack>
-                    )}
+                    <TablePagination
+                        qp={qp}
+                        setQp={setQp}
+                        totalPages={totalPages}
+                    />
                 </Stack>
             </DialogContent>
             <DialogActions>

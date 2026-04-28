@@ -110,6 +110,14 @@ import DeviceRequestsTab from "../components/pages/userManagement/viewUser/tabs/
 import PerformanceTab from "../components/pages/userManagement/viewUser/tabs/PerformanceTab";
 import ProfileTab from "../components/pages/userManagement/viewUser/tabs/ProfileTab";
 import TransactionsTab from "../components/pages/userManagement/viewUser/tabs/TransactionsTab";
+import ReferralsTab from "../components/pages/userManagement/viewUser/tabs/ReferralsTab";
+import ReferralPointsRoot from "../components/pages/ReferralPoints";
+import AllReferralsPage from "../components/pages/ReferralPoints/AllReferrals";
+import PointsTransactionsPage from "../components/pages/ReferralPoints/PointsTransactions";
+import ReferralConfigPage from "../components/pages/Setting/ReferralConfig";
+import AllMarketingLinksPage from "../components/pages/MarketingLinks";
+import MarketingLinkDetailPage from "../components/pages/MarketingLinks/Detail";
+import CouponCodesPage from "../components/pages/CouponCodes";
 import { PATH } from "./PATH";
 import Private from "./Private";
 import Unauthorized from "./Unauthorized";
@@ -285,6 +293,7 @@ const router = createBrowserRouter([
 							{ path: "performance", element: <PerformanceTab /> },
 							{ path: "login-history", element: <UserLoginHistory /> },
 							{ path: "activity-history", element: <UserActivityHistory /> },
+							{ path: "referrals", element: <ReferralsTab /> },
 						],
 					},
 				],
@@ -310,6 +319,30 @@ const router = createBrowserRouter([
 			{
 				path: PATH.SUBSCRIPTION_PLAN_MANAGEMENT.ROOT,
 				element: <Unauthorized permissions={["add_subscriptions", "edit_subscriptions", "delete_subscriptions", "view_subscriptions"]}> <SubscriptionManagementRoot /></Unauthorized>,
+			},
+			{
+				path: PATH.REFERRAL_POINTS.ROOT,
+				element: <Unauthorized permissions={["view_referrals", "add_referrals", "edit_referrals", "delete_referrals"]}><ReferralPointsRoot /></Unauthorized>,
+			},
+			{
+				path: PATH.REFERRAL_POINTS.REFERRALS.ROOT,
+				element: <Unauthorized permissions={["view_referrals", "add_referrals", "edit_referrals", "delete_referrals"]}><AllReferralsPage /></Unauthorized>,
+			},
+			{
+				path: PATH.REFERRAL_POINTS.TRANSACTIONS.ROOT,
+				element: <Unauthorized permissions={["view_referrals", "add_referrals", "edit_referrals", "delete_referrals"]}><PointsTransactionsPage /></Unauthorized>,
+			},
+			{
+				path: PATH.MARKETING_LINKS.ROOT,
+				element: <Unauthorized permissions={["view_referrals", "add_referrals", "edit_referrals", "delete_referrals"]}><AllMarketingLinksPage /></Unauthorized>,
+			},
+			{
+				path: PATH.MARKETING_LINKS.DETAIL.ROOT(),
+				element: <Unauthorized permissions={["view_referrals", "add_referrals", "edit_referrals", "delete_referrals"]}><MarketingLinkDetailPage /></Unauthorized>,
+			},
+			{
+				path: PATH.COUPON_CODES.ROOT,
+				element: <Unauthorized permissions={["view_referrals", "add_referrals", "edit_referrals", "delete_referrals"]}><CouponCodesPage /></Unauthorized>,
 			},
 			{
 				element:
@@ -374,6 +407,7 @@ const router = createBrowserRouter([
 					{ path: PATH.SETTINGS.SYSTEM.EMAIL_TEMPLATES.ROOT, element: <EmailTemplatesRoot /> },
 					{ path: PATH.SETTINGS.SYSTEM.COURSE_SETTING.ROOT, element: <CourseSettingRoot /> },
 					{ path: PATH.SETTINGS.SYSTEM.LOGIN_TYPE.ROOT, element: <LoginTypeRoot /> },
+					{ path: PATH.SETTINGS.SYSTEM.REFERRAL_CONFIG.ROOT, element: <ReferralConfigPage /> },
 					{ path: PATH.SETTINGS.API.ZOOM.ROOT, element: <ZoomSettingRoot /> },
 					{ path: PATH.SETTINGS.API.ESEWA.ROOT, element: <EsewaSettingRoot /> },
 					{ path: PATH.SETTINGS.API.KHALTI.ROOT, element: <KhaltiSettingRoot /> },

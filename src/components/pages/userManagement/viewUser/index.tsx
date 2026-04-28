@@ -10,7 +10,7 @@ import TabController from "../../../molecules/TabController";
 import ConfirmationDialog from "../../../organism/ConfirmationDialog";
 import PageHeader from "../../../organism/PageHeader";
 
-type TabValue = "profile" | "courses" | "transactions" | "device-requests" | "performance";
+type TabValue = "profile" | "courses" | "transactions" | "device-requests" | "performance" | "referrals";
 
 const TABS: { label: string; value: TabValue }[] = [
     { label: "Profile", value: "profile" },
@@ -18,6 +18,7 @@ const TABS: { label: string; value: TabValue }[] = [
     { label: "Transactions", value: "transactions" },
     { label: "Device Request", value: "device-requests" },
     { label: "Performance", value: "performance" },
+    { label: "Referrals", value: "referrals" },
 ];
 
 export default function ViewUserRoot() {

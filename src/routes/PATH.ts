@@ -189,6 +189,10 @@ export const PATH = {
 				ROOT: (id?: string) =>
 					id ? `/user-management/${id}/view/activity-history` : "/user-management/:id/view/activity-history",
 			},
+			REFERRALS: {
+				ROOT: (id?: string) =>
+					id ? `/user-management/${id}/view/referrals` : "/user-management/:id/view/referrals",
+			},
 		},
 	},
 	TEST_QUESTION_MANAGEMENT: {
@@ -231,6 +235,20 @@ export const PATH = {
 	},
 	SUBSCRIPTION_PLAN_MANAGEMENT: {
 		ROOT: "/subscription-management"
+	},
+	REFERRAL_POINTS: {
+		ROOT: "/referral-points",
+		REFERRALS: { ROOT: "/referral-points/referrals" },
+		TRANSACTIONS: { ROOT: "/referral-points/transactions" },
+	},
+	MARKETING_LINKS: {
+		ROOT: "/marketing-links",
+		DETAIL: {
+			ROOT: (id?: number) => id ? `/marketing-links/${id}` : "/marketing-links/:id",
+		},
+	},
+	COUPON_CODES: {
+		ROOT: "/coupon-codes",
 	},
 	TRANSACTION_MANAGEMENT: {
 		ROOT: "/transaction-management"
@@ -315,6 +333,9 @@ export const PATH = {
 			},
 			LOGIN_TYPE: {
 				ROOT: "/settings/system/login-type"
+			},
+			REFERRAL_CONFIG: {
+				ROOT: "/settings/system/referral-config"
 			},
 		},
 		API: {

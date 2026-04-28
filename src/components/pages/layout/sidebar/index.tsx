@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { IconButton, Tooltip, useTheme } from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
 import { Link, useLocation } from "react-router-dom";
-import { useGetThemeSettingsQuery } from "../../../../services/settingApi";
+import { useBrandSettings } from "../../../../hooks/useBrandSettings";
 import CustomAppbar from "../appbar";
 import PrimaryMenu from "./PrimaryMenu";
 
@@ -30,12 +30,12 @@ export default function ResponsiveDrawer(props: Props) {
 	const location = useLocation();
 	const pathname = location.pathname;
 	const theme = useTheme();
-	const { data: themeSettings } = useGetThemeSettingsQuery();
+	const { brandName, logoDarkUrl, logoUrl, favIconUrl ,companyName} = useBrandSettings();
 	const isDark = theme.palette.mode === "dark";
-	const logoSrc = isDark
-		? (themeSettings?.data?.logo_dark_url || themeSettings?.data?.logo_url || "/logo.svg")
-		: (themeSettings?.data?.logo_url || "/logo.svg");
-	const faviconSrc = themeSettings?.data?.favicon_url || "/favicon.ico";
+	const logoSrc = !isDark
+		? (logoDarkUrl || "/logo.svg")
+		: (logoUrl || "/logo.svg");
+	const faviconSrc = favIconUrl || "/favicon.ico";
 
 	const drawerWidth = collapsed ? DRAWER_COLLAPSED : DRAWER_EXPANDED;
 
@@ -87,7 +87,7 @@ export default function ResponsiveDrawer(props: Props) {
 					<Link to="/">
 						<img
 							src={logoSrc}
-							alt={themeSettings?.data?.company_name || ""}
+							alt={brandName||companyName||"Company Logo"}
 							width={137}
 							height={73}
 							className="max-w-[120px] mx-auto"

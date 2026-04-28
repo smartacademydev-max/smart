@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import * as Yup from "yup";
 import SearchIcon from "../../../icons/SearchIcon";
+import { useBrandSettings } from "../../../hooks/useBrandSettings";
 import { useGetAllCourseQuery } from "../../../services/courseApi";
 import { useGetAllBundleQuery, useGetAllIndividualTestQuery } from "../../../services/questionApi";
 import { useAddTransactionMutation, useGetTransactionByIdQuery, useUpdateTransactionByIdMutation } from "../../../services/transactionApi";
@@ -51,6 +52,7 @@ const enrollmentConfig = {
 export default function TransactionManagementForm({ open, setOpen, transactionId }: Props) {
     const dispatch = useAppDispatch();
     const theme = useTheme();
+    const { brandName } = useBrandSettings();
 
     const [enrollmentType, setEnrollmentType] = useState<EnrollmentType>("course");
 
@@ -104,7 +106,8 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         const timestamp = Date.now();
-        return `SMART-INVOICE-${year}${month}${day}-${timestamp}${studentId ? `-${studentId}` : ''}`;
+        const prefix = (brandName || "INVOICE").toUpperCase().replace(/\s+/g, "-");
+        return `${prefix}-${year}${month}${day}-${timestamp}${studentId ? `-${studentId}` : ''}`;
     };
 
     const validationSchema = useMemo(() => Yup.object({

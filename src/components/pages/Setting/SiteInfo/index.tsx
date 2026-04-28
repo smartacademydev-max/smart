@@ -113,7 +113,7 @@ export default function SiteInfoRoot() {
                 <FileDragDrop
                     label="Logo (Light Mode)"
                     initialPreview={formik.values.logo_url}
-                    helperText="Shown on light backgrounds — SVG or PNG recommended"
+                    helperText="Shown on light backgrounds — PNG recommended"
                     maxSize={5}
                     onFileChange={(f) => {
                         formik.setFieldValue("logo", f);
@@ -124,7 +124,7 @@ export default function SiteInfoRoot() {
                 <FileDragDrop
                     label="Logo (Dark Mode)"
                     initialPreview={formik.values.logo_dark_url}
-                    helperText="Shown on dark backgrounds — SVG or PNG recommended"
+                    helperText="Shown on dark backgrounds — PNG recommended"
                     maxSize={5}
                     onFileChange={(f) => {
                         formik.setFieldValue("logo_dark", f);
@@ -135,7 +135,7 @@ export default function SiteInfoRoot() {
                 <FileDragDrop
                     label="Favicon"
                     initialPreview={formik.values.favicon_url}
-                    helperText="32×32 or 64×64 px — ICO, PNG or SVG"
+                    helperText="32×32 or 64×64 px — ICO or PNG"
                     maxSize={2}
                     onFileChange={(f) => {
                         formik.setFieldValue("favicon", f);
