@@ -3,6 +3,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Add } from "iconsax-reactjs";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { PATH } from "../../../../../routes/PATH";
 import {
     useAddQuestionsToLabelMutation,
     useGetQuestionLabelByIdQuery,
@@ -12,7 +13,6 @@ import {
 } from "../../../../../services/questionApi";
 import { showToast } from "../../../../../slice/toastSlice";
 import { useAppDispatch } from "../../../../../store/hook";
-import { PATH } from "../../../../../routes/PATH";
 import type { QuestionProps, QuestionTypeProps } from "../../../../../types/question";
 import { renderHtml } from "../../../../../utils/renderHtml";
 import Actions from "../../../../molecules/Action";
@@ -77,7 +77,12 @@ export default function QuestionLabelDetail() {
 
     const handleSelectRow = (qId: number, checked: boolean) => {
         const next = new Set(selectedRows);
-        checked ? next.add(qId) : next.delete(qId);
+        if (checked) {
+            next.add(qId);
+        }
+        else {
+            next.delete(qId);
+        }
         setSelectedRows(next);
     };
 
@@ -284,6 +289,7 @@ export default function QuestionLabelDetail() {
                 onAdd={handleAddQuestions}
                 existingIds={existingIds}
                 isLoading={adding}
+                questionType={activeTab}
             />
         </div>
     );
