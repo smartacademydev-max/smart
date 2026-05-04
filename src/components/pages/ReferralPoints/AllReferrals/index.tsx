@@ -22,13 +22,17 @@ const STATUS_OPTIONS: { label: string; value: ReferralStatus | "" }[] = [
     { label: "All", value: "" },
     { label: "Pending", value: "pending" },
     { label: "Registered", value: "registered" },
-    { label: "Purchased", value: "purchased" },
+    { label: "Course Purchased", value: "course_purchased" },
+    { label: "Test Purchased", value: "test_purchased" },
+    { label: "Bundle Purchased", value: "bundle_purchased" },
 ];
 
 const statusColor: Record<ReferralStatus, "default" | "warning" | "info" | "success"> = {
     pending: "warning",
     registered: "info",
-    purchased: "success",
+    course_purchased: "success",
+    test_purchased: "success",
+    bundle_purchased: "success",
 };
 
 export default function AllReferralsPage() {

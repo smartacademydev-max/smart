@@ -1,11 +1,14 @@
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import {
     Box,
     Button,
     CircularProgress,
     Divider,
+    IconButton,
     InputLabel,
     OutlinedInput,
     Switch,
+    Tooltip,
     Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -14,25 +17,10 @@ import { showToast } from "../../../../slice/toastSlice";
 import { useAppDispatch } from "../../../../store/hook";
 import type { PointsRule } from "../../../../types/referral";
 
-const DEFAULT_RULES: PointsRule[] = [
-    { action_key: "referral_registration", action_label: "Referral Registration (referrer earns)", points: 10, is_active: true },
-    { action_key: "referral_purchase_course", action_label: "Referral First Purchase — Course (referrer earns)", points: 50, is_active: true },
-    { action_key: "referral_purchase_test", action_label: "Referral First Purchase — Test (referrer earns)", points: 50, is_active: true },
-    { action_key: "referral_purchase_bundle", action_label: "Referral First Purchase — Bundle (referrer earns)", points: 50, is_active: true },
-    { action_key: "course_completion", action_label: "Course Completion (self earns)", points: 100, is_active: true },
-    { action_key: "daily_streak_milestone", action_label: "Daily Streak Milestone (self earns)", points: 10, is_active: true },
-    { action_key: "self_purchase_course", action_label: "Self Purchase — Course", points: 20, is_active: true },
-    { action_key: "self_purchase_test", action_label: "Self Purchase — Test", points: 20, is_active: true },
-    { action_key: "self_purchase_bundle", action_label: "Self Purchase — Bundle", points: 20, is_active: true },
-    { action_key: "subscription_purchase", action_label: "Subscription Purchase", points: 30, is_active: true },
-    { action_key: "profile_completion", action_label: "Profile Completion (100%)", points: 10, is_active: true },
-    { action_key: "first_login", action_label: "First Login Bonus", points: 5, is_active: true },
-    { action_key: "course_review", action_label: "Course Review Submitted", points: 15, is_active: true },
-    { action_key: "test_attempt", action_label: "Test / Quiz Attempt", points: 5, is_active: true },
-    { action_key: "discussion_post", action_label: "Discussion Post", points: 5, is_active: true },
-    { action_key: "certificate_earned", action_label: "Certificate Earned", points: 50, is_active: true },
-    { action_key: "birthday_bonus", action_label: "Birthday Bonus", points: 20, is_active: true },
-];
+type RuleRow = PointsRule & { _isNew?: boolean };
+
+const slugify = (s: string) =>
+    s.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "").replace(/_+/g, "_").replace(/^_|_$/g, "");
 
 export default function ReferralConfigPage() {
     const dispatch = useAppDispatch();
@@ -40,32 +28,31 @@ export default function ReferralConfigPage() {
     const [updateConfig, { isLoading: saving }] = useUpdatePointsConfigMutation();
 
     const [conversionRate, setConversionRate] = useState<string>("");
-    const [rules, setRules] = useState<PointsRule[]>(DEFAULT_RULES);
+    const [rules, setRules] = useState<RuleRow[]>([]);
 
     useEffect(() => {
         if (data?.data) {
             setConversionRate(String(data.data.conversion_rate ?? ""));
-            if (data.data.rules?.length) {
-                setRules(
-                    DEFAULT_RULES.map((def) => {
-                        const saved = data.data.rules.find((r) => r.action_key === def.action_key);
-                        return saved ? { ...def, points: saved.points, is_active: saved.is_active } : def;
-                    })
-                );
-            }
+            setRules(data.data.rules ?? []);
         }
     }, [data]);
 
-    const handlePointsChange = (key: string, value: string) => {
+    const handleChange = (idx: number, field: keyof PointsRule, value: string | number | boolean) => {
         setRules((prev) =>
-            prev.map((r) => (r.action_key === key ? { ...r, points: Number(value) } : r))
+            prev.map((r, i) => {
+                if (i !== idx) return r;
+                const updated = { ...r, [field]: value };
+                if (field === "action_label" && r._isNew) {
+                    updated.action_key = slugify(String(value));
+                }
+                return updated;
+            })
         );
     };
 
-    const handleToggle = (key: string) => {
-        setRules((prev) =>
-            prev.map((r) => (r.action_key === key ? { ...r, is_active: !r.is_active } : r))
-        );
+
+    const handleDelete = (idx: number) => {
+        setRules((prev) => prev.filter((_, i) => i !== idx));
     };
 
     const handleSave = async () => {
@@ -74,8 +61,15 @@ export default function ReferralConfigPage() {
             dispatch(showToast({ message: "Please enter a valid conversion rate.", severity: "error" }));
             return;
         }
+        for (const r of rules) {
+            if (!r.action_key || !r.action_label) {
+                dispatch(showToast({ message: "All rules must have an action key and label.", severity: "error" }));
+                return;
+            }
+        }
         try {
-            const res = await updateConfig({ rules, conversion_rate: rate }).unwrap();
+            const payload = rules.map(({ _isNew, ...r }) => r);
+            const res = await updateConfig({ rules: payload, conversion_rate: rate }).unwrap();
             dispatch(showToast({ message: res.message || "Configuration saved.", severity: "success" }));
         } catch (e: any) {
             dispatch(showToast({ message: e?.data?.message || "Unable to save configuration.", severity: "error" }));
@@ -127,27 +121,23 @@ export default function ReferralConfigPage() {
 
             <Divider className="mb-6!" />
 
-            {/* Earning Rules */}
-            <Typography variant="subtitle1" fontWeight={600} mb={1}>
-                Earning Rules
-            </Typography>
+            {/* Earning Rules header */}
+            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                    Earning Rules
+                </Typography>
+
+            </Box>
             <Typography variant="body2" color="text.secondary" mb={3}>
                 Set how many points each action earns. Disable any rule to stop awarding points for it.
             </Typography>
 
-            <Box
-                sx={{
-                    border: "1px solid",
-                    borderColor: "divider",
-                    borderRadius: 2,
-                    overflow: "hidden",
-                }}
-            >
+            <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, overflow: "hidden" }}>
                 {/* Header row */}
                 <Box
                     sx={{
                         display: "grid",
-                        gridTemplateColumns: "1fr 140px 64px",
+                        gridTemplateColumns: "1fr 140px 64px 44px",
                         px: 2,
                         py: 1.25,
                         bgcolor: "action.hover",
@@ -164,44 +154,96 @@ export default function ReferralConfigPage() {
                     <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: "uppercase", textAlign: "center" }}>
                         Active
                     </Typography>
+                    <span />
                 </Box>
+
+                {rules.length === 0 && (
+                    <Box py={5} textAlign="center">
+                        <Typography variant="body2" color="text.disabled">
+                            No rules yet. Click "Add Rule" to get started.
+                        </Typography>
+                    </Box>
+                )}
 
                 {rules.map((rule, idx) => (
                     <Box
-                        key={rule.action_key}
+                        key={idx}
                         sx={{
                             display: "grid",
-                            gridTemplateColumns: "1fr 140px 64px",
+                            gridTemplateColumns: "1fr 140px 64px 44px",
                             px: 2,
                             py: 1,
                             alignItems: "center",
                             borderBottom: idx < rules.length - 1 ? "1px solid" : "none",
                             borderColor: "divider",
-                            opacity: rule.is_active ? 1 : 0.5,
+                            opacity: rule.is_active ? 1 : 0.55,
                         }}
                     >
-                        <Typography variant="body2" fontWeight={rule.is_active ? 500 : 400}>
-                            {rule.action_label}
-                        </Typography>
+                        {/* Label + key */}
+                        <Box pr={1}>
+                            <OutlinedInput
+                                fullWidth
+                                size="small"
+                                placeholder="Action label"
+                                value={rule.action_label}
+                                onChange={(e) => handleChange(idx, "action_label", e.target.value)}
+                            />
+                            {rule._isNew ? (
+                                <OutlinedInput
+                                    fullWidth
+                                    size="small"
+                                    placeholder="action_key (e.g. course_completion)"
+                                    value={rule.action_key}
+                                    onChange={(e) => handleChange(idx, "action_key", slugify(e.target.value))}
+                                    sx={{ mt: 0.5, "& input": { fontFamily: "monospace", fontSize: "0.72rem" } }}
+                                />
+                            ) : (
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        display: "block",
+                                        mt: 0.25,
+                                        fontFamily: "monospace",
+                                        color: "text.disabled",
+                                        lineHeight: 1.4,
+                                    }}
+                                >
+                                    {rule.action_key}
+                                </Typography>
+                            )}
+                        </Box>
+
+                        {/* Points */}
                         <Box px={1}>
                             <OutlinedInput
                                 fullWidth
                                 size="small"
                                 type="number"
                                 value={rule.points}
-                                onChange={(e) => handlePointsChange(rule.action_key, e.target.value)}
+                                onChange={(e) => handleChange(idx, "points", Number(e.target.value))}
                                 disabled={!rule.is_active}
                                 inputProps={{ min: 0 }}
                                 sx={{ "& input": { textAlign: "center" } }}
                             />
                         </Box>
+
+                        {/* Active */}
                         <Box display="flex" justifyContent="center">
                             <Switch
                                 size="small"
                                 checked={rule.is_active}
-                                onChange={() => handleToggle(rule.action_key)}
+                                onChange={(e) => handleChange(idx, "is_active", e.target.checked)}
                                 color="primary"
                             />
+                        </Box>
+
+                        {/* Delete */}
+                        <Box display="flex" justifyContent="center">
+                            <Tooltip title="Remove rule">
+                                <IconButton size="small" color="error" onClick={() => handleDelete(idx)}>
+                                    <DeleteOutlineRoundedIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
                         </Box>
                     </Box>
                 ))}

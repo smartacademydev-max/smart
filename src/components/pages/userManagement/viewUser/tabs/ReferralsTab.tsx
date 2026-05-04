@@ -32,7 +32,9 @@ function StatCard({ label, value }: StatCardProps) {
 const referralStatusColor: Record<ReferralStatus, "default" | "warning" | "info" | "success"> = {
     pending: "warning",
     registered: "info",
-    purchased: "success",
+    course_purchased: "success",
+    test_purchased: "success",
+    bundle_purchased: "success",
 };
 
 export default function ReferralsTab() {

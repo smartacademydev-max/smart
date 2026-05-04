@@ -1,8 +1,12 @@
-import { Box, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Gift } from "iconsax-reactjs";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PATH } from "../../../../routes/PATH";
 import { useGetReferralOverviewQuery } from "../../../../services/referralApi";
+import type { TopReferrer } from "../../../../types/referral";
+import CustomTable from "../../../molecules/Table";
 import DashboardAnalyticsCard from "../../../organism/Cards/DashboardAnalyticsCard";
 import DashboardAnalyticsLoading from "../../../organism/Cards/DashboardAnalyticsCard/Loading";
 import EmptyRoute from "../../../organism/EmptyRoute";
@@ -20,6 +24,62 @@ export default function ReferralOverviewPage() {
         { title: "Points Redeemed", value: (overview?.total_points_redeemed ?? 0).toLocaleString(), description: "Total points spent by users", type: "error" as const },
     ];
 
+    const columns = useMemo<ColumnDef<TopReferrer>[]>(() => [
+        {
+            header: "Rank",
+            accessorKey: "user_id",
+            size: 70,
+            cell: ({ row }) => (
+                <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    color={row.index < 3 ? "primary.main" : "text.primary"}
+                >
+                    #{row.index + 1}
+                </Typography>
+            ),
+        },
+        {
+            header: "User",
+            accessorKey: "user_name",
+            cell: ({ row }) => (
+                <Typography
+                    variant="body2"
+                    fontWeight={500}
+                    className="cursor-pointer hover:underline"
+                    onClick={() => navigate(PATH.USER_MANAGEMENT.VIEW_USER.REFERRALS.ROOT(String(row.original.user_id)))}
+                >
+                    {row.original.user_name}
+                </Typography>
+            ),
+        },
+        {
+            header: "Referrals",
+            accessorKey: "referrals_count",
+            cell: ({ row }) => (
+                <Typography variant="body2">{row.original.referrals_count}</Typography>
+            ),
+        },
+        {
+            header: "Converted",
+            accessorKey: "converted_count",
+            cell: ({ row }) => (
+                <Typography variant="body2">{row.original.converted_count}</Typography>
+            ),
+        },
+        {
+            header: "Points Earned",
+            accessorKey: "points_earned",
+            cell: ({ row }) => (
+                <Typography variant="body2" fontWeight={500} color="success.main">
+                    {row.original.points_earned.toLocaleString()} pts
+                </Typography>
+            ),
+        },
+    ], [navigate]);
+
+    const topReferrers = overview?.top_referrers ?? [];
+
     return (
         <div className="h-full flex flex-col">
             <PageHeader
@@ -36,47 +96,20 @@ export default function ReferralOverviewPage() {
                         <DashboardAnalyticsCard key={card.title} data={card} />
                     ))}
             </div>
-            <Typography variant="h5" fontWeight={500}>Top Referrers</Typography>
 
+            <Typography variant="h6" fontWeight={600} mb={2}>Top Referrers</Typography>
 
-            {!overview?.top_referrers?.length ? (
+            {!isLoading && !topReferrers.length ? (
                 <EmptyRoute
                     title="No Referral Yet"
                     message="No referral data yet. Encourage users to share their referral links and start earning points!"
                 />
             ) : (
-                overview.top_referrers.map((referrer, idx) => (
-                    <Box
-                        key={referrer.user_id}
-                        sx={{
-                            display: "grid",
-                            gridTemplateColumns: "60px 1fr 120px 120px 140px",
-                            px: 3,
-                            py: 1.5,
-                            alignItems: "center",
-                            borderBottom: idx < overview.top_referrers.length - 1 ? "1px solid" : "none",
-                            borderColor: "divider",
-                            "&:hover": { bgcolor: "action.hover" },
-                        }}
-                    >
-                        <Typography variant="body2" fontWeight={600} color={idx < 3 ? "primary.main" : "text.primary"}>
-                            #{idx + 1}
-                        </Typography>
-                        <Typography
-                            variant="body2"
-                            fontWeight={500}
-                            className="cursor-pointer hover:underline"
-                            onClick={() => navigate(PATH.USER_MANAGEMENT.VIEW_USER.REFERRALS.ROOT(String(referrer.user_id)))}
-                        >
-                            {referrer.user_name}
-                        </Typography>
-                        <Typography variant="body2">{referrer.referrals_count}</Typography>
-                        <Typography variant="body2">{referrer.converted_count}</Typography>
-                        <Typography variant="body2" fontWeight={500} color="success.main">
-                            {referrer.points_earned} pts
-                        </Typography>
-                    </Box>
-                ))
+                <CustomTable
+                    data={topReferrers}
+                    columns={columns}
+                    loading={isLoading}
+                />
             )}
         </div>
     );

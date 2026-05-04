@@ -1,7 +1,7 @@
 import type { Pagination } from "./roleAndPermission";
 import type { GlobalResponse } from "./user";
 
-export type ReferralStatus = "pending" | "registered" | "purchased";
+export type ReferralStatus = "pending" | "registered" | "course_purchased" | "test_purchased" | "bundle_purchased";
 export type PointsTransactionType = "earned" | "spent";
 
 export interface PointsRule {
