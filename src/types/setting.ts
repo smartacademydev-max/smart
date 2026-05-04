@@ -120,7 +120,7 @@ export interface EmailTemplateProps {
     method: EmailTemplateMethod;
     template_key: string;
     subject?: string;
-    body: string;
+body: string;
     is_enabled?: boolean;
     variables?: string[];
 }

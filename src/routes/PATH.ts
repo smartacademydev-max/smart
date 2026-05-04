@@ -338,6 +338,9 @@ export const PATH = {
 				ROOT: "/settings/system/referral-config"
 			},
 		},
+		CONTROLS: {
+			ROOT: "/settings/controls",
+		},
 		API: {
 			ROOT: "/settings/api",
 			ZOOM: {
@@ -383,9 +386,6 @@ export const PATH = {
 		DETAIL: {
 			ROOT: (id?: number) => id ? `/device-reset/${id}` : "/device-reset/:userId",
 		},
-	},
-	CONTROLS: {
-		ROOT: "/controls",
 	},
 	TICKET: {
 		ROOT: "/tickets",

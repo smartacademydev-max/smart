@@ -9,8 +9,10 @@ import EmptyRoute from '../../../../../../organism/EmptyRoute';
 import PageHeader from '../../../../../../organism/PageHeader';
 import TableFilter from '../../../../../../organism/TableFilter';
 import AssignTestDialog from './AssignTestDialog';
+import { useParams } from 'react-router-dom';
 
-export default function CourseTest({ id, allowMultiple = true }: { id?: string; allowMultiple?: boolean; }) {
+export default function CourseTest({ allowMultiple = true }: { allowMultiple?: boolean; }) {
+    const { id } = useParams();
     const dispatch = useAppDispatch();
     const [search, setSearch] = useState("")
     const [open, setOpen] = useState(false);
@@ -23,6 +25,8 @@ export default function CourseTest({ id, allowMultiple = true }: { id?: string; 
     const [removeTestFromCourse] = useRemoveTestToCourseMutation()
 
     const tests = data?.data?.data || [];
+
+    console.log("all tests", { tests, id })
 
     const handleToggleItem = (id: number) => {
         setSelectedItems(prev => {

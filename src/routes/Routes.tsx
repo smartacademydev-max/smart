@@ -412,6 +412,7 @@ const router = createBrowserRouter([
 					{ path: PATH.SETTINGS.API.ESEWA.ROOT, element: <EsewaSettingRoot /> },
 					{ path: PATH.SETTINGS.API.KHALTI.ROOT, element: <KhaltiSettingRoot /> },
 					{ path: PATH.SETTINGS.API.SMS_GATEWAY.ROOT, element: <SmsGatewayRoot /> },
+					{ path: PATH.SETTINGS.CONTROLS.ROOT, element: <ControlsRoot /> },
 				],
 			},
 			{
@@ -451,14 +452,6 @@ const router = createBrowserRouter([
 					{ path: PATH.DEVICE_RESET.ROOT, element: <DeviceResetDetailPage /> },
 					{ path: PATH.DEVICE_RESET.DETAIL.ROOT(), element: <DeviceResetDetailPage /> },
 				],
-			},
-			{
-				path: PATH.CONTROLS.ROOT,
-				element: (
-					<Unauthorized permissions={["add_settings", "edit_settings", "delete_settings", "view_settings"]}>
-						<ControlsRoot />
-					</Unauthorized>
-				),
 			},
 			{
 				element: (
