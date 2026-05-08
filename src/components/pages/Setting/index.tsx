@@ -32,7 +32,7 @@ const MENU_GROUPS = [
             { label: "Course Setting", url: PATH.SETTINGS.SYSTEM.COURSE_SETTING.ROOT, icon: Book1 },
             { label: "Login Type", url: PATH.SETTINGS.SYSTEM.LOGIN_TYPE.ROOT, icon: LoginCurve },
             { label: "Referral & Points", url: PATH.SETTINGS.SYSTEM.REFERRAL_CONFIG.ROOT, icon: Gift },
-            { label: "Controls", url: PATH.SETTINGS.CONTROLS.ROOT, icon: ToggleOff },
+            { label: "Controls", url: PATH.SETTINGS.SYSTEM.CONTROLS.ROOT, icon: ToggleOff },
         ],
     },
     {

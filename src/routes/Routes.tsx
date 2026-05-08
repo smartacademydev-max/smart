@@ -17,6 +17,7 @@ import PagesRoot from "../components/pages/ContentManagement/Pages";
 import PageCreationForm from "../components/pages/ContentManagement/Pages/PageCreationForm";
 import SplashScreenRoot from "../components/pages/ContentManagement/SplashScreen";
 import ControlsRoot from "../components/pages/Controls";
+import CouponCodesPage from "../components/pages/CouponCodes";
 import CourseManagementRoot from "../components/pages/CourseManagement/Course";
 import AllCourse from "../components/pages/CourseManagement/Course/allCourse";
 import CourseAnalyticsRootLayout from "../components/pages/CourseManagement/Course/analytics";
@@ -46,6 +47,8 @@ import TestEnrollmentPage from "../components/pages/Enrollments/TestEnrollment";
 import GorkhapatraRoot from "../components/pages/Gorkhapatra";
 import AllGorkhapatraRoot from "../components/pages/Gorkhapatra/allGorkhapatra";
 import CreateGorkhapatraRoot from "../components/pages/Gorkhapatra/createGorkhapatra";
+import AllMarketingLinksPage from "../components/pages/MarketingLinks";
+import MarketingLinkDetailPage from "../components/pages/MarketingLinks/Detail";
 import MediaManagementRoot from "../components/pages/MediaManagement";
 import AllMediaRoot from "../components/pages/MediaManagement/allMedia";
 import ModerationManagementRoot from "../components/pages/ModerationManagement";
@@ -53,6 +56,9 @@ import WordModeration from "../components/pages/ModerationManagement/WordModerat
 import NotificationRoot from "../components/pages/NotificationManagement";
 import AllNotificationsRoot from "../components/pages/NotificationManagement/allNotification";
 import CreateNotificationRoot from "../components/pages/NotificationManagement/createNotification";
+import ReferralPointsRoot from "../components/pages/ReferralPoints";
+import AllReferralsPage from "../components/pages/ReferralPoints/AllReferrals";
+import PointsTransactionsPage from "../components/pages/ReferralPoints/PointsTransactions";
 import RoleManagementRoot from "../components/pages/RoleManagement";
 import AllRoles from "../components/pages/RoleManagement/allRoles";
 import CreateRoleRoot from "../components/pages/RoleManagement/createRole";
@@ -68,6 +74,7 @@ import EmailTemplatesRoot from "../components/pages/Setting/EmailTemplates";
 import LinkedDevices from "../components/pages/Setting/LinkedDevices";
 import LoginTypeRoot from "../components/pages/Setting/LoginType";
 import ProfilePageRoot from "../components/pages/Setting/Profile";
+import ReferralConfigPage from "../components/pages/Setting/ReferralConfig";
 import SiteInfoRoot from "../components/pages/Setting/SiteInfo";
 import SmtpSettingRoot from "../components/pages/Setting/Smtp";
 import SubscriptionManagementRoot from "../components/pages/SubscriptionManagement";
@@ -76,9 +83,9 @@ import OmrSheetRoot from "../components/pages/TestAndQuestionManagement/OmrSheet
 import OmrFormatForm from "../components/pages/TestAndQuestionManagement/OmrSheets/OmrFormatForm";
 import AllOmrSheets from "../components/pages/TestAndQuestionManagement/OmrSheets/allOmr";
 import AllOmrFormats from "../components/pages/TestAndQuestionManagement/OmrSheets/allOmrFormat";
-import QuestionManagementRoot from "../components/pages/TestAndQuestionManagement/QuestionManagement";
 import QuestionLabelsRoot from "../components/pages/TestAndQuestionManagement/QuestionLabels";
 import QuestionLabelDetail from "../components/pages/TestAndQuestionManagement/QuestionLabels/detail";
+import QuestionManagementRoot from "../components/pages/TestAndQuestionManagement/QuestionManagement";
 import TestManagementRoot from "../components/pages/TestAndQuestionManagement/TestManagement";
 import AllIndividualTestListing from "../components/pages/TestAndQuestionManagement/TestManagement/allIndividualTest";
 import SingleStudentSingleQuestion from "../components/pages/TestAndQuestionManagement/TestManagement/checkSinlgeQuestion";
@@ -109,15 +116,8 @@ import CoursesTab from "../components/pages/userManagement/viewUser/tabs/Courses
 import DeviceRequestsTab from "../components/pages/userManagement/viewUser/tabs/DeviceRequestsTab";
 import PerformanceTab from "../components/pages/userManagement/viewUser/tabs/PerformanceTab";
 import ProfileTab from "../components/pages/userManagement/viewUser/tabs/ProfileTab";
-import TransactionsTab from "../components/pages/userManagement/viewUser/tabs/TransactionsTab";
 import ReferralsTab from "../components/pages/userManagement/viewUser/tabs/ReferralsTab";
-import ReferralPointsRoot from "../components/pages/ReferralPoints";
-import AllReferralsPage from "../components/pages/ReferralPoints/AllReferrals";
-import PointsTransactionsPage from "../components/pages/ReferralPoints/PointsTransactions";
-import ReferralConfigPage from "../components/pages/Setting/ReferralConfig";
-import AllMarketingLinksPage from "../components/pages/MarketingLinks";
-import MarketingLinkDetailPage from "../components/pages/MarketingLinks/Detail";
-import CouponCodesPage from "../components/pages/CouponCodes";
+import TransactionsTab from "../components/pages/userManagement/viewUser/tabs/TransactionsTab";
 import { PATH } from "./PATH";
 import Private from "./Private";
 import Unauthorized from "./Unauthorized";
@@ -412,7 +412,7 @@ const router = createBrowserRouter([
 					{ path: PATH.SETTINGS.API.ESEWA.ROOT, element: <EsewaSettingRoot /> },
 					{ path: PATH.SETTINGS.API.KHALTI.ROOT, element: <KhaltiSettingRoot /> },
 					{ path: PATH.SETTINGS.API.SMS_GATEWAY.ROOT, element: <SmsGatewayRoot /> },
-					{ path: PATH.SETTINGS.CONTROLS.ROOT, element: <ControlsRoot /> },
+					{ path: PATH.SETTINGS.SYSTEM.CONTROLS.ROOT, element: <ControlsRoot /> },
 				],
 			},
 			{

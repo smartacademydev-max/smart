@@ -1,13 +1,17 @@
 import BuildIcon from "@mui/icons-material/Build";
 import SecurityIcon from "@mui/icons-material/Security";
+import SmsIcon from "@mui/icons-material/Sms";
 import {
 	Box,
+	Button,
 	CircularProgress,
+	OutlinedInput,
 	Paper,
 	Stack,
 	Switch,
 	Typography
 } from "@mui/material";
+import { useState } from "react";
 import { useGetControlsQuery, useUpdateControlsMutation } from "../../../services/controlsApi";
 import { showToast } from "../../../slice/toastSlice";
 import { useAppDispatch } from "../../../store/hook";
@@ -69,11 +73,11 @@ export default function ControlsRoot() {
 	const { data, isLoading } = useGetControlsQuery();
 	const [updateControls] = useUpdateControlsMutation();
 
-	// Local draft for the discount form (needs a Save button)
-	// const [discountDraft, setDiscountDraft] = useState<GlobalDiscount | null>(null);
-	// const [savingDiscount, setSavingDiscount] = useState(false);
+	const [otpDraft, setOtpDraft] = useState<number | null>(null);
+	const [savingOtp, setSavingOtp] = useState(false);
 
 	const controls = data?.data;
+	const otpLimit = otpDraft ?? controls?.otp_limit ?? 5;
 
 	// Instant toggle handler for boolean controls
 	const handleToggle = async (key: "screen_protection" | "maintenance_mode", value: boolean) => {
@@ -82,6 +86,20 @@ export default function ControlsRoot() {
 			dispatch(showToast({ message: "Controls updated", severity: "success" }));
 		} catch {
 			dispatch(showToast({ message: "Failed to update controls", severity: "error" }));
+		}
+	};
+
+	const handleSaveOtpLimit = async () => {
+		if (otpDraft === null) return;
+		setSavingOtp(true);
+		try {
+			await updateControls({ otp_limit: otpDraft }).unwrap();
+			setOtpDraft(null);
+			dispatch(showToast({ message: "OTP limit updated", severity: "success" }));
+		} catch {
+			dispatch(showToast({ message: "Failed to update OTP limit", severity: "error" }));
+		} finally {
+			setSavingOtp(false);
 		}
 	};
 
@@ -124,36 +142,96 @@ export default function ControlsRoot() {
 	}
 
 	return (
-		<Box overflow="auto">
-			<div className="flex flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-3">
-				{/* Screen Protection */}
-				<ControlCard
-					icon={<SecurityIcon fontSize="small" />}
-					title="Screen Protection"
-					description="Block screenshots and screen recording across the mobile app."
-					action={
-						<Switch
-							checked={controls?.screen_protection ?? false}
-							onChange={(e) => handleToggle("screen_protection", e.target.checked)}
-						/>
-					}
-				/>
+		<Box display="flex" flexDirection="column" height="100%" overflow="hidden">
+			<Box flex={1} overflow="auto">
+				<div className="flex flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-3 ">
+					{/* Screen Protection */}
+					<ControlCard
+						icon={<SecurityIcon fontSize="small" />}
+						title="Screen Protection"
+						description="Block screenshots and screen recording across the mobile app."
+						action={
+							<Switch
+								checked={controls?.screen_protection ?? false}
+								onChange={(e) => handleToggle("screen_protection", e.target.checked)}
+							/>
+						}
+					/>
 
-				{/* Maintenance Mode */}
-				<ControlCard
-					icon={<BuildIcon fontSize="small" />}
-					title="Maintenance Mode"
-					description="Take the app offline for users and display a maintenance screen."
-					action={
-						<Switch
-							checked={controls?.maintenance_mode ?? false}
-							onChange={(e) => handleToggle("maintenance_mode", e.target.checked)}
-						/>
-					}
-				/>
+					{/* Maintenance Mode */}
+					<ControlCard
+						icon={<BuildIcon fontSize="small" />}
+						title="Maintenance Mode"
+						description="Take the app offline for users and display a maintenance screen."
+						action={
+							<Switch
+								checked={controls?.maintenance_mode ?? false}
+								onChange={(e) => handleToggle("maintenance_mode", e.target.checked)}
+							/>
+						}
+					/>
 
-				{/* Global Discount */}
-				{/* <Paper
+					{/* OTP Limit */}
+					<Paper
+						variant="outlined"
+						sx={{
+							display: "flex",
+							flexDirection: "column",
+							gap: 2,
+							p: "20px 24px",
+							borderRadius: 2,
+						}}
+					>
+						<Stack direction="row" alignItems="center" gap={2} flex={1}>
+							<Box
+								sx={{
+									width: 44,
+									height: 44,
+									borderRadius: 2,
+									bgcolor: "primary.light",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									color: "primary.main",
+									flexShrink: 0,
+								}}
+							>
+								<SmsIcon fontSize="small" />
+							</Box>
+							<Box flex={1}>
+								<Typography variant="subtitle1" fontWeight={600}>
+									OTP Limit
+								</Typography>
+								<Typography variant="body2" color="text.secondary">
+									Maximum number of OTP requests a user can make per day.
+								</Typography>
+							</Box>
+						</Stack>
+
+						<OutlinedInput
+							fullWidth
+							type="number"
+							size="small"
+							value={otpLimit}
+							inputProps={{ min: 1, max: 100 }}
+							onChange={(e) =>
+								setOtpDraft(Math.min(100, Math.max(1, Number(e.target.value))))
+							}
+						/>
+						<Button
+							variant="contained"
+							size="small"
+							disabled={savingOtp || otpDraft === null}
+							onClick={handleSaveOtpLimit}
+							startIcon={savingOtp ? <CircularProgress size={14} color="inherit" /> : undefined}
+							sx={{ height: 40 }}
+						>
+							Save
+						</Button>
+					</Paper>
+
+					{/* Global Discount */}
+					{/* <Paper
 						variant="outlined"
 						sx={{ p: "20px 24px", borderRadius: 2 }}
 					>
@@ -239,7 +317,8 @@ export default function ControlsRoot() {
 							</>
 						)}
 					</Paper> */}
-			</div>
+				</div>
+			</Box>
 		</Box>
 	);
 }

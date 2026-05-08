@@ -8,6 +8,7 @@ export interface AppControls {
 	screen_protection: boolean;
 	maintenance_mode: boolean;
 	global_discount: GlobalDiscount;
+	otp_limit: number;
 }
 
 export interface AppControlsResponse {

@@ -334,12 +334,12 @@ export const PATH = {
 			LOGIN_TYPE: {
 				ROOT: "/settings/system/login-type"
 			},
+			CONTROLS: {
+				ROOT: "/settings/system/controls"
+			},
 			REFERRAL_CONFIG: {
 				ROOT: "/settings/system/referral-config"
 			},
-		},
-		CONTROLS: {
-			ROOT: "/settings/controls",
 		},
 		API: {
 			ROOT: "/settings/api",
