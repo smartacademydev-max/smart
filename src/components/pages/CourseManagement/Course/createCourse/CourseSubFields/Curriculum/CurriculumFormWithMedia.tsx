@@ -6,10 +6,11 @@ import * as Yup from "yup";
 import { useAddCurriculumMutation } from '../../../../../../../services/courseApi';
 import { showToast } from '../../../../../../../slice/toastSlice';
 import { useAppDispatch } from '../../../../../../../store/hook';
-import { initialCurriculumInitialState, type courseTabType, type CurriculumProps } from '../../../../../../../types/course';
+import { initialCurriculumInitialState, type courseTabType, type CurriculumProps, type CurriculumTestProps } from '../../../../../../../types/course';
 import TextEditor from '../../../../../../atoms/TextEditor';
 import FooterAction from '../../../../../../molecules/FooterAction';
 import SelectFromMedia from '../../../../../../molecules/MediaFileDragDrop/SelectFromMedia';
+import TestPickerDialog from './TestPickerDialog';
 
 type CurriculumType = "subject" | "chapter" | "unit" | "lesson" | "child_lesson";
 
@@ -25,6 +26,18 @@ const validationSchema = Yup.object({
     name: Yup.string().required("Name is required"),
     description: Yup.string().required("Description is required")
 })
+
+/** Render a test duration ({ hours, minutes } | number) as a label. */
+function formatTestDuration(d: any): string {
+    if (d == null) return "—";
+    if (typeof d === "number") return d > 0 ? `${d} min` : "—";
+    const hours = Number(d.hours ?? 0);
+    const minutes = Number(d.minutes ?? 0);
+    if (hours === 0 && minutes === 0) return "—";
+    if (hours === 0) return `${minutes} min`;
+    if (minutes === 0) return `${hours} hr`;
+    return `${hours} hr ${minutes} min`;
+}
 
 const getTitleByType = (type?: CurriculumType) => {
     switch (type) {
@@ -55,6 +68,8 @@ export default function CurriculumFormWithMedia({
     const theme = useTheme();
     const [mediaDialogOpen, setMediaDialogOpen] = React.useState(false);
     const [currentMediaType, setCurrentMediaType] = React.useState<courseTabType>("notes");
+    const [testDialogOpen, setTestDialogOpen] = React.useState(false);
+    const [selectedTestInfo, setSelectedTestInfo] = React.useState<CurriculumTestProps | null>(null);
     const showMediaOptions = curriculumType !== 'subject';
 
     const handleClose = () => {
@@ -65,14 +80,14 @@ export default function CurriculumFormWithMedia({
 
     const formik = useFormik({
         initialValues: selectedCurriculum ? {
-            ...selectedCurriculum
+            ...selectedCurriculum,
+            test_id: selectedCurriculum.test_id ?? selectedCurriculum.test?.id ?? null,
         } : {
             ...initialCurriculumInitialState
         },
         validationSchema,
         enableReinitialize: true,
         onSubmit: async (values) => {
-            console.log(values);
             try {
                 const payload = {
                     ...values,
@@ -93,6 +108,7 @@ export default function CurriculumFormWithMedia({
                     })
                 );
                 formik.resetForm();
+                setSelectedTestInfo(null);
                 handleClose();
             }
             catch (e: any) {
@@ -121,6 +137,20 @@ export default function CurriculumFormWithMedia({
             }
         }
         setMediaDialogOpen(false);
+    };
+
+    React.useEffect(() => {
+        setSelectedTestInfo(selectedCurriculum?.test ?? null);
+    }, [selectedCurriculum?.test, selectedCurriculum?.id]);
+
+    const handleTestSelect = (test: CurriculumTestProps) => {
+        formik.setFieldValue("test_id", test.id);
+        setSelectedTestInfo(test);
+    };
+
+    const handleRemoveTest = () => {
+        formik.setFieldValue("test_id", null);
+        setSelectedTestInfo(null);
     };
 
     return (
@@ -278,6 +308,59 @@ export default function CurriculumFormWithMedia({
                                             </FormHelperText>
                                         )}
                                     </div>
+                                    <div className="input__field">
+                                        <InputLabel>Add Test</InputLabel>
+                                        <Button
+                                            variant="outlined"
+                                            color="inherit"
+                                            className="justify-start!"
+                                            fullWidth
+                                            onClick={() => setTestDialogOpen(true)}
+                                            startIcon={(
+                                                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <rect width="32" height="32" rx="16" fill="#E8E5FF" />
+                                                    <path d="M19.3334 9.33301H12.6667C10.6667 9.33301 9.33337 10.333 9.33337 12.6663V19.333C9.33337 21.6663 10.6667 22.6663 12.6667 22.6663H19.3334C21.3334 22.6663 22.6667 21.6663 22.6667 19.333V12.6663C22.6667 10.333 21.3334 9.33301 19.3334 9.33301ZM13.3334 13.6663H17.3334C17.6067 13.6663 17.8334 13.893 17.8334 14.1663C17.8334 14.4397 17.6067 14.6663 17.3334 14.6663H13.3334C13.06 14.6663 12.8334 14.4397 12.8334 14.1663C12.8334 13.893 13.06 13.6663 13.3334 13.6663ZM18.6667 18.333H13.3334C13.06 18.333 12.8334 18.1063 12.8334 17.833C12.8334 17.5597 13.06 17.333 13.3334 17.333H18.6667C18.94 17.333 19.1667 17.5597 19.1667 17.833C19.1667 18.1063 18.94 18.333 18.6667 18.333Z" fill="#6E5BFF" />
+                                                </svg>
+                                            )}
+                                        >
+                                            {selectedTestInfo ? "Change Test" : "Click to select a test"}
+                                        </Button>
+                                        {selectedTestInfo && (
+                                            <Box
+                                                className="mt-4 p-3 rounded-md flex items-center gap-3 relative"
+                                                sx={{
+                                                    border: `1px solid ${theme.palette.textField.border}`,
+                                                    background: theme.palette.primary.contrastText,
+                                                }}
+                                            >
+                                                <IconButton onClick={handleRemoveTest} className="absolute! -top-4 -right-4">
+                                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M13.492 1.66675H6.50866C3.47533 1.66675 1.66699 3.47508 1.66699 6.50841V13.4834C1.66699 16.5251 3.47533 18.3334 6.50866 18.3334H13.4837C16.517 18.3334 18.3253 16.5251 18.3253 13.4917V6.50841C18.3337 3.47508 16.5253 1.66675 13.492 1.66675ZM12.8003 11.9167C13.042 12.1584 13.042 12.5584 12.8003 12.8001C12.6753 12.9251 12.517 12.9834 12.3587 12.9834C12.2003 12.9834 12.042 12.9251 11.917 12.8001L10.0003 10.8834L8.08366 12.8001C7.95866 12.9251 7.80033 12.9834 7.64199 12.9834C7.48366 12.9834 7.32533 12.9251 7.20033 12.8001C6.95866 12.5584 6.95866 12.1584 7.20033 11.9167L9.11699 10.0001L7.20033 8.08341C6.95866 7.84175 6.95866 7.44175 7.20033 7.20008C7.44199 6.95842 7.84199 6.95842 8.08366 7.20008L10.0003 9.11675L11.917 7.20008C12.1587 6.95842 12.5587 6.95842 12.8003 7.20008C13.042 7.44175 13.042 7.84175 12.8003 8.08341L10.8837 10.0001L12.8003 11.9167Z" fill="#E21D48" />
+                                                    </svg>
+                                                </IconButton>
+                                                <Box
+                                                    className="min-w-10 h-10 rounded-md flex items-center justify-center"
+                                                    sx={{ background: theme.palette.primary.light, color: theme.palette.primary.main }}
+                                                >
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M8 2V5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                                        <path d="M16 2V5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                                        <path d="M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                                        <path d="M7 11H13" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                                        <path d="M7 16H9.62" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                </Box>
+                                                <div className="content min-w-0 flex-1">
+                                                    <Typography variant="subtitle2" fontWeight={500} className="truncate">
+                                                        {selectedTestInfo.name}
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.middle" className="capitalize">
+                                                        {selectedTestInfo.test_type} · {selectedTestInfo.total_questions} Qs · {formatTestDuration(selectedTestInfo.duration)}
+                                                    </Typography>
+                                                </div>
+                                            </Box>
+                                        )}
+                                    </div>
                                 </>
                             )}
                         </div>
@@ -296,6 +379,12 @@ export default function CurriculumFormWithMedia({
                 type={currentMediaType}
                 onSelect={handleMediaSelect}
                 allowMultiple={false}
+            />
+            <TestPickerDialog
+                open={testDialogOpen}
+                setOpen={setTestDialogOpen}
+                selectedTestId={selectedTestInfo?.id ?? formik.values.test_id ?? null}
+                onSelect={handleTestSelect}
             />
         </>
     )

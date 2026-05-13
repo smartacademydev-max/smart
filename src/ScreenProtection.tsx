@@ -8,6 +8,9 @@ type Props = {
 
 const SIZE_THRESHOLD = 160;
 const TIMING_THRESHOLD = 80;
+// Below this viewport width treat the device as mobile/tablet and skip
+// protection entirely — soft keyboards shift innerHeight and false-trigger it.
+const MOBILE_BREAKPOINT = 1200;
 
 
 const triggerDebugger = new Function('debugger');
@@ -15,9 +18,26 @@ const triggerDebugger = new Function('debugger');
 const ScreenProtection: React.FC<Props> = ({ children }) => {
   const [devToolsOpen, setDevToolsOpen] = useState(false);
   const devToolsRef = useRef(false);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
+  );
   const { mode } = useAppSelector((state) => state.theme);
 
   useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) {
+      if (devToolsRef.current) {
+        devToolsRef.current = false;
+        setDevToolsOpen(false);
+      }
+      return;
+    }
+
     const handleContextMenu = (e: MouseEvent) => e.preventDefault();
     const handleSelectStart = (e: Event) => e.preventDefault();
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -89,7 +109,7 @@ const ScreenProtection: React.FC<Props> = ({ children }) => {
       clearInterval(sizeCheck);
       clearInterval(timingCheck);
     };
-  }, []);
+  }, [isMobile]);
 
   return (
     <>

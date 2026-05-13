@@ -79,7 +79,6 @@ export default function ControlsRoot() {
 	const controls = data?.data;
 	const otpLimit = otpDraft ?? controls?.otp_limit ?? 5;
 
-	// Instant toggle handler for boolean controls
 	const handleToggle = async (key: "screen_protection" | "maintenance_mode", value: boolean) => {
 		try {
 			await updateControls({ [key]: value }).unwrap();

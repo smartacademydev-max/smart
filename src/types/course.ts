@@ -120,14 +120,24 @@ export type CurriculumCommonProps = {
     name: string;
     description: string;
 }
+export interface CurriculumTestProps {
+    id: number;
+    name: string;
+    test_type: string;
+    duration: number;
+    total_questions: number;
+}
+
 export type CurriculumCommonMediaProps = {
     video_url: string;
     note_id: number | null;
     audio_id: number | null;
     parent_id: number | null;
+    test_id: number | null;
     note?: MediaProps
     audio?: MediaProps
     video?: MediaProps
+    test?: CurriculumTestProps | null;
 }
 
 export interface ChildLessonProps
@@ -169,6 +179,7 @@ export const initialCurriculumInitialState: CurriculumProps = {
     video_url: "",
     note_id: null,
     audio_id: null,
+    test_id: null,
     chapters: null,
     parent_id: null,
 };

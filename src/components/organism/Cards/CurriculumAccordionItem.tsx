@@ -1,5 +1,5 @@
 import { Add } from "@mui/icons-material";
-import { Button, Collapse, Divider, Typography } from "@mui/material";
+import { Box, Button, Collapse, Divider, Typography, useTheme } from "@mui/material";
 import React from "react";
 import type { ChapterProps, ChildLessonProps, LessonProps, SubjectProps, UnitProps } from "../../../types/course";
 import { renderHtml } from "../../../utils/renderHtml";
@@ -32,6 +32,7 @@ export default function CurriculumItem({
     backgroundColor = "white",
     children
 }: CurriculumItemProps) {
+    const theme = useTheme();
     return (
         <div
             className="curriculum__content py-5 px-6 rounded-2xl"
@@ -59,7 +60,7 @@ export default function CurriculumItem({
                     {renderHtml(item.description)}
                 </div>
 
-                {item.audio || item.note || item.video_url ? <div className="media__listing flex flex-col gap-4 md:gap-6 md:grid md:grid-cols-3 2xl:grid-cols-5 mt-4 lg:mt-6">
+                {item.audio || item.note || item.video_url || item.test ? <div className="media__listing flex flex-col gap-4 md:gap-6 md:grid md:grid-cols-3 2xl:grid-cols-5 mt-4 lg:mt-6">
                     {item.audio ?
                         <div className="col-span-1">
                             <MediaCard media={item.audio} type="audios" />
@@ -70,6 +71,33 @@ export default function CurriculumItem({
                     </div> : ""}
                     {item.video ? <div className="col-span-1">
                         <MediaCard media={item.video} type="videos" />
+                    </div> : ""}
+                    {item.test ? <div className="col-span-1">
+                        <Box
+                            className="p-3 rounded-md flex items-center gap-3 h-full"
+                            sx={{ border: `1px solid ${theme.palette.textField.border}` }}
+                        >
+                            <Box
+                                className="min-w-10 h-10 rounded-md flex items-center justify-center"
+                                sx={{ background: theme.palette.primary.light, color: theme.palette.primary.main }}
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M8 2V5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M16 2V5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M7 11H13" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M7 16H9.62" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </Box>
+                            <div className="content min-w-0 flex-1">
+                                <Typography variant="subtitle2" fontWeight={500} className="truncate" title={item.test.name}>
+                                    {item.test.name}
+                                </Typography>
+                                <Typography variant="caption" color="text.middle" className="capitalize block truncate">
+                                    {item.test.test_type} · {item.test.total_questions} Qs · {item.test.duration} min
+                                </Typography>
+                            </div>
+                        </Box>
                     </div> : ""}
 
                 </div> : ""}
