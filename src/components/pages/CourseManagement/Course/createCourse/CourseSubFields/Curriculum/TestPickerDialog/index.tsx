@@ -19,7 +19,10 @@ const toCurriculumTest = (test: TestProps): CurriculumTestProps => ({
     id: Number(test.id),
     name: test.name,
     test_type: test.test_type,
-    duration: (test.duration?.hours ?? 0) * 60 + (test.duration?.minutes ?? 0),
+    duration: {
+        hours: test.duration?.hours ?? 0,
+        minutes: test.duration?.minutes ?? 0,
+    },
     total_questions: test.total_questions ?? test.question_ids?.length ?? 0,
 });
 
