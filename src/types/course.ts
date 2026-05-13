@@ -124,7 +124,7 @@ export interface CurriculumTestProps {
     id: number;
     name: string;
     test_type: string;
-    duration: number;
+    duration: DurationProps;
     total_questions: number;
 }
 

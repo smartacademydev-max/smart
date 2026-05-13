@@ -94,7 +94,7 @@ export default function CurriculumItem({
                                     {item.test.name}
                                 </Typography>
                                 <Typography variant="caption" color="text.middle" className="capitalize block truncate">
-                                    {item.test.test_type} · {item.test.total_questions} Qs · {item.test.duration} min
+                                    {item.test.test_type} · {item.test.total_questions} Qs · {item.test.duration?.hours ?? 0}h {item.test.duration?.minutes ?? 0}m
                                 </Typography>
                             </div>
                         </Box>
