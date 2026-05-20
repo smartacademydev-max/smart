@@ -56,6 +56,7 @@ import WordModeration from "../components/pages/ModerationManagement/WordModerat
 import NotificationRoot from "../components/pages/NotificationManagement";
 import AllNotificationsRoot from "../components/pages/NotificationManagement/allNotification";
 import CreateNotificationRoot from "../components/pages/NotificationManagement/createNotification";
+import NotificationDetail from "../components/pages/NotificationManagement/detail/NotificationDetail";
 import ReferralPointsRoot from "../components/pages/ReferralPoints";
 import AllReferralsPage from "../components/pages/ReferralPoints/AllReferrals";
 import PointsTransactionsPage from "../components/pages/ReferralPoints/PointsTransactions";
@@ -360,6 +361,7 @@ const router = createBrowserRouter([
 					{ path: PATH.NOTIFICATION_MANAGEMENT.ROOT, element: <AllNotificationsRoot /> },
 					{ path: PATH.NOTIFICATION_MANAGEMENT.CREATE_NOTIFICATION.ROOT, element: <CreateNotificationRoot /> },
 					{ path: PATH.NOTIFICATION_MANAGEMENT.EDIT_NOTIFICATION.ROOT(), element: <CreateNotificationRoot /> },
+					{ path: PATH.NOTIFICATION_MANAGEMENT.VIEW_NOTIFICATION.ROOT(), element: <NotificationDetail /> },
 				],
 			},
 			{

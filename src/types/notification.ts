@@ -156,3 +156,74 @@ export interface NotificationList {
         pagination: Pagination;
     }
 }
+
+export type NotificationStatus =
+    | "draft"
+    | "scheduled"
+    | "sending"
+    | "sent"
+    | "partial"
+    | "failed";
+
+export type NotificationEventAction =
+    | "sent"
+    | "delivered"
+    | "read"
+    | "clicked"
+    | "failed";
+
+export type NotificationChannel = DeliveryMethodsType;
+
+export interface NotificationChannelStats {
+    sent: number;
+    delivered: number;
+    read: number;
+    clicked: number;
+    failed: number;
+}
+
+export interface NotificationStats {
+    id: number;
+    status: NotificationStatus;
+    send_started_at?: string | null;
+    send_finished_at?: string | null;
+    sent_at?: string | null;
+    target_count: number;
+    sent_count: number;
+    delivered_count: number;
+    read_count: number;
+    clicked_count: number;
+    failed_count: number;
+    per_channel: Partial<Record<NotificationChannel, NotificationChannelStats>>;
+    timeline?: { bucket: string; sent: number; delivered: number; failed: number }[];
+}
+
+export interface NotificationStatsResponse extends GlobalResponse {
+    data: NotificationStats;
+}
+
+export interface NotificationEvent {
+    id: number;
+    user_id: number | null;
+    user_name?: string | null;
+    user_email?: string | null;
+    channel: NotificationChannel;
+    action: NotificationEventAction;
+    reason?: string | null;
+    via?: "card" | "external_link" | "deeplink" | null;
+    created_at: string;
+}
+
+export interface NotificationEventListResponse extends GlobalResponse {
+    data: {
+        data: NotificationEvent[];
+        pagination: Pagination;
+    };
+}
+
+export interface NotificationStatsSocketEvent {
+    notification_id: number;
+    status?: NotificationStatus;
+    stats?: NotificationStats;
+    event?: NotificationEvent;
+}

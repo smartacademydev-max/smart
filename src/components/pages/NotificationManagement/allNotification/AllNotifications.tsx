@@ -202,7 +202,7 @@ export default function AllNotifications() {
                 <Actions
                     deleting={deleting}
                     editUrl={PATH.NOTIFICATION_MANAGEMENT.EDIT_NOTIFICATION.ROOT(Number(row.original.id))}
-                    viewUrl={PATH.NOTIFICATION_MANAGEMENT.EDIT_NOTIFICATION.ROOT(Number(row.original.id))}
+                    viewUrl={PATH.NOTIFICATION_MANAGEMENT.VIEW_NOTIFICATION.ROOT(Number(row.original.id))}
                     onDelete={() => openDeleteConfirmation([row.original.id?.toString() || ""])}
                 />
             ),

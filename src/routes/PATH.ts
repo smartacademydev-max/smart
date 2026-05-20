@@ -262,6 +262,10 @@ export const PATH = {
 			ROOT: (id?: number) =>
 				id ? `/notification-management/${id}` : "/notification-management/:id",
 		},
+		VIEW_NOTIFICATION: {
+			ROOT: (id?: number) =>
+				id ? `/notification-management/${id}/view` : "/notification-management/:id/view",
+		},
 	},
 	GORKHAPATRA: {
 		ROOT: "/gorkhapatra",

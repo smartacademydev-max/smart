@@ -1,5 +1,5 @@
 import type { QueryParams } from "../types";
-import type { CompletionStatus, DeliveryMethodsType, NotificationList, NotificationListResponse, NotificationPayload, TargetStudentType } from "../types/notification";
+import type { CompletionStatus, DeliveryMethodsType, NotificationChannel, NotificationEventAction, NotificationEventListResponse, NotificationList, NotificationListResponse, NotificationPayload, NotificationStatsResponse, TargetStudentType } from "../types/notification";
 import type { GlobalResponse } from "../types/user";
 import { buildQueryParams } from "../utils/buildQueryParams";
 import { baseApi } from "./baseApi";
@@ -104,6 +104,53 @@ export const notificationApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: [{ type: "Notifications", id: "LIST" }],
         }),
+        getNotificationStats: builder.query<NotificationStatsResponse, { id: number }>({
+            query: ({ id }) => ({
+                url: `/admin/notification/${id}/stats`,
+                method: "GET",
+            }),
+            providesTags: (_result, _error, { id }) => [
+                { type: "NotificationStats" as const, id },
+            ],
+        }),
+        getNotificationEvents: builder.query<
+            NotificationEventListResponse,
+            QueryParams & {
+                id: number;
+                action?: NotificationEventAction | "";
+                channel?: NotificationChannel | "";
+            }
+        >({
+            query: ({ id, pageIndex, pageSize, search, startDate, endDate, action, channel }) => {
+                const queryParams = buildQueryParams({
+                    page: pageIndex,
+                    page_size: pageSize,
+                    search,
+                    start_date: startDate,
+                    end_date: endDate,
+                    action,
+                    channel,
+                });
+                return {
+                    url: `/admin/notification/${id}/events?${queryParams}`,
+                    method: "GET",
+                };
+            },
+            providesTags: (_result, _error, { id }) => [
+                { type: "NotificationEvents" as const, id },
+            ],
+        }),
+        resendNotificationFailed: builder.mutation<GlobalResponse, { id: number }>({
+            query: ({ id }) => ({
+                url: `/admin/notification/${id}/resend?only=failed`,
+                method: "POST",
+            }),
+            invalidatesTags: (_result, _error, { id }) => [
+                { type: "Notifications" as const, id },
+                { type: "NotificationStats" as const, id },
+                { type: "NotificationEvents" as const, id },
+            ],
+        }),
     })
 })
 
@@ -116,4 +163,7 @@ export const {
     useSendNotificationMutation,
     useGetAllNotificationsQuery,
     useReadNotificationMutation,
+    useGetNotificationStatsQuery,
+    useGetNotificationEventsQuery,
+    useResendNotificationFailedMutation,
 } = notificationApi;

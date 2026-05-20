@@ -64,6 +64,8 @@ export const baseApi = createApi({
         "ReferralOverview",
         "MarketingLink",
         "CouponCode",
+        "NotificationStats",
+        "NotificationEvents",
     ],
     endpoints: () => ({}),
 });
