@@ -62,7 +62,7 @@ const validationSchema = (id?: string) => {
         profile: Yup.mixed().nullable(),
         dob: Yup.mixed().nullable(),
         address: Yup.string(),
-        temporary_address: Yup.string(),
+        temporary_address: Yup.string().nullable(),
     });
 };
 
@@ -326,6 +326,7 @@ export default function UserManagementForm() {
                                     onBlur={formik.handleBlur}
                                     error={formik.touched.password && Boolean(formik.errors.password)}
                                     placeholder="Enter password"
+                                    autoComplete="new-password"
                                 />
                                 {formik.touched.password && formik.errors.password && (
                                     <FormHelperText error>{formik.errors.password}</FormHelperText>
@@ -343,6 +344,7 @@ export default function UserManagementForm() {
                                     onBlur={formik.handleBlur}
                                     error={formik.touched.password_confirmation && Boolean(formik.errors.password_confirmation)}
                                     placeholder="Confirm password"
+                                    autoComplete="new-password"
                                 />
                                 {formik.touched.password_confirmation && formik.errors.password_confirmation && (
                                     <FormHelperText error>{formik.errors.password_confirmation}</FormHelperText>
@@ -398,7 +400,7 @@ export default function UserManagementForm() {
                                     id="temporary_address"
                                     fullWidth
                                     placeholder="Enter temporary address"
-                                    value={formik.values.temporary_address}
+                                    value={formik.values.temporary_address ?? ""}
                                     onChange={formik.handleChange}
                                     onBlur={formik.handleBlur}
                                     error={formik.touched.temporary_address && Boolean(formik.errors.temporary_address)}

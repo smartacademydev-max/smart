@@ -1,5 +1,6 @@
-import { Box, Checkbox, CircularProgress, Divider, FormControlLabel, Typography, useTheme } from "@mui/material";
-import { useEffect, useState } from "react";
+import { Box, Checkbox, CircularProgress, Divider, FormControlLabel, InputAdornment, OutlinedInput, Typography, useTheme } from "@mui/material";
+import { SearchNormal1 } from "iconsax-reactjs";
+import { useEffect, useRef, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { v4 as uuidv4 } from "uuid";
 import { renderHtml } from "../../../utils/renderHtml";
@@ -27,15 +28,26 @@ export default function InfiniteScrolling({
     selectedItems,
     onSelectionChange,
     fetchMore,
+    onSearch,
     loading = false,
     maxSelection = 100,
     itemLabelKey = "name",
     itemIdKey = "id",
+    placeholder = "Search...",
     scrollableId = "scrollableDiv",
     groupLabelKey,
 }: InfiniteScrollingProps) {
 
     const theme = useTheme();
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            onSearch(value);
+        }, 400);
+    };
 
     // --- Map stable UUIDs to each itemId so they don't regenerate every render ---
     const [uuidMap, setUuidMap] = useState<Record<number, string>>({});
@@ -104,6 +116,20 @@ export default function InfiniteScrolling({
                 marginTop: "8px"
             }}
         >
+            {/* Search */}
+            <OutlinedInput
+                fullWidth
+                size="small"
+                placeholder={placeholder}
+                onChange={handleSearchChange}
+                sx={{ mb: 1 }}
+                startAdornment={
+                    <InputAdornment position="start">
+                        <SearchNormal1 size={16} />
+                    </InputAdornment>
+                }
+            />
+
             {/* Scrollable List */}
             <Box id={scrollableId} sx={{ height: 200, overflow: "auto" }}>
                 {loading && data.length === 0 ? (

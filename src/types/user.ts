@@ -20,7 +20,7 @@ export interface RegisterUserProps {
 	address?: string;
 	enrolled_courses?: number;
 	dob?: string | null;
-	temporary_address?: string;
+	temporary_address?: string | null;
 }
 
 export const RegisterUserInitialData = {
@@ -38,7 +38,7 @@ export const RegisterUserInitialData = {
 	designation: "",
 	dob: null,
 	address: "",
-	temporary_address: "",
+	temporary_address: null,
 }
 
 export interface LoginUserProps {

@@ -16,6 +16,7 @@ interface PasswordProps {
 	error?: boolean;
 	helperText?: string;
 	placeholder?: string;
+	autoComplete?: string;
 }
 
 export default function Password({
@@ -27,6 +28,7 @@ export default function Password({
 	error = false,
 	helperText = "",
 	placeholder = "Enter your Password",
+	autoComplete,
 }: PasswordProps) {
 	const [showPassword, setShowPassword] = useState(false);
 
@@ -52,6 +54,7 @@ export default function Password({
 				onBlur={onBlur}
 				placeholder={placeholder}
 				error={error}
+				inputProps={{ autoComplete: autoComplete ?? "off" }}
 				endAdornment={
 					<InputAdornment position="end">
 						<IconButton
