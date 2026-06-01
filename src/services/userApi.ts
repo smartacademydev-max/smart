@@ -6,6 +6,28 @@ import type { CourseAnalyticsResponse, LoginHistoryResponse, MonthlyActivityResp
 import { buildQueryParams } from "../utils/buildQueryParams";
 import { baseApi } from "./baseApi";
 
+export interface UserImportResultRow {
+    row: number;
+    message: string;
+}
+
+export interface UserImportResult {
+    total: number;
+    created: number;
+    skipped: number;
+    errors: UserImportResultRow[];
+    reset_links_sent: number;
+}
+
+/** Columns the backend expects in the bulk-import file. */
+export const USER_IMPORT_TEMPLATE_COLUMNS = [
+    "name",
+    "email",
+    "phone",
+    "role",
+    "designation",
+];
+
 export const userApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
         createUser: builder.mutation<GlobalResponse, FormData>({
@@ -211,6 +233,30 @@ export const userApi = baseApi.injectEndpoints({
             query: ({ id, period }) => ({ url: `/admin/user/${id}/performance/monthly-activity?period=${period}`, method: "GET" }),
             providesTags: (_result, _error, { id }) => [{ type: "User", id }],
         }),
+
+        getUserImportTemplate: builder.query<{ data: string }, void>({
+            queryFn: async (_arg, _api, _extra, baseQuery) => {
+                const res = await baseQuery({
+                    url: "/admin/user/import/template",
+                    method: "GET",
+                    responseHandler: (response) => response.text(),
+                });
+                if (res.error) return { error: res.error };
+                return { data: { data: res.data as string } };
+            },
+        }),
+
+        importUsers: builder.mutation<
+            GlobalResponse & { data: UserImportResult },
+            FormData
+        >({
+            query: (body) => ({
+                url: "/admin/user/import",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: [{ type: "User", id: "LIST" }, { type: "MenuCounts", id: "ALL" }],
+        }),
     })
 })
 
@@ -237,4 +283,6 @@ export const {
     useGetUserPerformanceAnalyticsQuery,
     useGetUserTrackPerformanceQuery,
     useGetUserMonthlyActivityQuery,
+    useLazyGetUserImportTemplateQuery,
+    useImportUsersMutation,
 } = userApi;

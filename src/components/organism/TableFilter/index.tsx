@@ -31,13 +31,14 @@ interface TableFilterProps {
     setDays?: React.Dispatch<React.SetStateAction<number | null>>;
     handleResetFilter?: () => void;
     onDownload?: () => void;
+    onImport?: () => void;
     onStatusChange?: () => void;
     donwloading?: boolean;
     redirectUrl?: string;
     onAssignMarks?: () => void;
 }
 export default function TableFilter({
-    search, setSearch, selectedRows, handleRoleDelete, onFilter, layout, categoryLayout, title, setLayout, onPublish, customRange, setCustomRange, assignToCourse, setDays, handleResetFilter, onDownload, donwloading, redirectUrl,
+    search, setSearch, selectedRows, handleRoleDelete, onFilter, layout, categoryLayout, title, setLayout, onPublish, customRange, setCustomRange, assignToCourse, setDays, handleResetFilter, onDownload, onImport, donwloading, redirectUrl,
     onStatusChange, onAssignMarks,
 }: TableFilterProps) {
     const theme = useTheme();
@@ -334,6 +335,11 @@ export default function TableFilter({
                             </Typography>
                         </Button>
                     )}
+                    {onImport ? <Button onClick={onImport} startIcon={<Send variant="Bold" color={theme.palette.text.dark} />} sx={{
+                        border: `1px solid ${theme.palette.separator.dark}`
+                    }} className="py-2.5! px-3.5! rounded-md!">
+                        <Typography variant="subtitle1" color="text.dark">Import</Typography>
+                    </Button> : ""}
                     {onDownload ? <Button onClick={onDownload} disabled={donwloading} startIcon={donwloading ? <CircularProgress size={16} color="inherit" /> : <Download sx={{ color: (theme) => theme.palette.primary.black }} />} sx={{
                         border: `1px solid ${theme.palette.separator.dark}`
                     }} className="py-2.5! px-3.5! rounded-md!">

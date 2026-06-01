@@ -24,6 +24,7 @@ import TableFilter from "../../../organism/TableFilter";
 import UserAnalytics from "../analytics";
 import NewSignUpsChart from "../analytics/NewSignUpsChart";
 import RoleDistributionChart from "../analytics/RoleDistributionChart";
+import ImportUsersDialog from "./ImportUsersDialog";
 
 type ActionType = "delete" | "suspend" | "activate";
 
@@ -42,6 +43,7 @@ export default function AllUserTable() {
     const [openConfirm, setOpenConfirm] = React.useState(false);
     const [actionType, setActionType] = React.useState<ActionType>("delete");
     const [selectedUserIds, setSelectedUserIds] = React.useState<string[]>([]);
+    const [importOpen, setImportOpen] = useState(false);
 
     const {
         selections,
@@ -444,6 +446,7 @@ export default function AllUserTable() {
                             setDays={setDays}
                             handleResetFilter={handleResetFilter}
                             onDownload={handleDownload}
+                            onImport={() => setImportOpen(true)}
                             donwloading={downloading}
                         />
                         {!user.length && !isLoading ? (
@@ -513,6 +516,7 @@ export default function AllUserTable() {
                 setOpen={setOpenOtpPopup}
                 otp={otp}
             />
+            <ImportUsersDialog open={importOpen} onClose={() => setImportOpen(false)} />
         </div>
     );
 }
