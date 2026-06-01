@@ -140,6 +140,13 @@ export const userApi = baseApi.injectEndpoints({
             })
         }),
 
+        sendPasswordResetLink: builder.mutation<GlobalResponse, { id: string }>({
+            query: ({ id }) => ({
+                url: `/admin/user/${id}/send-password-reset`,
+                method: "POST",
+            }),
+        }),
+
         getUserAnalytics: builder.query<UserAnalyticsResponse, void>({
             query: () => ({
                 url: `/admin/user/analytics`,
@@ -269,6 +276,7 @@ export const {
     useGetUserByIdQuery,
     useSuspendUserMutation,
     useGenerateOTPMutation,
+    useSendPasswordResetLinkMutation,
     useGetUserAnalyticsQuery,
     useGetNewSignUpsQuery,
     useGetRoleDistributionQuery,

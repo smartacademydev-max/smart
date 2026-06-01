@@ -12,7 +12,7 @@ import {
     Popper,
     useTheme
 } from "@mui/material";
-import { ArrangeHorizontal, Copy, Send, Slash } from "iconsax-reactjs";
+import { ArrangeHorizontal, Copy, Key, Send, Slash } from "iconsax-reactjs";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
@@ -29,13 +29,14 @@ interface Props {
     onSuspend?: () => void;
     onClone?: () => void;
     onGenerateOtp?: () => void;
+    onSendPasswordReset?: () => void;
     onStatus?: () => void;
     userStatus?: boolean;
     file?: string;
     courseStatus?: "published" | "draft"
 }
 
-export default function Actions({ onEdit, onDelete, onView, deleting = false, onSuspend, userStatus, file, onClone, onGenerateOtp, onStatus, courseStatus, viewUrl, editUrl }: Props) {
+export default function Actions({ onEdit, onDelete, onView, deleting = false, onSuspend, userStatus, file, onClone, onGenerateOtp, onSendPasswordReset, onStatus, courseStatus, viewUrl, editUrl }: Props) {
     const dispatch = useAppDispatch();
     const [open, setOpen] = useState(false);
     const anchorRef = useRef<HTMLButtonElement | null>(null);
@@ -232,6 +233,17 @@ export default function Actions({ onEdit, onDelete, onView, deleting = false, on
                                                 <ArrangeHorizontal size={20} color={theme.palette.separator.darker} />
                                             </ListItemIcon>
                                             <ListItemText primary={t("actions.generate_otp")} />
+                                        </ListItemButton>
+                                    </ListItem> : ""}
+                                    {onSendPasswordReset ? <ListItem className="menu__item action__item">
+                                        <ListItemButton sx={{
+                                            m: 0,
+                                            border: "none"
+                                        }} onClick={() => handleMenuClick(onSendPasswordReset)}>
+                                            <ListItemIcon>
+                                                <Key size={20} color={theme.palette.separator.darker} />
+                                            </ListItemIcon>
+                                            <ListItemText primary={t("actions.send_password_reset")} />
                                         </ListItemButton>
                                     </ListItem> : ""}
                                     {onStatus ? <ListItem className="menu__item action__item">

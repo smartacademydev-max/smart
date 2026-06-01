@@ -368,6 +368,7 @@
         "view_file": "View Attachment",
         "clone": "Clone",
         "generate_otp": "Generate OTP",
+        "send_password_reset": "Send Password Reset",
         "publish": "Publish",
         "unpublish": "Unpublish",
         "draft": "Save as Draft",

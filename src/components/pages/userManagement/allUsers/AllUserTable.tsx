@@ -6,7 +6,8 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { PATH } from "../../../../routes/PATH";
 import { useDownloadCsvMutation } from "../../../../services/activityApi";
-import { useDeleteUserMutation, useGenerateOTPMutation, useGetAllUserQuery, useSuspendUserMutation } from "../../../../services/userApi";
+import { useGetLoginTypeSettingQuery } from "../../../../services/settingApi";
+import { useDeleteUserMutation, useGenerateOTPMutation, useGetAllUserQuery, useSendPasswordResetLinkMutation, useSuspendUserMutation } from "../../../../services/userApi";
 import { showToast } from "../../../../slice/toastSlice";
 import { useAppDispatch } from "../../../../store/hook";
 import { useCourseFilter } from "../../../../store/useCourseFilter";
@@ -81,6 +82,12 @@ export default function AllUserTable() {
     const [deleteUser, { isLoading: deleting }] = useDeleteUserMutation();
     const [suspendUser] = useSuspendUserMutation();
     const [generateOtp] = useGenerateOTPMutation();
+    const [sendPasswordResetLink] = useSendPasswordResetLinkMutation();
+    const { data: loginTypeData } = useGetLoginTypeSettingQuery();
+    // Only expose the "Send Password Reset" action when password login is actually used.
+    const passwordLoginEnabled =
+        loginTypeData?.data?.login_type === "password" ||
+        loginTypeData?.data?.login_type === "both";
     const [downloadUsers, { isLoading: downloading }] = useDownloadCsvMutation();
 
     const handleSelectAll = (checked: boolean) => {
@@ -212,6 +219,26 @@ export default function AllUserTable() {
                     title: "",
                     description: ""
                 };
+        }
+    };
+
+    const handleSendPasswordReset = async (id?: string) => {
+        if (!id) return;
+        try {
+            const response = await sendPasswordResetLink({ id }).unwrap();
+            dispatch(
+                showToast({
+                    message: response?.message || "Password reset link sent",
+                    severity: "success",
+                }),
+            );
+        } catch (e: any) {
+            dispatch(
+                showToast({
+                    message: e?.data?.message || "Unable to send password reset link",
+                    severity: "error",
+                }),
+            );
         }
     };
 
@@ -348,6 +375,11 @@ export default function AllUserTable() {
                         onSuspend={() => openSuspendConfirmation([row.original.id?.toString() || ""])}
                         userStatus={row.original.is_suspended}
                         onGenerateOtp={() => handleUserOtpGeneration(Number(row.original.id))}
+                        onSendPasswordReset={
+                            passwordLoginEnabled
+                                ? () => handleSendPasswordReset(row.original.id?.toString())
+                                : undefined
+                        }
                     />
                     {row.original.is_suspended ? (
                         <IconButton
@@ -365,7 +397,7 @@ export default function AllUserTable() {
                 </Box>
             ),
         },
-    ], [isAllSelected, selectedRows, deleting, qp]);
+    ], [isAllSelected, selectedRows, deleting, qp, passwordLoginEnabled]);
 
     const dialogContent = getDialogContent();
 
