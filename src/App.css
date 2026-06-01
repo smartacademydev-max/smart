@@ -82,11 +82,15 @@ body {
 
 .editor__wrapper .ck-editor__editable {
 	min-height: 175px;
-}
-
-.editor__wrapper .ck-editor__editable {
 	border: none !important;
 	box-shadow: none !important;
+	background: transparent !important;
+	color: inherit !important;
+}
+
+.editor__wrapper .ck.ck-content {
+	background: transparent !important;
+	color: inherit !important;
 }
 
 .ck.ck-sticky-panel .ck-sticky-panel__content_sticky{

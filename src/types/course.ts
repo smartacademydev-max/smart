@@ -18,7 +18,7 @@ export interface SelectionType {
     status?: Status[];
 }
 
-export type CourseTypeProps = "free" | "expiry" | "subscription"
+export type CourseTypeProps = "free" | "expiry" | "subscription" | "open_access"
 export type DiscountTypeProps = "percentage" | "amount"
 export type BillingCycle = "days" | "months" | "years"
 export type courseClonePropertyProps = "audios" | "videos" | "notes" | "curriculums" | "tests"

@@ -96,7 +96,7 @@ const validationSchema = (id?: string) => Yup.object().shape({
         .min(1, "Please select at least one instructor"),
 
     course_type: Yup.string()
-        .oneOf(["free", "subscription", "expiry"], "Invalid course type")
+        .oneOf(["free", "subscription", "expiry", "open_access"], "Invalid course type")
         .required("Course type is required"),
     package_type: Yup.string()
         .oneOf(PackageTypeValue, "Invalid package type")

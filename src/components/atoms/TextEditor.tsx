@@ -72,19 +72,19 @@ const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(function TextEd
     }));
 
     return (
-        <Box className="input__field" sx={{ height: "calc(100%)" }}>
+        <Box className="input__field">
             <InputLabel className={required ? "required" : ""}>
                 {label || "Description"}
             </InputLabel>
 
-            <div
-                className="editor__wrapper general__content__box styled__list"
-                style={{
-                    border: "1px solid #E5E7EB",
-                    height: "100%",
-                    padding: "16px",
-                    borderRadius: "8px",
-                    overflowY: "auto",
+            <Box
+                className="editor__wrapper general__content__box styled__list rounded-lg p-4 max-h-[480px] overflow-y-auto transition-colors"
+                sx={{
+                    border: 1,
+                    borderColor: "divider",
+                    bgcolor: "background.paper",
+                    color: "text.primary",
+                    "&:focus-within": { borderColor: "primary.main" },
                 }}
             >
                 <CKEditor
@@ -120,7 +120,7 @@ const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(function TextEd
                         onBlur?.(val);
                     }}
                 />
-            </div>
+            </Box>
 
             {error && <FormHelperText error>{error}</FormHelperText>}
         </Box>
