@@ -1,5 +1,5 @@
-import { Box, Checkbox, CircularProgress, Divider, FormControlLabel, InputAdornment, OutlinedInput, Typography, useTheme } from "@mui/material";
-import { SearchNormal1 } from "iconsax-reactjs";
+import { Box, Checkbox, Chip, CircularProgress, Divider, FormControlLabel, InputAdornment, OutlinedInput, Typography, useTheme } from "@mui/material";
+import { Gift, SearchNormal1 } from "iconsax-reactjs";
 import { useEffect, useRef, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { v4 as uuidv4 } from "uuid";
@@ -80,8 +80,14 @@ export default function InfiniteScrolling({
         return path.split('.').reduce((acc, key) => acc?.[key], obj) ?? 'Uncategorized';
     };
 
-    // --- Group items by label key or created_at date ---
-    const groupedData = data.reduce((acc: Record<string, any[]>, item) => {
+    // --- Pull `open_access` (Free Materials) items out so they can be pinned
+    // to the top of the list with a distinct badge. Single course in the system today,
+    // but the logic handles >1 defensively. ---
+    const openAccessItems = data.filter((item) => item.course_type === "open_access");
+    const regularItems = data.filter((item) => item.course_type !== "open_access");
+
+    // --- Group regular items by label key or created_at date ---
+    const groupedData = regularItems.reduce((acc: Record<string, any[]>, item) => {
         const groupKey = groupLabelKey
             ? resolvePath(item, groupLabelKey)
             : new Date(item.created_at).toDateString();
@@ -162,7 +168,63 @@ export default function InfiniteScrolling({
                                 </Typography>
                             </Box>
                         ) : (
-                            Object.entries(groupedData).map(([groupKey, items]) => {
+                            <>
+                                {openAccessItems.length > 0 && (
+                                    <Box
+                                        sx={{
+                                            mb: 1,
+                                            borderRadius: 1,
+                                            border: `1px dashed ${theme.palette.primary.main}`,
+                                            bgcolor: theme.palette.primary.light,
+                                            px: 0.5,
+                                            py: 0.5,
+                                        }}
+                                    >
+                                        <Box className="flex items-center gap-1 px-1 pb-1">
+                                            <Gift size={14} color={theme.palette.primary.main} variant="Bold" />
+                                            <Typography
+                                                variant="caption"
+                                                fontWeight={700}
+                                                sx={{ color: "primary.main", letterSpacing: "0.5px", textTransform: "uppercase" }}
+                                            >
+                                                Free Materials
+                                            </Typography>
+                                        </Box>
+                                        {openAccessItems.map((item) => {
+                                            const itemId = item[itemIdKey];
+                                            const stableKey = uuidMap[itemId];
+                                            const isSelected = selectedItems.includes(itemId);
+                                            return (
+                                                <Box key={stableKey} className="item__wrapper flex flex-col">
+                                                    <FormControlLabel
+                                                        sx={{ m: 0, p: 0.5, width: "100%" }}
+                                                        control={
+                                                            <Checkbox
+                                                                checked={isSelected}
+                                                                disabled={!isSelected && isMaxReached}
+                                                                onChange={() => handleToggle(itemId)}
+                                                            />
+                                                        }
+                                                        label={
+                                                            <Box className="flex items-center gap-2">
+                                                                <Typography variant="subtitle1">
+                                                                    {renderHtml(item[itemLabelKey])}
+                                                                </Typography>
+                                                                <Chip
+                                                                    label="Free Materials"
+                                                                    size="small"
+                                                                    color="primary"
+                                                                    sx={{ height: 18, fontSize: 10, fontWeight: 600 }}
+                                                                />
+                                                            </Box>
+                                                        }
+                                                    />
+                                                </Box>
+                                            );
+                                        })}
+                                    </Box>
+                                )}
+                                {Object.entries(groupedData).map(([groupKey, items]) => {
                                 const groupIds = items.map(item => item[itemIdKey]);
                                 const allGroupSelected = groupIds.every(id => selectedItems.includes(id));
                                 const someGroupSelected = groupIds.some(id => selectedItems.includes(id));
@@ -222,7 +284,8 @@ export default function InfiniteScrolling({
                                         })}
                                     </Box>
                                 );
-                            })
+                            })}
+                            </>
                         )}
                     </InfiniteScroll>
                 )}
