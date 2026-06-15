@@ -140,7 +140,10 @@ export const userApi = baseApi.injectEndpoints({
             })
         }),
 
-        sendPasswordResetLink: builder.mutation<GlobalResponse, { id: string }>({
+        sendPasswordResetLink: builder.mutation<
+            GlobalResponse & { data?: { token: string; email: string; reset_url?: string } },
+            { id: string }
+        >({
             query: ({ id }) => ({
                 url: `/admin/user/${id}/send-password-reset`,
                 method: "POST",

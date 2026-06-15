@@ -1,5 +1,5 @@
 import { Add } from "@mui/icons-material";
-import { Autocomplete, Button, Divider, IconButton, OutlinedInput, TextField, Typography } from "@mui/material";
+import { Autocomplete, Button, Divider, FormHelperText, IconButton, InputLabel, OutlinedInput, TextField, Typography } from "@mui/material";
 import type { FormikProps } from "formik";
 import { useMemo } from "react";
 import { useGetAllSubscriptionQuery } from "../../../../../../services/subscriptionPlanApi";
@@ -85,6 +85,23 @@ export default function SubscriptionCourseType({ handleClick, formik }: Props) {
                 )}
             </div>
             <Divider className='mb-8!' />
+
+            <div className="input_field mb-6">
+                <InputLabel>Label</InputLabel>
+                <OutlinedInput
+                    fullWidth
+                    placeholder='Enter label (shown on course card)'
+                    name='course_type_label'
+                    value={formik.values.course_type_label ?? ''}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                />
+                {formik.touched.course_type_label && formik.errors.course_type_label && (
+                    <FormHelperText error sx={{ mt: 0.5 }}>
+                        {formik.errors.course_type_label}
+                    </FormHelperText>
+                )}
+            </div>
 
             {hasData ? (
                 <div className="subscription__form__wrapper">

@@ -54,6 +54,7 @@ export interface CourseProps {
     about_this_course: string;
     teachers: number[];
     course_type: CourseTypeProps;
+    course_type_label?: string;
     package_type?: PackageType;
     course_expiry: CourseExpiry;
     free_type_description?: string;
@@ -89,6 +90,7 @@ export const initialCourseState: CourseProps = {
     about_this_course: "",
     teachers: [],
     course_type: "free",
+    course_type_label: "",
     package_type: "course",
     course_expiry: {
         start_date: "",

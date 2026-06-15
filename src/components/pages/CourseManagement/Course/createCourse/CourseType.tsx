@@ -125,6 +125,7 @@ function ActivityBlock({ currentType, formik }: { currentType: CourseTypeProps, 
             {currentType === "free" &&
 
                 <FreeCourseType
+                    formik={formik}
                     value={formik.values.free_type_description}
                     onChange={(value) => formik.setFieldValue("free_type_description", value)}
                     onBlur={(value) => formik.setFieldValue("free_type_description", value)}
@@ -150,6 +151,7 @@ function ActivityBlock({ currentType, formik }: { currentType: CourseTypeProps, 
             }
             {currentType === "open_access" &&
                 <OpenAccessCourseType
+                    formik={formik}
                     value={formik.values.free_type_description}
                     onChange={(value) => formik.setFieldValue("free_type_description", value)}
                     onBlur={(value) => formik.setFieldValue("free_type_description", value)}

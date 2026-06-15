@@ -18,6 +18,7 @@ import CustomTable from "../../../molecules/Table";
 import TablePagination from "../../../molecules/Table/Pagination";
 import ConfirmationDialog from "../../../organism/ConfirmationDialog";
 import OtpDialog from "../../../organism/Dialog/OtpDialog";
+import ResetLinkDialog from "../../../organism/Dialog/ResetLinkDialog";
 import EmptyRoute from "../../../organism/EmptyRoute";
 import { CourseFilter } from "../../../organism/Filter/CourseFilter";
 import PageHeader from "../../../organism/PageHeader";
@@ -45,6 +46,8 @@ export default function AllUserTable() {
     const [actionType, setActionType] = React.useState<ActionType>("delete");
     const [selectedUserIds, setSelectedUserIds] = React.useState<string[]>([]);
     const [importOpen, setImportOpen] = useState(false);
+    const [resetLinkOpen, setResetLinkOpen] = useState(false);
+    const [resetLinkData, setResetLinkData] = useState<{ url: string; email?: string }>({ url: "" });
 
     const {
         selections,
@@ -232,6 +235,21 @@ export default function AllUserTable() {
                     severity: "success",
                 }),
             );
+
+            // Build the shareable URL for the admin to copy.
+            // Prefer a backend-supplied reset_url; otherwise compose it from
+            // VITE_USER_APP_URL + the token/email returned in the response.
+            const data = response?.data;
+            const userAppUrl = import.meta.env.VITE_USER_APP_URL || window.location.origin;
+            let url = data?.reset_url || "";
+            if (!url && data?.token && data?.email) {
+                url = `${userAppUrl.replace(/\/$/, "")}/reset-password?token=${data.token}&email=${encodeURIComponent(data.email)}`;
+            }
+
+            if (url) {
+                setResetLinkData({ url, email: data?.email });
+                setResetLinkOpen(true);
+            }
         } catch (e: any) {
             dispatch(
                 showToast({
@@ -547,6 +565,12 @@ export default function AllUserTable() {
                 open={openOtpPopup}
                 setOpen={setOpenOtpPopup}
                 otp={otp}
+            />
+            <ResetLinkDialog
+                open={resetLinkOpen}
+                setOpen={setResetLinkOpen}
+                url={resetLinkData.url}
+                email={resetLinkData.email}
             />
             <ImportUsersDialog open={importOpen} onClose={() => setImportOpen(false)} />
         </div>

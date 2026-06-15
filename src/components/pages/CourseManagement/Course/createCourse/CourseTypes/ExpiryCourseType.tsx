@@ -14,6 +14,26 @@ export default function ExpiryCourseType({ formik }: { formik: FormikProps<Cours
             <Typography variant='h5' className='pb-2'>Expiry</Typography>
             <Divider className='mb-8!' />
             <div className="grid grid-cols-2 gap-y-4 gap-x-6">
+                {/* Label */}
+                <div className="col-span-2">
+                    <div className="input_field">
+                        <InputLabel>Label</InputLabel>
+                        <OutlinedInput
+                            fullWidth
+                            placeholder='Enter label (shown on course card)'
+                            name='course_type_label'
+                            value={formik.values.course_type_label ?? ''}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                        />
+                        {formik.touched.course_type_label && formik.errors.course_type_label && (
+                            <FormHelperText error sx={{ mt: 0.5 }}>
+                                {formik.errors.course_type_label}
+                            </FormHelperText>
+                        )}
+                    </div>
+                </div>
+
                 {/* Start Date */}
                 <div className="col-span-2 lg:col-span-1">
                     <div className="input_field">
