@@ -8,6 +8,9 @@ export const createCourseFormData = (values: CourseProps): FormData => {
     formData.append("description", values.description);
     formData.append("about_this_course", values.about_this_course);
     formData.append("course_type", values.course_type);
+    if (values.course_type_label && values.course_type_label.trim()) {
+        formData.append("course_type_label", values.course_type_label.trim());
+    }
 
     formData.append("duration[hours]", values.duration.hours.toString());
     formData.append("duration[minutes]", values.duration.minutes.toString());
