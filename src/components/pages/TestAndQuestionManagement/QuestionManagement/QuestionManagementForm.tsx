@@ -26,6 +26,7 @@ export interface Props {
     open: boolean;
     setOpen: (newValue: boolean) => void;
     editData?: QuestionProps | null;
+    onSave?: (values: QuestionProps) => void;
 }
 
 const questionTypes = [
@@ -74,7 +75,7 @@ const questionValidationSchema = Yup.object().shape({
         otherwise: (schema) => schema.notRequired()
     })
 });
-export default function QuestionManagementForm({ setOpen, editData }: Props) {
+export default function QuestionManagementForm({ setOpen, editData, onSave }: Props) {
     const dispatch = useAppDispatch();
     const { data } = useGetAllMegaCategoryQuery();
     const megaCategories = data?.data || [];
@@ -82,6 +83,7 @@ export default function QuestionManagementForm({ setOpen, editData }: Props) {
     const [createOrUpdateQuestion, { isLoading }] = useEditOrCreateQuestionMutation();
 
     const isEditMode = Boolean(editData?.id);
+    const isLocalMode = typeof onSave === "function";
 
 
     const formik = useFormik<QuestionProps>({
@@ -89,6 +91,12 @@ export default function QuestionManagementForm({ setOpen, editData }: Props) {
         validationSchema: questionValidationSchema,
         enableReinitialize: true,
         onSubmit: async (values) => {
+            if (isLocalMode) {
+                onSave!(values);
+                setOpen(false);
+                formik.resetForm();
+                return;
+            }
             try {
                 const response = await createOrUpdateQuestion({ body: values }).unwrap();
                 dispatch(

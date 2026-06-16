@@ -38,6 +38,8 @@ export const createCourseFormData = (values: CourseProps): FormData => {
             formData.append(`course_subscription[${index}][price]`, subscription.price);
             formData.append(`course_subscription[${index}][billing_cycle]`, subscription.billing_cycle);
             formData.append(`course_subscription[${index}][number]`, subscription.number.toString());
+            formData.append(`course_subscription[${index}][discount]`, (subscription.discount ?? 0).toString());
+            formData.append(`course_subscription[${index}][discount_type]`, subscription.discount_type ?? "percentage");
         });
     }
 

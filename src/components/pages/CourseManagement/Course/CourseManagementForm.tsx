@@ -126,6 +126,21 @@ const validationSchema = (id?: string) => Yup.object().shape({
         }),
         otherwise: (schema) => schema.notRequired(),
     }),
+
+    course_subscription: Yup.array().when("course_type", {
+        is: "subscription",
+        then: (schema) => schema.of(
+            Yup.object().shape({
+                discount: Yup.number()
+                    .min(0, "Discount must be at least 0")
+                    .typeError("Discount must be a number"),
+                discount_type: Yup.string()
+                    .oneOf(["percentage", "amount"], "Invalid discount type")
+                    .required("Discount type is required"),
+            })
+        ),
+        otherwise: (schema) => schema.notRequired(),
+    }),
 });
 
 export default function CourseManagementForm() {

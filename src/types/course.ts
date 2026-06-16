@@ -40,6 +40,8 @@ export interface CourseSubscription {
     price: string;
     billing_cycle: BillingCycle
     number: number;
+    discount: number;
+    discount_type: DiscountTypeProps;
 }
 export interface CourseProps {
     id?: number;

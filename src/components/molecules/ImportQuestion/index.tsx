@@ -1,4 +1,4 @@
-import { Box, FormControlLabel, FormHelperText, InputLabel, LinearProgress, OutlinedInput, Radio, Typography, useTheme } from "@mui/material";
+import { Box, Dialog, DialogContent, FormControlLabel, FormHelperText, IconButton, InputLabel, LinearProgress, OutlinedInput, Radio, Tooltip, Typography, useTheme } from "@mui/material";
 import { useFormik } from "formik";
 import { useCallback, useState } from "react";
 import { useDropzone, type Accept } from "react-dropzone";
@@ -8,6 +8,7 @@ import { showToast } from "../../../slice/toastSlice";
 import { useAppDispatch } from "../../../store/hook";
 import type { QuestionProps } from "../../../types/question";
 import { renderHtml } from "../../../utils/renderHtml";
+import QuestionManagementForm from "../../pages/TestAndQuestionManagement/QuestionManagement/QuestionManagementForm";
 import FooterAction from "../FooterAction";
 
 interface MediaFileDragDropProps {
@@ -24,6 +25,8 @@ export default function ImportQuestion({
     const [uploadMedia, { isLoading }] = useUploadQuestionPaperMutation();
     const [questions, setQuestions] = useState<QuestionProps[]>([]);
     const [_isDragging, setIsDragging] = useState(false);
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
 
     const getAcceptTypes = (): Accept => ({
         "application/pdf": [".pdf"]
@@ -80,20 +83,11 @@ export default function ImportQuestion({
 
     const [saveQuestions, { isLoading: saving }] = useSaveUploadedQuestionsMutation();
 
-    const formik = useFormik({
+    const formik = useFormik<{ title: string; questions: QuestionProps[] }>({
         enableReinitialize: true,
         initialValues: {
             title: "",
-            questions: questions.map(q => ({
-                id: q.id,
-                question: q.question,
-                question_type: q.question_type,
-                options: q.options.map(opt => ({
-                    id: opt.id,
-                    option: opt.option,
-                    is_correct: opt.is_correct
-                })),
-            })),
+            questions: questions.map(q => ({ ...q, options: q.options.map(opt => ({ ...opt })) })),
         },
         validationSchema: Yup.object().shape({
             title: Yup.string()
@@ -104,13 +98,23 @@ export default function ImportQuestion({
         }),
         onSubmit: async (values) => {
             try {
-                const response = await saveQuestions({ title: values.title, question: values.questions }).unwrap();
+                const payload = values.questions.map(q => ({
+                    id: q.id,
+                    question: q.question,
+                    question_type: q.question_type,
+                    options: q.options.map(opt => ({
+                        id: opt.id,
+                        option: opt.option,
+                        is_correct: opt.is_correct,
+                    })),
+                }));
+                const response = await saveQuestions({ title: values.title, question: payload }).unwrap();
 
                 dispatch(showToast({
                     message: response?.message || "Questions saved successfully",
                     severity: "success"
                 }));
-                
+
                 onClose();
             }
             catch (e: any) {
@@ -130,6 +134,33 @@ export default function ImportQuestion({
             is_correct: idx === optionIndex
         }));
         formik.setFieldValue(`questions.${questionIndex}.options`, updatedOptions);
+    };
+
+    const handleDeleteQuestion = (index: number) => {
+        const next = formik.values.questions.filter((_, i) => i !== index);
+        formik.setFieldValue("questions", next);
+        setQuestions(next);
+    };
+
+    const handleEditQuestion = (index: number) => {
+        setEditingIndex(index);
+        setEditDialogOpen(true);
+    };
+
+    const handleEditSave = (updated: QuestionProps) => {
+        if (editingIndex === null) return;
+        const next = formik.values.questions.map((q, i) =>
+            i === editingIndex ? { ...updated } : q
+        );
+        formik.setFieldValue("questions", next);
+        setQuestions(next);
+        setEditingIndex(null);
+        setEditDialogOpen(false);
+    };
+
+    const handleEditClose = () => {
+        setEditingIndex(null);
+        setEditDialogOpen(false);
     };
 
     const renderOption = (option: any, questionIndex: number, optionIndex: number, isCorrect: boolean, isUserWrong?: boolean) => {
@@ -230,9 +261,37 @@ export default function ImportQuestion({
                 </div>
 
                 {formik.values.questions.length ? formik.values.questions.map((question, questionIndex) => (
-                    <Box className="question__box w-full pb-4 mb-4 lg:pb-8 lg:mb-8 border-b last:border-b-0 last:mb-0 last:pb-0" key={question.id} sx={{ borderColor: (theme) => theme.palette.separator.dark }}>
-                        <div className="flex justify-between items-center">
-                            <Typography className="mb-6!" variant="body2">Question {questionIndex + 1} of {questions?.length}</Typography>
+                    <Box className="question__box w-full pb-4 mb-4 lg:pb-8 lg:mb-8 border-b last:border-b-0 last:mb-0 last:pb-0" key={`${question.id}-${questionIndex}`} sx={{ borderColor: (theme) => theme.palette.separator.dark }}>
+                        <div className="flex justify-between items-center mb-6">
+                            <Typography variant="body2">Question {questionIndex + 1} of {formik.values.questions.length}</Typography>
+                            <div className="flex items-center gap-1">
+                                <Tooltip title="Edit Question">
+                                    <IconButton
+                                        size="small"
+                                        color="primary"
+                                        onClick={() => handleEditQuestion(questionIndex)}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M13.26 3.6L5.05 12.29C4.74 12.62 4.44 13.27 4.38 13.72L4.01 16.96C3.88 18.13 4.72 18.93 5.88 18.73L9.1 18.18C9.55 18.1 10.18 17.77 10.49 17.43L18.7 8.74C20.12 7.24 20.76 5.53 18.55 3.44C16.35 1.37 14.68 2.1 13.26 3.6Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M11.89 5.05005C12.32 7.81005 14.56 9.92005 17.34 10.2" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M3 22H21" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Delete Question">
+                                    <IconButton
+                                        size="small"
+                                        color="error"
+                                        onClick={() => handleDeleteQuestion(questionIndex)}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M21 5.98C17.67 5.65 14.32 5.48 10.98 5.48C9 5.48 7.02 5.58 5.04 5.78L3 5.98" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M8.5 4.97L8.72 3.66C8.88 2.71 9 2 10.69 2H13.31C15 2 15.13 2.75 15.28 3.67L15.5 4.97" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M18.85 9.14L18.2 19.21C18.09 20.78 18 22 15.21 22H8.79C6 22 5.91 20.78 5.8 19.21L5.15 9.14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </IconButton>
+                                </Tooltip>
+                            </div>
                         </div>
                         <Typography variant="subtitle1" className="mb-2!">{renderHtml(question.question)}</Typography>
                         <div className="flex flex-col gap-4 md:grid md:grid-cols-2 w-full">
@@ -248,6 +307,32 @@ export default function ImportQuestion({
                 isLoading={saving}
                 replaceLabel="Verify & Submit"
             />
+
+            <Dialog
+                open={editDialogOpen}
+                onClose={handleEditClose}
+                sx={{
+                    "& .MuiPaper-root": {
+                        minWidth: { md: "664px", xl: "1266px" },
+                        height: "90vh",
+                        overflow: "hidden"
+                    },
+                }}
+            >
+                <DialogContent
+                    sx={{ background: theme.palette.primary.contrastText }}
+                    className="h-full overflow-hidden"
+                >
+                    {editingIndex !== null && (
+                        <QuestionManagementForm
+                            open={editDialogOpen}
+                            setOpen={(val) => { if (!val) handleEditClose(); }}
+                            editData={formik.values.questions[editingIndex]}
+                            onSave={handleEditSave}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
         </form>
     );
 }
