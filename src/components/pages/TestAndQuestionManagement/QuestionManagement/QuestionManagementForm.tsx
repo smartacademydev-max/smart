@@ -34,13 +34,13 @@ const questionTypes = [
     { label: "Subjective", value: "subjective" }
 ];
 
-const questionValidationSchema = Yup.object().shape({
+const buildQuestionValidationSchema = (isLocalMode: boolean) => Yup.object().shape({
     question_type: Yup.string()
         .oneOf(["mcq", "subjective"], "Invalid question type")
         .required("Question type is required"),
-    megacategory_id: Yup.number()
-        .nullable()
-        .required("Mega category is required"),
+    megacategory_id: isLocalMode
+        ? Yup.number().nullable().notRequired()
+        : Yup.number().nullable().required("Mega category is required"),
     points: Yup.number().when("question_type", {
         is: "subjective",
         then: (schema) =>
@@ -88,7 +88,7 @@ export default function QuestionManagementForm({ setOpen, editData, onSave }: Pr
 
     const formik = useFormik<QuestionProps>({
         initialValues: editData || QuestionInitialState,
-        validationSchema: questionValidationSchema,
+        validationSchema: buildQuestionValidationSchema(isLocalMode),
         enableReinitialize: true,
         onSubmit: async (values) => {
             if (isLocalMode) {
@@ -264,9 +264,11 @@ export default function QuestionManagementForm({ setOpen, editData, onSave }: Pr
                                 options={megaCategories}
                                 loading={isLoading}
                                 value={selectedMegaCategory || null}
-                                onChange={(_, newValue: any) =>
-                                    formik.setFieldValue("megacategory_id", newValue?.id || null)
-                                }
+                                onChange={(_, newValue: any) => {
+                                    formik.setFieldTouched("megacategory_id", true, false);
+                                    formik.setFieldValue("megacategory_id", newValue?.id || null);
+                                }}
+                                onBlur={() => formik.setFieldTouched("megacategory_id", true)}
                                 getOptionLabel={(option: any) => option.name || ""}
                                 isOptionEqualToValue={(option: any, value: any) =>
                                     option.id === value.id

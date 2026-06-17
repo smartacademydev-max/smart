@@ -1,6 +1,6 @@
 import { Box, Dialog, DialogContent, FormControlLabel, FormHelperText, IconButton, InputLabel, LinearProgress, OutlinedInput, Radio, Tooltip, Typography, useTheme } from "@mui/material";
 import { useFormik } from "formik";
-import { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useDropzone, type Accept } from "react-dropzone";
 import * as Yup from "yup";
 import { useSaveUploadedQuestionsMutation, useUploadQuestionPaperMutation } from "../../../services/questionApi";
@@ -16,6 +16,85 @@ interface MediaFileDragDropProps {
     onClose: () => void;
 }
 
+interface QuestionRowProps {
+    question: QuestionProps;
+    questionIndex: number;
+    totalCount: number;
+    onCorrectChange: (qi: number, oi: number) => void;
+    onEdit: (qi: number) => void;
+    onDelete: (qi: number) => void;
+}
+
+const QuestionRow = React.memo(function QuestionRow({
+    question,
+    questionIndex,
+    totalCount,
+    onCorrectChange,
+    onEdit,
+    onDelete,
+}: QuestionRowProps) {
+    const theme = useTheme();
+
+    return (
+        <Box
+            className="question__box w-full pb-4 mb-4 lg:pb-8 lg:mb-8 border-b last:border-b-0 last:mb-0 last:pb-0"
+            sx={{ borderColor: theme.palette.separator.dark }}
+        >
+            <div className="flex justify-between items-center mb-6">
+                <Typography variant="body2">Question {questionIndex + 1} of {totalCount}</Typography>
+                <div className="flex items-center gap-1">
+                    <Tooltip title="Edit Question">
+                        <IconButton size="small" color="primary" onClick={() => onEdit(questionIndex)}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M13.26 3.6L5.05 12.29C4.74 12.62 4.44 13.27 4.38 13.72L4.01 16.96C3.88 18.13 4.72 18.93 5.88 18.73L9.1 18.18C9.55 18.1 10.18 17.77 10.49 17.43L18.7 8.74C20.12 7.24 20.76 5.53 18.55 3.44C16.35 1.37 14.68 2.1 13.26 3.6Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M11.89 5.05005C12.32 7.81005 14.56 9.92005 17.34 10.2" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M3 22H21" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete Question">
+                        <IconButton size="small" color="error" onClick={() => onDelete(questionIndex)}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 5.98C17.67 5.65 14.32 5.48 10.98 5.48C9 5.48 7.02 5.58 5.04 5.78L3 5.98" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M8.5 4.97L8.72 3.66C8.88 2.71 9 2 10.69 2H13.31C15 2 15.13 2.75 15.28 3.67L15.5 4.97" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M18.85 9.14L18.2 19.21C18.09 20.78 18 22 15.21 22H8.79C6 22 5.91 20.78 5.8 19.21L5.15 9.14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </IconButton>
+                    </Tooltip>
+                </div>
+            </div>
+            <Typography variant="subtitle1" className="mb-2!">{renderHtml(question.question)}</Typography>
+            <div className="flex flex-col gap-4 md:grid md:grid-cols-2 w-full">
+                {question.options.map((option: any, optionIndex: number) => {
+                    const isCorrect = option.is_correct;
+                    const bgColor = isCorrect ? theme.palette.success.light : "transparent";
+                    const borderColor = isCorrect ? theme.palette.success.main : theme.palette.separator.dark;
+
+                    return (
+                        <Box
+                            key={option.option + option.id}
+                            className="rounded-lg p-3 col-span-1 flex items-center gap-1"
+                            sx={{ border: `1px solid ${borderColor}`, backgroundColor: bgColor }}
+                        >
+                            <FormControlLabel
+                                className="items-center!"
+                                label={<Typography variant="body2">{renderHtml(option.option)}</Typography>}
+                                control={
+                                    <Radio
+                                        color="success"
+                                        checked={option.is_correct}
+                                        onChange={() => onCorrectChange(questionIndex, optionIndex)}
+                                    />
+                                }
+                            />
+                        </Box>
+                    );
+                })}
+            </div>
+        </Box>
+    );
+});
+
 export default function ImportQuestion({
     maxSize = 2,
     onClose
@@ -27,6 +106,7 @@ export default function ImportQuestion({
     const [_isDragging, setIsDragging] = useState(false);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const getAcceptTypes = (): Accept => ({
         "application/pdf": [".pdf"]
@@ -83,12 +163,14 @@ export default function ImportQuestion({
 
     const [saveQuestions, { isLoading: saving }] = useSaveUploadedQuestionsMutation();
 
+    const initialFormValues = useMemo(() => ({
+        title: "",
+        questions: questions.map(q => ({ ...q, options: q.options.map(opt => ({ ...opt })) })),
+    }), [questions]);
+
     const formik = useFormik<{ title: string; questions: QuestionProps[] }>({
         enableReinitialize: true,
-        initialValues: {
-            title: "",
-            questions: questions.map(q => ({ ...q, options: q.options.map(opt => ({ ...opt })) })),
-        },
+        initialValues: initialFormValues,
         validationSchema: Yup.object().shape({
             title: Yup.string()
                 .trim()
@@ -128,24 +210,42 @@ export default function ImportQuestion({
         },
     });
 
-    const handleCorrectAnswerChange = (questionIndex: number, optionIndex: number) => {
-        const updatedOptions = formik.values.questions[questionIndex].options.map((opt, idx) => ({
+    const formikRef = useRef(formik);
+    formikRef.current = formik;
+
+    const handleFormSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await formikRef.current.submitForm();
+        const errors = formikRef.current.errors;
+        const firstErrorKey = Object.keys(errors)[0];
+        if (!firstErrorKey) return;
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        const target = container.querySelector(`[data-error-anchor="${firstErrorKey}"]`) as HTMLElement | null;
+        if (!target) return;
+        container.scrollTo({ top: Math.max(0, target.offsetTop - 16), behavior: "smooth" });
+    };
+
+    const handleCorrectAnswerChange = useCallback((questionIndex: number, optionIndex: number) => {
+        const f = formikRef.current;
+        const updatedOptions = f.values.questions[questionIndex].options.map((opt, idx) => ({
             ...opt,
             is_correct: idx === optionIndex
         }));
-        formik.setFieldValue(`questions.${questionIndex}.options`, updatedOptions);
-    };
+        f.setFieldValue(`questions.${questionIndex}.options`, updatedOptions);
+    }, []);
 
-    const handleDeleteQuestion = (index: number) => {
-        const next = formik.values.questions.filter((_, i) => i !== index);
-        formik.setFieldValue("questions", next);
+    const handleDeleteQuestion = useCallback((index: number) => {
+        const f = formikRef.current;
+        const next = f.values.questions.filter((_, i) => i !== index);
+        f.setFieldValue("questions", next);
         setQuestions(next);
-    };
+    }, []);
 
-    const handleEditQuestion = (index: number) => {
+    const handleEditQuestion = useCallback((index: number) => {
         setEditingIndex(index);
         setEditDialogOpen(true);
-    };
+    }, []);
 
     const handleEditSave = (updated: QuestionProps) => {
         if (editingIndex === null) return;
@@ -161,42 +261,6 @@ export default function ImportQuestion({
     const handleEditClose = () => {
         setEditingIndex(null);
         setEditDialogOpen(false);
-    };
-
-    const renderOption = (option: any, questionIndex: number, optionIndex: number, isCorrect: boolean, isUserWrong?: boolean) => {
-        const bgColor = isCorrect
-            ? theme.palette.success.light
-            : isUserWrong
-                ? theme.palette.error.light
-                : "transparent";
-
-        const borderColor = isCorrect
-            ? theme.palette.success.main
-            : isUserWrong
-                ? theme.palette.error.main
-                : theme.palette.separator.dark;
-
-
-        return (
-            <Box
-                key={option.option + option.id}
-                className="rounded-lg p-3 col-span-1 flex items-center gap-1"
-                sx={{ border: `1px solid ${borderColor}`, backgroundColor: bgColor }}
-            >
-
-                <FormControlLabel
-                    className="items-center!"
-                    label={
-                        <Typography variant="body2">{renderHtml(option.option)}</Typography>
-                    }
-                    control={<Radio
-                        color="success"
-                        checked={option.is_correct}
-                        onChange={() => handleCorrectAnswerChange(questionIndex, optionIndex)}
-                    />}
-                />
-            </Box>
-        );
     };
 
     if (!questions.length) {
@@ -235,14 +299,9 @@ export default function ImportQuestion({
 
 
     return (
-        <form onSubmit={formik.handleSubmit} className="h-full overflow-hidden">
-            <Box
-                className="flex flex-col justify-start items-start gap-3 p-3  rounded-lg  overflow-auto"
-                sx={{
-                    height: "calc(100% - 150px)"
-                }}
-            >
-                <div className="input__field w-full mb-2">
+        <form onSubmit={handleFormSubmit} className="h-full flex flex-col overflow-hidden">
+            <Box className="shrink-0 px-3 pt-3 pb-2">
+                <div data-error-anchor="title" className="input__field w-full">
                     <InputLabel className="required">Group Title</InputLabel>
                     <OutlinedInput
                         fullWidth
@@ -259,48 +318,23 @@ export default function ImportQuestion({
                         </FormHelperText>
                     )}
                 </div>
+            </Box>
 
-                {formik.values.questions.length ? formik.values.questions.map((question, questionIndex) => (
-                    <Box className="question__box w-full pb-4 mb-4 lg:pb-8 lg:mb-8 border-b last:border-b-0 last:mb-0 last:pb-0" key={`${question.id}-${questionIndex}`} sx={{ borderColor: (theme) => theme.palette.separator.dark }}>
-                        <div className="flex justify-between items-center mb-6">
-                            <Typography variant="body2">Question {questionIndex + 1} of {formik.values.questions.length}</Typography>
-                            <div className="flex items-center gap-1">
-                                <Tooltip title="Edit Question">
-                                    <IconButton
-                                        size="small"
-                                        color="primary"
-                                        onClick={() => handleEditQuestion(questionIndex)}
-                                    >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M13.26 3.6L5.05 12.29C4.74 12.62 4.44 13.27 4.38 13.72L4.01 16.96C3.88 18.13 4.72 18.93 5.88 18.73L9.1 18.18C9.55 18.1 10.18 17.77 10.49 17.43L18.7 8.74C20.12 7.24 20.76 5.53 18.55 3.44C16.35 1.37 14.68 2.1 13.26 3.6Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M11.89 5.05005C12.32 7.81005 14.56 9.92005 17.34 10.2" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M3 22H21" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                    </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Delete Question">
-                                    <IconButton
-                                        size="small"
-                                        color="error"
-                                        onClick={() => handleDeleteQuestion(questionIndex)}
-                                    >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M21 5.98C17.67 5.65 14.32 5.48 10.98 5.48C9 5.48 7.02 5.58 5.04 5.78L3 5.98" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M8.5 4.97L8.72 3.66C8.88 2.71 9 2 10.69 2H13.31C15 2 15.13 2.75 15.28 3.67L15.5 4.97" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M18.85 9.14L18.2 19.21C18.09 20.78 18 22 15.21 22H8.79C6 22 5.91 20.78 5.8 19.21L5.15 9.14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                    </IconButton>
-                                </Tooltip>
-                            </div>
-                        </div>
-                        <Typography variant="subtitle1" className="mb-2!">{renderHtml(question.question)}</Typography>
-                        <div className="flex flex-col gap-4 md:grid md:grid-cols-2 w-full">
-                            {question.options.map((option: any, optionIndex: number) => {
-                                return renderOption(option, questionIndex, optionIndex, option.is_correct);
-                            })}
-                        </div>
-                    </Box>
-                )) : ""}
+            <Box
+                ref={scrollContainerRef}
+                className="flex-1 min-h-0 flex flex-col justify-start items-start gap-3 px-3 overflow-auto"
+            >
+                {formik.values.questions.map((question, questionIndex) => (
+                    <QuestionRow
+                        key={`${question.id}-${questionIndex}`}
+                        question={question}
+                        questionIndex={questionIndex}
+                        totalCount={formik.values.questions.length}
+                        onCorrectChange={handleCorrectAnswerChange}
+                        onEdit={handleEditQuestion}
+                        onDelete={handleDeleteQuestion}
+                    />
+                ))}
             </Box>
             <FooterAction
                 handleConfirmationChange={onClose}

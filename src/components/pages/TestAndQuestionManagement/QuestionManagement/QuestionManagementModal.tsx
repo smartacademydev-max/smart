@@ -45,29 +45,33 @@ export default function QuestionManagementModal({ open, setOpen, editData }: Pro
         >
             <DialogContent sx={{
                 background: theme.palette.primary.contrastText
-            }} className="h-full overflow-hidden">
+            }} className="h-full overflow-hidden flex flex-col">
                 {!editData && (
-                    <TabController
-                        options={[
-                            { label: "Upload Questions", value: "upload" },
-                            { label: "Add Question", value: "add" }
-                        ]}
-                        setActiveTab={setActiveTab}
-                        currentActive={activeTab}
-                    />
+                    <div className="shrink-0">
+                        <TabController
+                            options={[
+                                { label: "Upload Questions", value: "upload" },
+                                { label: "Add Question", value: "add" }
+                            ]}
+                            setActiveTab={setActiveTab}
+                            currentActive={activeTab}
+                        />
+                    </div>
                 )}
 
-                {activeTab === "upload" && !editData && (
-                    <ImportQuestion maxSize={20} onClose={handleClose} />
-                )}
+                <div className="flex-1 min-h-0 overflow-hidden">
+                    {activeTab === "upload" && !editData && (
+                        <ImportQuestion maxSize={20} onClose={handleClose} />
+                    )}
 
-                {(activeTab === "add" || editData) && (
-                    <QuestionManagementForm
-                        open={open}
-                        setOpen={setOpen}
-                        editData={editData}
-                    />
-                )}
+                    {(activeTab === "add" || editData) && (
+                        <QuestionManagementForm
+                            open={open}
+                            setOpen={setOpen}
+                            editData={editData}
+                        />
+                    )}
+                </div>
             </DialogContent>
         </Dialog>
     );
