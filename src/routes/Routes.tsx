@@ -26,6 +26,7 @@ import CourseMedia from "../components/pages/CourseManagement/Course/createCours
 import CourseCurriculumForm from "../components/pages/CourseManagement/Course/createCourse/CourseSubFields/Curriculum";
 import PlaylistDetailPage from "../components/pages/CourseManagement/Course/createCourse/CourseSubFields/PlaylistDetail";
 import CourseTest from "../components/pages/CourseManagement/Course/createCourse/CourseSubFields/Test";
+import SingleTestCategory from "../components/pages/CourseManagement/Course/createCourse/CourseSubFields/SingleTestCategory";
 import LiveClassRoot from "../components/pages/CourseManagement/LiveClass";
 import AllLiveClass from "../components/pages/CourseManagement/LiveClass/allLiveClass";
 import CreateLiveClassRoot from "../components/pages/CourseManagement/LiveClass/createLiveClass";
@@ -94,6 +95,8 @@ import QuestionAnswerLisitingLayout from "../components/pages/TestAndQuestionMan
 import SingleStudentAnswerLayout from "../components/pages/TestAndQuestionManagement/TestManagement/checkTest/SingleStudentAnswerLayout";
 import CreatTestRoot from "../components/pages/TestAndQuestionManagement/TestManagement/createTest";
 import ResultRoot from "../components/pages/TestAndQuestionManagement/TestManagement/result";
+import TextCategoryManagementRoot from "../components/pages/TestAndQuestionManagement/TestManagement/testCategory";
+import AllTestCategory from "../components/pages/TestAndQuestionManagement/TestManagement/testCategory/allTestCategory";
 import ViewTestRoot from "../components/pages/TestAndQuestionManagement/TestManagement/viewTest";
 import TicketManagementRoot from "../components/pages/TicketManagement";
 import TicketTypes from "../components/pages/TicketManagement/TicketTypes";
@@ -164,6 +167,7 @@ const router = createBrowserRouter([
 							{ path: PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.PLAYLIST.ROOT(), element: <CourseMedia /> },
 							{ path: PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.PLAYLIST.VIEW_PLAYLIST.ROOT(), element: <PlaylistDetailPage /> },
 							{ path: PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.TEST.ROOT(), element: <CourseTest /> },
+							{ path: PATH.COURSE_MANAGEMENT.COURSES.EDIT_COURSE.TEST.TEST_CATEGORY.ROOT(), element: <SingleTestCategory /> },
 						]
 					},
 					{ path: PATH.COURSE_MANAGEMENT.COURSES.ANALYTICS.ROOT(), element: <CourseAnalyticsRootLayout /> },
@@ -264,6 +268,15 @@ const router = createBrowserRouter([
 							},
 						],
 					},
+					{
+						element: <TextCategoryManagementRoot />,
+						children: [
+							{
+								path: PATH.TEST_QUESTION_MANAGEMENT.TEST.TEST_CATEGORY.ROOT,
+								element: <AllTestCategory />
+							}
+						]
+					}
 				],
 			},
 			{

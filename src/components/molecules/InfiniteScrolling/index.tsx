@@ -18,7 +18,6 @@ interface InfiniteScrollingProps {
     itemIdKey?: string;
     placeholder?: string;
     scrollableId?: string;
-    /** Dot-notation path to group items by (e.g. "label.name"). Falls back to grouping by created_at date. */
     groupLabelKey?: string;
 }
 
@@ -225,66 +224,66 @@ export default function InfiniteScrolling({
                                     </Box>
                                 )}
                                 {Object.entries(groupedData).map(([groupKey, items]) => {
-                                const groupIds = items.map(item => item[itemIdKey]);
-                                const allGroupSelected = groupIds.every(id => selectedItems.includes(id));
-                                const someGroupSelected = groupIds.some(id => selectedItems.includes(id));
+                                    const groupIds = items.map(item => item[itemIdKey]);
+                                    const allGroupSelected = groupIds.every(id => selectedItems.includes(id));
+                                    const someGroupSelected = groupIds.some(id => selectedItems.includes(id));
 
-                                return (
-                                    <Box key={groupKey}>
-                                        {/* Group Label */}
-                                        <Box className="flex items-center gap-2 py-1 px-1">
-                                            {groupLabelKey && (
-                                                <Checkbox
-                                                    size="small"
-                                                    checked={allGroupSelected}
-                                                    indeterminate={!allGroupSelected && someGroupSelected}
-                                                    onChange={() => handleGroupToggle(items)}
-                                                    sx={{ p: 0 }}
-                                                />
-                                            )}
-                                            <Typography variant="subtitle2" fontWeight={600} color="text.dark" className="text-nowrap">
-                                                {groupKey}
-                                            </Typography>
-                                            <Divider sx={{
-                                                color: (theme) => theme.palette.separator.dark,
-                                                // width: "100%",
-                                                my: "4px"
-                                            }} />
-                                        </Box>
-
-                                        {items.map((item) => {
-                                            const itemId = item[itemIdKey];
-                                            const stableKey = uuidMap[itemId];
-                                            const isSelected = selectedItems.includes(itemId);
-
-                                            return (
-                                                <Box
-                                                    key={stableKey}
-                                                    className="item__wrapper flex flex-col "
-                                                >
-                                                    <FormControlLabel
-                                                        sx={{ m: 0, p: .5, width: "100%" }}
-                                                        control={
-                                                            <Checkbox
-                                                                checked={isSelected}
-                                                                disabled={!isSelected && isMaxReached}
-                                                                onChange={() => handleToggle(itemId)}
-                                                            />
-                                                        }
-                                                        label={
-                                                            <Box>
-                                                                <Typography variant="subtitle1">
-                                                                    {renderHtml(item[itemLabelKey])}
-                                                                </Typography>
-                                                            </Box>
-                                                        }
+                                    return (
+                                        <Box key={groupKey}>
+                                            {/* Group Label */}
+                                            <Box className="flex items-center gap-2 py-1 px-1">
+                                                {groupLabelKey && (
+                                                    <Checkbox
+                                                        size="small"
+                                                        checked={allGroupSelected}
+                                                        indeterminate={!allGroupSelected && someGroupSelected}
+                                                        onChange={() => handleGroupToggle(items)}
+                                                        sx={{ p: 0 }}
                                                     />
-                                                </Box>
-                                            );
-                                        })}
-                                    </Box>
-                                );
-                            })}
+                                                )}
+                                                <Typography variant="subtitle2" fontWeight={600} color="text.dark" className="text-nowrap">
+                                                    {groupKey}
+                                                </Typography>
+                                                <Divider sx={{
+                                                    color: (theme) => theme.palette.separator.dark,
+                                                    // width: "100%",
+                                                    my: "4px"
+                                                }} />
+                                            </Box>
+
+                                            {items.map((item) => {
+                                                const itemId = item[itemIdKey];
+                                                const stableKey = uuidMap[itemId];
+                                                const isSelected = selectedItems.includes(itemId);
+
+                                                return (
+                                                    <Box
+                                                        key={stableKey}
+                                                        className="item__wrapper flex flex-col "
+                                                    >
+                                                        <FormControlLabel
+                                                            sx={{ m: 0, p: .5, width: "100%" }}
+                                                            control={
+                                                                <Checkbox
+                                                                    checked={isSelected}
+                                                                    disabled={!isSelected && isMaxReached}
+                                                                    onChange={() => handleToggle(itemId)}
+                                                                />
+                                                            }
+                                                            label={
+                                                                <Box>
+                                                                    <Typography variant="subtitle1">
+                                                                        {renderHtml(item[itemLabelKey])}
+                                                                    </Typography>
+                                                                </Box>
+                                                            }
+                                                        />
+                                                    </Box>
+                                                );
+                                            })}
+                                        </Box>
+                                    );
+                                })}
                             </>
                         )}
                     </InfiniteScroll>

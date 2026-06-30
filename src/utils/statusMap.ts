@@ -10,6 +10,7 @@ export function statusMap<T extends string>(map: Record<T, StatusVariant>) {
 
 import type { DeviceRequestStatus } from "../types/deviceReset";
 import type { GorkhapatraTypes } from "../types/gorkhapatra";
+import type { TestTypeProps } from "../types/question";
 import type { TicketPriority, TicketStatus } from "../types/ticket";
 import type { TransactionCourseStatus } from "../types/transaction";
 
@@ -56,6 +57,11 @@ export const getTicketPriorityVariant = statusMap<TicketPriority>({
     urgent: "error",
     medium: "warning",
     high: "info",
+});
+export const getTestTypeVariant = statusMap<TestTypeProps>({
+    mcq: "primary",
+    omr: "error",
+    subjective: "warning",
 });
 
 export const RequestStatusColor = statusMap<DeviceRequestStatus>({

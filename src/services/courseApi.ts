@@ -2,7 +2,7 @@ import type { CurriculumType } from "../components/pages/CourseManagement/Course
 import type { CategoryFilterParams, QueryParams } from "../types";
 import type { AnalyticsProps, courseClonePropertyProps, CourseList, CourseProps, courseTabType, CurriculumList, CurriculumProps } from "../types/course";
 import type { MediaList, PlaylistDetail, PlaylistListing } from "../types/media";
-import type { TestList } from "../types/question";
+import type { TestCategoryListing, TestList } from "../types/question";
 import type { TransactionList } from "../types/transaction";
 import type { GlobalResponse } from "../types/user";
 import { buildQueryParams } from "../utils/buildQueryParams";
@@ -275,8 +275,64 @@ export const courseApi = baseApi.injectEndpoints({
             invalidatesTags: (_result, _error,) => [
                 { type: "Test", id: "LIST" }
             ],
-
         }),
+        assignTestAndTestCategoryToCourse: builder.mutation<GlobalResponse, { course_id: number | null; test_ids: number[], test_category_id: number }>({
+            query: (body) => {
+                return {
+                    url: `/admin/test-category`,
+                    method: "POST",
+                    body
+                };
+            },
+            invalidatesTags: (_result, _error,) => [
+                { type: "Test", id: "LIST" },
+                { type: "TestCategory", id: "LIST" },
+            ],
+        }),
+        detachTestCategoryToCourse: builder.mutation<GlobalResponse, { course_id: number | null; test_category_ids: number[] }>({
+            query: (body) => {
+                return {
+                    url: `/admin/test-category/detach`,
+                    method: "DELETE",
+                    body
+                };
+            },
+            invalidatesTags: (_result, _error,) => [
+                { type: "TestCategory", id: "LIST" }
+            ],
+        }),
+        useGetAllTestCategoryInACourse: builder.query<TestCategoryListing, QueryParams & { id: number; }>({
+            query: ({ id, pageIndex, pageSize, search }) => ({
+                url: `course/${id}/test-category?${buildQueryParams({
+                    page: pageIndex,
+                    page_size: pageSize,
+                    search: search,
+                })}`,
+                method: "GET",
+            }),
+            providesTags: (result) =>
+                result?.data?.data
+                    ? [
+                        ...result.data.data.map((course) => ({ type: "TestCategory" as const, id: course.id })),
+                        { type: "TestCategory", id: "LIST" },
+                    ]
+                    : [{ type: "TestCategory", id: "LIST" }],
+        }),
+        getSelectedTestBasedOnTestCategoryAndCourseId: builder.query<TestList, QueryParams & { course_id: number; test_category_id: number, search?: string; }>({
+            query: ({ course_id, test_category_id, pageIndex, pageSize, search }) => ({
+                url: `course/${course_id}/test-category/${test_category_id}${buildQueryParams({
+                    page: pageIndex,
+                    page_size: pageSize,
+                    search: search,
+                })}`,
+                method: "GET",
+            }),
+            providesTags: [
+                { type: "TestCategory", id: "LIST" },
+                { type: "Test", id: "LIST" },
+            ]
+        }),
+
         removeTestToCourse: builder.mutation<GlobalResponse, { id: number | null; body: number[] }>({
             query: ({ id, body }) => {
                 return {
@@ -368,4 +424,8 @@ export const {
     useArchiveEnrolledStudentMutation,
     useGetCourseMediaPlaylistQuery,
     useGetSinglePlaylistQuery,
+    useAssignTestAndTestCategoryToCourseMutation,
+    useGetSelectedTestBasedOnTestCategoryAndCourseIdQuery,
+    useUseGetAllTestCategoryInACourseQuery,
+    useDetachTestCategoryToCourseMutation
 } = courseApi;

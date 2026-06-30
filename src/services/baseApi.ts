@@ -66,6 +66,7 @@ export const baseApi = createApi({
         "CouponCode",
         "NotificationStats",
         "NotificationEvents",
+        "TestCategory"
     ],
     endpoints: () => ({}),
 });

@@ -98,7 +98,7 @@ export default function PrimaryMenu({ collapsed = false }: PrimaryMenuProps) {
         location.pathname.startsWith(PATH.TEST_QUESTION_MANAGEMENT.TEST.ROOT) ||
         location.pathname.startsWith(PATH.TEST_QUESTION_MANAGEMENT.QUESTION_LABELS.ROOT) ||
         location.pathname.startsWith(PATH.SET.ROOT) ||
-        location.pathname.startsWith(PATH.OMR.ROOT);
+        location.pathname.startsWith(PATH.OMR.ROOT) || location.pathname.startsWith(PATH.TEST_QUESTION_MANAGEMENT.TEST.TEST_CATEGORY.ROOT);
 
     const isOmrActive = () => location.pathname.startsWith(PATH.OMR.ROOT);
 
@@ -309,6 +309,13 @@ export default function PrimaryMenu({ collapsed = false }: PrimaryMenuProps) {
                                 </CAN>
 
                                 <CAN permissions={["add_tests", "edit_tests", "delete_tests", "view_tests"]}>
+                                    <ListItem disablePadding className="menu__item">
+                                        <ListItemButton
+                                            onClick={() => navigate(PATH.TEST_QUESTION_MANAGEMENT.TEST.TEST_CATEGORY.ROOT)}
+                                            className={location.pathname.startsWith(PATH.TEST_QUESTION_MANAGEMENT.TEST.TEST_CATEGORY.ROOT) ? "active-nested" : ""}>
+                                            <ListItemText primary={t("menus.test_question_management.test.test_category.root")} />
+                                        </ListItemButton>
+                                    </ListItem>
                                     <ListItem disablePadding className="menu__item">
                                         <ListItemButton
                                             onClick={() => navigate(PATH.TEST_QUESTION_MANAGEMENT.TEST.ROOT)}

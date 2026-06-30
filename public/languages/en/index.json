@@ -64,6 +64,9 @@
                 },
                 "omr": {
                     "root": "OMR Sheet"
+                },
+                "test_category": {
+                    "root": "Test Category"
                 }
             }
         },

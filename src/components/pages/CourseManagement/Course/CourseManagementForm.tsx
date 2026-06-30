@@ -147,7 +147,6 @@ export default function CourseManagementForm() {
     const { t } = useTranslation();
     const location = useLocation();
     const pathname = location.pathname;
-    console.log(pathname)
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const { id } = useParams();
@@ -159,6 +158,7 @@ export default function CourseManagementForm() {
 
     const getInitialTab = (): courseTabType => {
         const pathSegments = pathname.split('/').filter(Boolean);
+        const validTabs: courseTabType[] = ["overview", "curriculum", "videos", "notes", "test", "audios"];
         const playlistIdx = pathSegments.indexOf('playlist');
         if (playlistIdx > 0) {
             const type = pathSegments[playlistIdx - 1];
@@ -167,14 +167,17 @@ export default function CourseManagementForm() {
         }
         const lastSegment = pathSegments[pathSegments.length - 1];
         if (lastSegment === id) return "overview";
-        const validTabs: courseTabType[] = ["overview", "curriculum", "videos", "notes", "test", "audios"];
-        return validTabs.includes(lastSegment as courseTabType) ? (lastSegment as courseTabType) : "overview";
+        const courseIdIdx = id ? pathSegments.indexOf(id) : -1;
+        const courseSubPath = courseIdIdx >= 0 ? pathSegments.slice(courseIdIdx + 1) : pathSegments;
+        const matchedTab = courseSubPath.find((segment) =>
+            validTabs.includes(segment as courseTabType)
+        );
+        return matchedTab ? (matchedTab as courseTabType) : "overview";
     };
 
     const [activeTab, setActiveTab] = React.useState<courseTabType>(getInitialTab());
     const [searchTeacher, setSearchTeacher] = React.useState("")
 
-    // Update activeTab when pathname changes
     React.useEffect(() => {
         setActiveTab(getInitialTab());
     }, [pathname]);

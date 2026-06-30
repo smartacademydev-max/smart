@@ -56,7 +56,10 @@ export const PATH = {
 
 				TEST: {
 					ROOT: (id?: number) =>
-						id ? `/courses/${id}/test` : "/courses/:id/test"
+						id ? `/courses/${id}/test` : "/courses/:id/test",
+					TEST_CATEGORY: {
+						ROOT: (id?: number, test_category_id?: number) => id && test_category_id ? `/courses/${id}/test/test-category/${test_category_id}` : "/courses/:id/test/test-category/:test_category_id",
+					}
 				},
 
 				AUDIOS: {
@@ -230,6 +233,18 @@ export const PATH = {
 			},
 			INDIVIDUAL_TEST: {
 				ROOT: "/test/individual"
+			},
+			TEST_CATEGORY: {
+				ROOT: "/test/category",
+				CREATE_TEST_CATEGORY: {
+					ROOT: "/test/category/create-test-category"
+				},
+				EDIT_TEST_CATEGORY: {
+					ROOT: (id?: number) => id ? `test/category/${id}/edit` : "/test/category/:id/edit"
+				},
+				VIEW_TEST_CATEGORY: {
+					ROOT: (id?: number) => id ? `test/category/${id}/view` : "/test/category/:id/view"
+				}
 			}
 		}
 	},

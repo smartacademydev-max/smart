@@ -1,5 +1,6 @@
 import type { CategoryFilterParams, QueryParams } from "../types";
-import type { OmrFormatList, OmrFormatProps, OmrList, OMRType, QuestionLabelDetailResponse, QuestionLabelFormProps, QuestionLabelList, QuestionList, QuestionProps, QuestionTypeProps, SetList, SetProps, StudentSubmitTestList, StudentSubmitTestProps, TestList, TestOverviewResponse, TestProps, TestTypeProps } from "../types/question";
+
+import type { OmrFormatList, OmrFormatProps, OmrList, OMRType, QuestionLabelDetailResponse, QuestionLabelFormProps, QuestionLabelList, QuestionList, QuestionProps, QuestionTypeProps, SetList, SetProps, StudentSubmitTestList, StudentSubmitTestProps, TestCategory, TestCategoryListing, TestList, TestOverviewResponse, TestProps, TestTypeProps } from "../types/question";
 import type { TransactionList } from "../types/transaction";
 import type { GlobalResponse } from "../types/user";
 import { buildQueryParams } from "../utils/buildQueryParams";
@@ -581,7 +582,78 @@ export const questionApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: [{ type: "Questions", id: "LIST" }],
         }),
-        
+        getAllTestCategory: builder.query<TestCategoryListing, QueryParams>({
+            query: ({ pageIndex, pageSize, search }) => {
+                const params = new URLSearchParams();
+
+                if (pageIndex) params.append("page", pageIndex.toString());
+                if (pageSize) params.append("page_size", pageSize.toString());
+                if (search) params.append("search", search);
+
+                return {
+                    url: `/admin/test/category?${params.toString()}`,
+                    method: "GET",
+                };
+            },
+            providesTags: (result) =>
+                result?.data?.data
+                    ? [
+                        ...result.data.data.map((pos) => ({
+                            type: "TestCategory" as const,
+                            id: pos.id,
+                        })),
+                        { type: "TestCategory", id: "LIST" },
+                    ]
+                    : [{ type: "TestCategory", id: "LIST" }],
+        }),
+
+        getTestCategoryById: builder.query<{ data: TestCategory }, { id: number }>({
+            query: ({ id }) => ({
+                url: `/admin/test/category/${id}`,
+                method: "GET",
+            }),
+            providesTags: (_res, _err, { id }) => [{ type: "TestCategory", id }],
+        }),
+
+        createTestCategory: builder.mutation<{ data: TestCategory; message: string }, FormData>({
+            query: (body) => ({
+                url: "/admin/test/category",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: [{ type: "TestCategory", id: "LIST" }],
+        }),
+
+        updateTestCategory: builder.mutation<
+            { data: TestCategory; message: string },
+            { id: string; body: FormData }
+        >({
+            query: ({ id, body }) => ({
+                url: `/admin/test/category/${id}`,
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: (_result, _error, { id }) => [
+                { type: "TestCategory", id },
+                { type: "TestCategory", id: "LIST" },
+            ],
+        }),
+
+        deleteTestCategory: builder.mutation<GlobalResponse, { body: string[] }>({
+            query: ({ body }) => ({
+                url: `/admin/test/category`,
+                method: "DELETE",
+                body: { test_category_ids: body },
+            }),
+            invalidatesTags: [{ type: "TestCategory", id: "LIST" }],
+        }),
+        getCourseTest: builder.query<TestList, QueryParams & { id: number }>({
+            query: ({ id, pageIndex, pageSize, search }) => ({
+                url: `/course/${id}/test?${buildQueryParams({ page: pageIndex, page_size: pageSize, search })}`,
+                method: "GET",
+            }),
+            providesTags: (_result, _error, { id }) => [{ type: "Course" as const, id }],
+        }),
     })
 });
 
@@ -645,4 +717,9 @@ export const {
     useAddQuestionsToLabelMutation,
     useRemoveQuestionsFromLabelMutation,
     useBulkUpdateQuestionMarksMutation,
+    useGetAllTestCategoryQuery,
+    useGetTestCategoryByIdQuery,
+    useCreateTestCategoryMutation,
+    useUpdateTestCategoryMutation,
+    useDeleteTestCategoryMutation
 } = questionApi;

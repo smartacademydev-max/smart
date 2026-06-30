@@ -659,7 +659,7 @@ export default function TestManagementForm() {
                         </div>
                         <div className="col-span-1">
                             <div className="input__field">
-                                <InputLabel className="required">Select Courses {formik.values.course_ids.length ? (formik.values.course_ids.length) : ""} <Typography variant="caption" color="text.middle">(Select the course you want to add test)</Typography></InputLabel>
+                                <InputLabel >Select Courses {formik.values.course_ids.length ? (formik.values.course_ids.length) : ""} <Typography variant="caption" color="text.middle">(Select the course you want to add test)</Typography></InputLabel>
                                 <OutlinedInput
                                     fullWidth
                                     placeholder="Search Course"

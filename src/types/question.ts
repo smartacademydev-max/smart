@@ -409,3 +409,26 @@ export const OmrFormatInitialState: OmrFormatProps = {
     correct_method_image: null,
     correct_method_image_url: "",
 };
+
+export interface TestCategory {
+    id?: number;
+    name: string;
+    slug: string;
+    image: File | null;
+    image_url: string | null;
+    description?: string;
+}
+
+export const TestCategoryInitialState: TestCategory = {
+    name: "",
+    slug: "",
+    image: null,
+    image_url: "",
+    description: ""
+}
+export interface TestCategoryListing {
+    data: {
+        data: TestCategory[];
+        pagination: Pagination;
+    }
+}
