@@ -414,12 +414,11 @@ export default function AssignTestDialog({ open, setOpen, testCategoryId }: Prop
     const [selectedCategory, setSelectedCategory] = useState<TestCategory | null>(null);
     const [testCategoryQp] = useState({ pageIndex: 1, pageSize: PAGE_SIZE });
 
-    // --- All Tests: pagination + search + accumulated list ---
     const [testPage, setTestPage] = useState(1);
     const [testSearch, setTestSearch] = useState("");
     const [allTestsList, setAllTestsList] = useState<TestProps[]>([]);
 
-    // --- Selected Tests (pre-assigned for the chosen category): pagination + search + accumulated list ---
+
     const [selectedTestPage, setSelectedTestPage] = useState(1);
     const [selectedTestSearch, setSelectedTestSearch] = useState("");
     const [preAssignedList, setPreAssignedList] = useState<TestProps[]>([]);
@@ -428,7 +427,9 @@ export default function AssignTestDialog({ open, setOpen, testCategoryId }: Prop
         pageIndex: testPage,
         pageSize: PAGE_SIZE,
         search: testSearch,
-    });
+        course_id: Number(id),
+        test_category_id: Number(selectedCategory?.id)
+    }, { skip: !id || !selectedCategory?.id });
 
     const { data: testCategory } = useGetAllTestCategoryQuery({
         pageIndex: testCategoryQp.pageIndex,
@@ -509,8 +510,7 @@ export default function AssignTestDialog({ open, setOpen, testCategoryId }: Prop
         },
     });
 
-    // --- Pre-select tests already assigned to this category, without clobbering
-    // user's in-progress selections. Idempotent across paginated loads (Set union). ---
+
     useEffect(() => {
         if (preAssignedList.length > 0) {
             const existingIds = preAssignedList.map((t) => Number(t.id));

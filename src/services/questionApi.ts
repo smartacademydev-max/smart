@@ -94,8 +94,8 @@ export const questionApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: [{ type: "Test", id: "LIST" }, { type: "Set", id: "LIST" }]
         }),
-        getAllTest: builder.query<TestList, QueryParams & { type?: TestTypeProps; days?: number | null; categoryFilter?: CategoryFilterParams; }>({
-            query: ({ pageIndex, pageSize, search, type, days, startDate, endDate, categoryFilter }) => {
+        getAllTest: builder.query<TestList, QueryParams & { type?: TestTypeProps; days?: number | null; categoryFilter?: CategoryFilterParams; course_id?: number; test_category_id?: number }>({
+            query: ({ pageIndex, pageSize, search, type, days, startDate, endDate, categoryFilter, course_id, test_category_id }) => {
                 const queryString = buildQueryParams({
                     page: pageIndex,
                     page_size: pageSize,
@@ -108,6 +108,8 @@ export const questionApi = baseApi.injectEndpoints({
                     categories: categoryFilter?.category,
                     sub_categories: categoryFilter?.sub_category,
                     positions: categoryFilter?.positions,
+                    course_id,
+                    test_category_id
                 });
                 return {
                     url: `/admin/test?${queryString}`,

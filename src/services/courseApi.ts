@@ -320,7 +320,7 @@ export const courseApi = baseApi.injectEndpoints({
         }),
         getSelectedTestBasedOnTestCategoryAndCourseId: builder.query<TestList, QueryParams & { course_id: number; test_category_id: number, search?: string; }>({
             query: ({ course_id, test_category_id, pageIndex, pageSize, search }) => ({
-                url: `course/${course_id}/test-category/${test_category_id}${buildQueryParams({
+                url: `course/${course_id}/test-category/${test_category_id}?${buildQueryParams({
                     page: pageIndex,
                     page_size: pageSize,
                     search: search,
