@@ -374,6 +374,9 @@ export const PATH = {
 			SMS_GATEWAY: {
 				ROOT: "/settings/api/sms-gateway"
 			},
+			CACHE: {
+				ROOT: "/settings/api/cache"
+			},
 		},
 	},
 	ACTIVITY_LOG: {

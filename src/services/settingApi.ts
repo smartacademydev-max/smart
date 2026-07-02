@@ -197,6 +197,9 @@ export const settingApi = baseApi.injectEndpoints({
             query: (body) => ({ url: `/admin/settings/api/sms-gateway`, method: "POST", body }),
             invalidatesTags: ["ApiSetting"],
         }),
+        clearServerCache: builder.mutation<GlobalResponse, void>({
+            query: () => ({ url: `/admin/settings/cache-refresh`, method: "POST" }),
+        }),
     }),
 });
 
@@ -231,4 +234,5 @@ export const {
     useToggleKhaltiActiveMutation,
     useGetSmsGatewaySettingsQuery,
     useUpdateSmsGatewaySettingsMutation,
+    useClearServerCacheMutation,
 } = settingApi;

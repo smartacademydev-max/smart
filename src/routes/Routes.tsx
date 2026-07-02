@@ -65,6 +65,7 @@ import RoleManagementRoot from "../components/pages/RoleManagement";
 import AllRoles from "../components/pages/RoleManagement/allRoles";
 import CreateRoleRoot from "../components/pages/RoleManagement/createRole";
 import SettingRoot from "../components/pages/Setting";
+import CacheSettingRoot from "../components/pages/Setting/ApiSetting/CacheSetting";
 import EsewaSettingRoot from "../components/pages/Setting/ApiSetting/Esewa";
 import KhaltiSettingRoot from "../components/pages/Setting/ApiSetting/Khalti";
 import SmsGatewayRoot from "../components/pages/Setting/ApiSetting/SmsGateway";
@@ -427,6 +428,7 @@ const router = createBrowserRouter([
 					{ path: PATH.SETTINGS.API.ESEWA.ROOT, element: <EsewaSettingRoot /> },
 					{ path: PATH.SETTINGS.API.KHALTI.ROOT, element: <KhaltiSettingRoot /> },
 					{ path: PATH.SETTINGS.API.SMS_GATEWAY.ROOT, element: <SmsGatewayRoot /> },
+					{ path: PATH.SETTINGS.API.CACHE.ROOT, element: <CacheSettingRoot /> },
 					{ path: PATH.SETTINGS.SYSTEM.CONTROLS.ROOT, element: <ControlsRoot /> },
 				],
 			},

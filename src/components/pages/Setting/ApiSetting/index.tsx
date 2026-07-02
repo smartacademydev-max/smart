@@ -3,13 +3,14 @@ import { PATH } from "../../../../routes/PATH";
 import PageHeader from "../../../organism/PageHeader";
 import TabController from "../../../molecules/TabController";
 
-type ApiTab = "zoom" | "esewa" | "khalti" | "sms-gateway";
+type ApiTab = "zoom" | "esewa" | "khalti" | "sms-gateway" | "cache";
 
 const tabs: { label: string; value: ApiTab; redirect_url: string }[] = [
     { label: "Zoom Account", value: "zoom", redirect_url: PATH.SETTINGS.API.ZOOM.ROOT },
     { label: "eSewa Payment", value: "esewa", redirect_url: PATH.SETTINGS.API.ESEWA.ROOT },
     { label: "Khalti Payment", value: "khalti", redirect_url: PATH.SETTINGS.API.KHALTI.ROOT },
     { label: "SMS Gateway", value: "sms-gateway", redirect_url: PATH.SETTINGS.API.SMS_GATEWAY.ROOT },
+    { label: "Server Cache", value: "cache", redirect_url: PATH.SETTINGS.API.CACHE.ROOT },
 ];
 
 export default function ApiSettingRoot() {

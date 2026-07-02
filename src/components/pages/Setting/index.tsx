@@ -8,7 +8,7 @@ import {
     Card,
     Category, Devices, DirectboxNotif, Global,
     Lock, LoginCurve, MessageText1, Mobile, Profile, Setting2,
-    Video, Wallet, Gift, ToggleOff,
+    Video, Wallet, Gift, ToggleOff, ArrowRotateRight,
 } from "iconsax-reactjs";
 import React, { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -45,6 +45,7 @@ const MENU_GROUPS = [
             { label: "eSewa Payment", url: PATH.SETTINGS.API.ESEWA.ROOT, icon: Wallet },
             { label: "Khalti Payment", url: PATH.SETTINGS.API.KHALTI.ROOT, icon: Card },
             { label: "SMS Gateway", url: PATH.SETTINGS.API.SMS_GATEWAY.ROOT, icon: Mobile },
+            { label: "Server Cache", url: PATH.SETTINGS.API.CACHE.ROOT, icon: ArrowRotateRight },
         ],
     },
 ];
