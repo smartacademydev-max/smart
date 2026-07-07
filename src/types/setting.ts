@@ -77,6 +77,8 @@ export interface SocialFormItem extends SocialItem {
     icon: File | null;
 }
 
+export type SmtpHealthCheckUnit = "hour" | "day" | "week";
+
 export interface SmtpSettingProps {
     mailer: "smtp";
     host: string;
@@ -86,6 +88,27 @@ export interface SmtpSettingProps {
     password: string;
     from_name: string;
     from_email: string;
+    test_email?: string;
+    health_check_enabled?: boolean;
+    health_check_interval_value?: number;
+    health_check_interval_unit?: SmtpHealthCheckUnit;
+}
+
+export interface SmtpSettingResponse extends SmtpSettingProps {
+    is_working?: boolean | null;
+    last_tested_at?: string | null;
+}
+
+export interface TestConnectionResult {
+    provider_status_code: number;
+    provider_response_body: string;
+    sent_at: string;
+}
+
+export interface TestSmtpConnectionPayload {
+    target_email: string;
+    subject?: string;
+    body?: string;
 }
 
 export type GlobalDiscountApplicableTo = "expiry" | "subscription" | "both";

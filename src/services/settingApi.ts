@@ -12,6 +12,9 @@ import type {
     LoginTypeSettingProps,
     SmsGatewaySettingProps,
     SmtpSettingProps,
+    SmtpSettingResponse,
+    TestConnectionResult,
+    TestSmtpConnectionPayload,
     ThemeSettingProps,
     ZoomAccount,
     ZoomAccountCreateProps,
@@ -93,13 +96,23 @@ export const settingApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: ["Theme"],
         }),
-        getSmtpSettings: builder.query<GlobalResponse & { data: SmtpSettingProps }, void>({
+        getSmtpSettings: builder.query<GlobalResponse & { data: SmtpSettingResponse }, void>({
             query: () => ({ url: `/admin/settings/smtp`, method: "GET" }),
             providesTags: ["SmtpSetting"],
         }),
         updateSmtpSettings: builder.mutation<GlobalResponse, SmtpSettingProps>({
             query: (body) => ({ url: `/admin/settings/smtp`, method: "POST", body }),
             invalidatesTags: ["SmtpSetting"],
+        }),
+        testSmtpConnection: builder.mutation<
+            GlobalResponse & { data: TestConnectionResult },
+            TestSmtpConnectionPayload
+        >({
+            query: (body) => ({
+                url: `/admin/settings/api/smtp/test`,
+                method: "POST",
+                body,
+            }),
         }),
         getCourseSettings: builder.query<GlobalResponse & { data: CourseSettingProps }, void>({
             query: () => ({ url: `/admin/settings/course`, method: "GET" }),
@@ -234,5 +247,6 @@ export const {
     useToggleKhaltiActiveMutation,
     useGetSmsGatewaySettingsQuery,
     useUpdateSmsGatewaySettingsMutation,
+    useTestSmtpConnectionMutation,
     useClearServerCacheMutation,
 } = settingApi;

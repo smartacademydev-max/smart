@@ -142,7 +142,6 @@ export default function LinkedDevices() {
                 loading={isLoading}
                 data={data?.data?.data || []}
                 columns={columns}
-                maxHeight="calc(100vh - 475px)"
             />
             <TablePagination
                 qp={qp}
@@ -152,4 +151,3 @@ export default function LinkedDevices() {
         </div>
     );
 }
-
