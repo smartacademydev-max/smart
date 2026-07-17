@@ -51,6 +51,14 @@ export const TransactionInitialState: TransactionPayload = {
 
 export type TransactionCourseStatus = "purchase" | "free_trial_expired" | "free_trial" | "purchase_expired";
 
+export interface InstallmentSummary {
+    total_count: number;
+    paid_count: number;
+    outstanding_amount: number;
+    next_due_date: string | null;
+    has_overdue: boolean;
+}
+
 export interface TransactionResponse extends TransactionPayload {
     name: string;
     added_by: string;
@@ -58,7 +66,9 @@ export interface TransactionResponse extends TransactionPayload {
     email: string;
     contact: string;
     created_at: string;
-    course_status?: TransactionCourseStatus
+    course_status?: TransactionCourseStatus;
+    is_installment?: boolean;
+    installment_summary?: InstallmentSummary | null;
 }
 
 export interface TransactionList {

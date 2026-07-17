@@ -36,6 +36,11 @@ export const getTransactionStatus = statusMap<"failed" | "success" | "pending">(
     pending: "warning",
 });
 
+export const getPaymentTypeVariant = statusMap<"installment" | "paid">({
+    installment: "warning",
+    paid: "success",
+});
+
 export const getCourseStatus = (progress?: number): StatusVariant => {
     if (progress === 0) return "error";
     if (progress === 100) return "success";

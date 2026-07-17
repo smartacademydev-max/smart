@@ -11,6 +11,8 @@ import { useCourseFilter } from '../../../../store/useCourseFilter';
 import { DeviceFilter, paymentOptions, StatusFilter, type DeviceType, type Status } from '../../../../types';
 import type { EnrollmentType, TransactionResponse } from '../../../../types/transaction';
 import { formatDate } from '../../../../utils/dateFormat';
+import { getPaymentTypeVariant } from '../../../../utils/statusMap';
+import StatusPill from '../../../atoms/StatusPill';
 import Actions from '../../../molecules/Action';
 import TabController from '../../../molecules/TabController';
 import CustomTable from '../../../molecules/Table';
@@ -233,6 +235,14 @@ export default function AllTransaction({ open, setOpen }: Props) {
                     {row.original.payment_method || "N/A"}
                 </Typography>
             ),
+        },
+        {
+            header: "Payment Type",
+            accessorKey: "is_installment",
+            cell: ({ row }) => {
+                const type = row.original.is_installment ? "installment" : "paid";
+                return <StatusPill status={type} variant={getPaymentTypeVariant(type)} />;
+            },
         },
         {
             header: "Created Date",
