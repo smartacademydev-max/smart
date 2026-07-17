@@ -1,6 +1,8 @@
 import { Autocomplete, Box, Button, Checkbox, CircularProgress, Dialog, DialogContent, Divider, FormControlLabel, IconButton, InputLabel, OutlinedInput, TextField, Typography, useTheme } from "@mui/material";
 import type { ColumnDef } from "@tanstack/react-table";
+import dayjs from "dayjs";
 import { CloseCircle } from "iconsax-reactjs";
+import MakuraDatePicker from "../../atoms/MakuraDatePicker";
 import { useFormik } from "formik";
 import { useEffect, useMemo, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
@@ -771,15 +773,15 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
 
                                                 <div className="input_field">
                                                     <InputLabel className="required">First Due Date</InputLabel>
-                                                    <OutlinedInput
-                                                        fullWidth
-                                                        type="date"
-                                                        name="installment_start_date"
-                                                        inputProps={{ min: todayStr }}
-                                                        value={formik.values.installment_start_date}
-                                                        onChange={formik.handleChange}
-                                                        onBlur={formik.handleBlur}
-                                                        error={formik.touched.installment_start_date && Boolean(formik.errors.installment_start_date)}
+                                                    <MakuraDatePicker
+                                                        value={formik.values.installment_start_date ? dayjs(formik.values.installment_start_date) : null}
+                                                        onChange={(newValue) => {
+                                                            formik.setFieldValue("installment_start_date", newValue ? newValue.format("YYYY-MM-DD") : "");
+                                                            formik.setFieldTouched("installment_start_date", true);
+                                                        }}
+                                                        minDate={dayjs(todayStr)}
+                                                        placeholder="Select date"
+                                                        error={Boolean(formik.touched.installment_start_date && formik.errors.installment_start_date)}
                                                     />
                                                     {formik.touched.installment_start_date && formik.errors.installment_start_date && (
                                                         <Typography color="error" variant="caption">{formik.errors.installment_start_date}</Typography>
@@ -827,11 +829,11 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                                                                 )}
                                                             </div>
                                                             <div className="flex-1">
-                                                                <OutlinedInput
-                                                                    fullWidth
-                                                                    type="date"
-                                                                    value={row.due_date}
-                                                                    onChange={(e) => updateInstallmentRow(i, "due_date", e.target.value)}
+                                                                <MakuraDatePicker
+                                                                    value={row.due_date ? dayjs(row.due_date) : null}
+                                                                    onChange={(newValue) => updateInstallmentRow(i, "due_date", newValue ? newValue.format("YYYY-MM-DD") : "")}
+                                                                    minDate={dayjs(todayStr)}
+                                                                    placeholder="Due date"
                                                                     error={Boolean(rowTouched?.due_date && rowErr?.due_date)}
                                                                 />
                                                                 {rowTouched?.due_date && rowErr?.due_date && (
