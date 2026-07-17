@@ -5,6 +5,23 @@ export type PaymentMethodProps = "esewa" | "khalti" | "cash" | "fonepay"
 export type PaymentStatusProps = "success" | "installment"
 export type EnrollmentType = "course" | "test" | "bundle"
 
+export type InstallmentInterval = "monthly" | "weekly";
+export type InstallmentStatus = "pending" | "paid" | "overdue";
+
+/** A single custom row when the admin wants uneven amounts / hand-picked dates. */
+export interface InstallmentRowInput {
+    amount: number | string;
+    due_date: string;
+}
+
+/** Installment fields sent alongside a transaction when status === "installment". */
+export interface InstallmentScheduleInput {
+    installment_count?: number | string;
+    installment_start_date?: string;
+    installment_interval?: InstallmentInterval;
+    installments?: InstallmentRowInput[];
+}
+
 export interface TransactionPayload {
     id?: number;
     student_id: number;
@@ -108,4 +125,77 @@ export interface PaymentMethodsAnalytics {
 
 export interface PaymentMethodsResponse extends GlobalResponse {
     data: PaymentMethodsAnalytics;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                Installments                                 */
+/* -------------------------------------------------------------------------- */
+
+/** One row of a schedule (per §2). `amount` / totals are JSON numbers. */
+export interface InstallmentRow {
+    id: number;
+    purchase_id: number;
+    installment_number: number;
+    amount: number;
+    due_date: string;
+    paid_at: string | null;
+    status: InstallmentStatus;
+    /** Computed live (unpaid AND past due) — drive the "overdue" badge off this, not `status`. */
+    is_overdue: boolean;
+    payment_method: string | null;
+    transaction_id: string | null;
+    invoice_id: string | null;
+    added_by: string | null;
+}
+
+/** Schedule for one transaction/purchase (per §2 / returned by §3 pay). */
+export interface InstallmentSchedule {
+    purchase_id: number;
+    student_name: string;
+    course_name: string;
+    is_installment: boolean;
+    is_archived: boolean;
+    total_amount: number;
+    paid_amount: number;
+    outstanding_amount: number;
+    paid_count: number;
+    total_count: number;
+    next_due_date: string | null;
+    installments: InstallmentRow[];
+}
+
+export interface InstallmentScheduleResponse extends GlobalResponse {
+    data: InstallmentSchedule;
+}
+
+/** Record-a-payment body (per §3). */
+export interface InstallmentPayPayload {
+    installment_id: number;
+    payment_method: string;
+    transaction_id?: string;
+    invoice_id?: string;
+}
+
+/** Row in the cross-student list (per §5) — enriched with student/course fields. */
+export interface InstallmentListRow {
+    id: number;
+    installment_number: number;
+    amount: number;
+    due_date: string;
+    status: InstallmentStatus;
+    is_overdue: boolean;
+    student_name: string;
+    student_email: string;
+    student_phone: string;
+    course_name: string;
+    is_archived: boolean;
+}
+
+export type InstallmentListStatus = "overdue" | "upcoming" | "pending" | "paid";
+
+export interface InstallmentListResponse extends GlobalResponse {
+    data: {
+        data: InstallmentListRow[];
+        pagination: Pagination;
+    };
 }

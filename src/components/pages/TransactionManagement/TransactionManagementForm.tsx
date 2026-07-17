@@ -1,5 +1,6 @@
 import { Autocomplete, Box, Button, Checkbox, CircularProgress, Dialog, DialogContent, Divider, FormControlLabel, IconButton, InputLabel, OutlinedInput, TextField, Typography, useTheme } from "@mui/material";
 import type { ColumnDef } from "@tanstack/react-table";
+import { CloseCircle } from "iconsax-reactjs";
 import { useFormik } from "formik";
 import { useEffect, useMemo, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
@@ -16,7 +17,7 @@ import { useCourseFilter } from "../../../store/useCourseFilter";
 import { paymentOptions } from "../../../types";
 import type { CourseProps } from "../../../types/course";
 import type { SetProps, TestProps } from "../../../types/question";
-import type { EnrollmentType } from "../../../types/transaction";
+import type { EnrollmentType, InstallmentInterval, InstallmentRowInput } from "../../../types/transaction";
 import { TransactionInitialState } from "../../../types/transaction";
 import type { RegisterUserProps } from "../../../types/user";
 import { calcHasMore } from "../../../utils/calculateHasMore";
@@ -92,9 +93,29 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
 
     const { data, isLoading } = useGetAllUserQuery({ ...qp, search: debounceSearch });
 
-    const paymentStatus = [
-        { label: "Success", value: "success" },
-        { label: "Installment", value: "installment" }
+    // Installments are courses-only (§1) — hide the option for test/bundle.
+    const paymentStatus = useMemo(() => {
+        const options = [{ label: "Success", value: "success" }];
+        if (enrollmentType === "course") options.push({ label: "Installment", value: "installment" });
+        return options;
+    }, [enrollmentType]);
+
+    const todayStr = useMemo(() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }, []);
+
+    const installmentDefaults = {
+        installment_count: 3 as number | string,
+        installment_start_date: todayStr,
+        installment_interval: "monthly" as InstallmentInterval,
+        use_custom_installments: false,
+        installments: [] as InstallmentRowInput[],
+    };
+
+    const intervalOptions: { label: string; value: InstallmentInterval }[] = [
+        { label: "Monthly", value: "monthly" },
+        { label: "Weekly", value: "weekly" },
     ];
 
     const [addTransaction, { isLoading: creatingTransaction }] = useAddTransactionMutation();
@@ -131,9 +152,39 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
         status: Yup.string()
             .oneOf(["success", "installment"])
             .required("Payment status is required"),
+        // Even-split fields — required only for installment + even split.
+        installment_count: Yup.number().when(["status", "use_custom_installments"], {
+            is: (status: string, custom: boolean) => status === "installment" && !custom,
+            then: (s) => s
+                .min(2, "Minimum 2 installments")
+                .max(24, "Maximum 24 installments")
+                .required("Number of installments is required"),
+            otherwise: (s) => s.notRequired(),
+        }),
+        installment_start_date: Yup.string().when(["status", "use_custom_installments"], {
+            is: (status: string, custom: boolean) => status === "installment" && !custom,
+            then: (s) => s
+                .required("First due date is required")
+                .test("not-past", "Date must be today or later", (val) => !val || val >= todayStr),
+            otherwise: (s) => s.notRequired(),
+        }),
+        // Custom rows — required only for installment + custom split.
+        installments: Yup.array().when(["status", "use_custom_installments"], {
+            is: (status: string, custom: boolean) => status === "installment" && custom,
+            then: (s) => s
+                .of(Yup.object({
+                    amount: Yup.number()
+                        .typeError("Enter a valid amount")
+                        .positive("Amount must be greater than 0")
+                        .required("Amount is required"),
+                    due_date: Yup.string().required("Due date is required"),
+                }))
+                .min(2, "Add at least 2 installments"),
+            otherwise: (s) => s.notRequired(),
+        }),
         image: Yup.mixed().nullable(),
         image_url: Yup.string().nullable()
-    }), [enrollmentType]);
+    }), [enrollmentType, todayStr]);
 
     const formik = useFormik({
         initialValues: transaction ? {
@@ -146,8 +197,9 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
             payment_method: transaction.payment_method || "",
             status: transaction.status || "",
             image: null,
-            image_url: transaction.image_url || null
-        } : TransactionInitialState,
+            image_url: transaction.image_url || null,
+            ...installmentDefaults,
+        } : { ...TransactionInitialState, ...installmentDefaults },
         validationSchema,
         enableReinitialize: true,
         onSubmit: async (values) => {
@@ -165,6 +217,21 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                 formData.append("test_id", String(values.test_id));
             } else if (enrollmentType === "bundle") {
                 formData.append("bundle_id", String(values.bundle_id));
+            }
+
+            // Installment schedule (courses only — §1). The backend owns the split
+            // arithmetic; we only send count + start date, or custom rows.
+            if (values.status === "installment" && enrollmentType === "course") {
+                if (values.use_custom_installments) {
+                    values.installments.forEach((row, i) => {
+                        formData.append(`installments[${i}][amount]`, String(row.amount));
+                        formData.append(`installments[${i}][due_date]`, row.due_date);
+                    });
+                } else {
+                    formData.append("installment_count", String(values.installment_count));
+                    formData.append("installment_start_date", values.installment_start_date);
+                    formData.append("installment_interval", values.installment_interval);
+                }
             }
 
             if (values.image) {
@@ -216,6 +283,10 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
         formik.setFieldValue("course_id", 0);
         formik.setFieldValue("test_id", 0);
         formik.setFieldValue("bundle_id", 0);
+        // Installments are courses-only — drop the status if leaving the course tab.
+        if (newType !== "course" && formik.values.status === "installment") {
+            formik.setFieldValue("status", "success");
+        }
         // Don't clear lists — existing data stays visible while fresh data loads.
         // pageIndex resets only if user had scrolled, triggering a fresh query with new params.
         setCourseQp(prev => prev.pageIndex !== 1 ? { pageIndex: 1, pageSize: 10 } : prev);
@@ -236,6 +307,33 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
             const newInvoiceId = generateInvoiceId(Number(id));
             formik.setFieldValue("invoice_id", newInvoiceId);
         }
+    };
+
+    const isInstallment = formik.values.status === "installment" && enrollmentType === "course";
+
+    const handleToggleCustomInstallments = (checked: boolean) => {
+        formik.setFieldValue("use_custom_installments", checked);
+        if (checked && formik.values.installments.length === 0) {
+            formik.setFieldValue("installments", [
+                { amount: "", due_date: "" },
+                { amount: "", due_date: "" },
+            ]);
+        }
+    };
+
+    const addInstallmentRow = () => {
+        formik.setFieldValue("installments", [...formik.values.installments, { amount: "", due_date: "" }]);
+    };
+
+    const removeInstallmentRow = (index: number) => {
+        formik.setFieldValue("installments", formik.values.installments.filter((_, i) => i !== index));
+    };
+
+    const updateInstallmentRow = (index: number, field: keyof InstallmentRowInput, value: string) => {
+        formik.setFieldValue(
+            "installments",
+            formik.values.installments.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
+        );
     };
 
     const columns = useMemo<ColumnDef<RegisterUserProps>[]>(() => [
@@ -633,6 +731,135 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                                         )}
                                     </div>
                                 </div>
+
+                                {isInstallment && (
+                                    <div className="col-span-2">
+                                        <Divider className="mb-4!" />
+                                        <div className="flex items-center justify-between mb-3">
+                                            <Typography variant="subtitle1" fontWeight={600}>Installment Plan</Typography>
+                                            <FormControlLabel
+                                                className="mr-0!"
+                                                control={
+                                                    <Checkbox
+                                                        checked={formik.values.use_custom_installments}
+                                                        onChange={(e) => handleToggleCustomInstallments(e.target.checked)}
+                                                        color="primary"
+                                                    />
+                                                }
+                                                label="Custom amounts & dates"
+                                            />
+                                        </div>
+
+                                        {!formik.values.use_custom_installments ? (
+                                            <div className="md:grid grid-cols-3 flex flex-col gap-4">
+                                                <div className="input_field">
+                                                    <InputLabel className="required">Number of Installments</InputLabel>
+                                                    <OutlinedInput
+                                                        fullWidth
+                                                        type="number"
+                                                        name="installment_count"
+                                                        inputProps={{ min: 2, max: 24 }}
+                                                        value={formik.values.installment_count}
+                                                        onChange={formik.handleChange}
+                                                        onBlur={formik.handleBlur}
+                                                        error={formik.touched.installment_count && Boolean(formik.errors.installment_count)}
+                                                    />
+                                                    {formik.touched.installment_count && formik.errors.installment_count && (
+                                                        <Typography color="error" variant="caption">{formik.errors.installment_count}</Typography>
+                                                    )}
+                                                </div>
+
+                                                <div className="input_field">
+                                                    <InputLabel className="required">First Due Date</InputLabel>
+                                                    <OutlinedInput
+                                                        fullWidth
+                                                        type="date"
+                                                        name="installment_start_date"
+                                                        inputProps={{ min: todayStr }}
+                                                        value={formik.values.installment_start_date}
+                                                        onChange={formik.handleChange}
+                                                        onBlur={formik.handleBlur}
+                                                        error={formik.touched.installment_start_date && Boolean(formik.errors.installment_start_date)}
+                                                    />
+                                                    {formik.touched.installment_start_date && formik.errors.installment_start_date && (
+                                                        <Typography color="error" variant="caption">{formik.errors.installment_start_date}</Typography>
+                                                    )}
+                                                </div>
+
+                                                <div className="input_field">
+                                                    <InputLabel className="required">Interval</InputLabel>
+                                                    <Autocomplete
+                                                        disableClearable
+                                                        fullWidth
+                                                        options={intervalOptions}
+                                                        getOptionLabel={(option) => option.label}
+                                                        value={intervalOptions.find(opt => opt.value === formik.values.installment_interval) || undefined}
+                                                        onChange={(_e, newValue) => formik.setFieldValue("installment_interval", newValue?.value || "monthly")}
+                                                        renderInput={(params) => (
+                                                            <TextField {...params} placeholder="Select Interval" />
+                                                        )}
+                                                    />
+                                                </div>
+
+                                                <Typography variant="caption" color="text.secondary" className="col-span-3">
+                                                    Amounts are split evenly by the server; any rounding remainder is added to the final installment.
+                                                </Typography>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col gap-3">
+                                                {formik.values.installments.map((row, i) => {
+                                                    const rowErr = (formik.errors.installments as any)?.[i];
+                                                    const rowTouched = (formik.touched.installments as any)?.[i];
+                                                    return (
+                                                        <div key={i} className="flex items-start gap-3">
+                                                            <div className="flex-1">
+                                                                <OutlinedInput
+                                                                    fullWidth
+                                                                    type="number"
+                                                                    placeholder={`Installment ${i + 1} amount`}
+                                                                    inputProps={{ min: 0, step: "0.01" }}
+                                                                    value={row.amount}
+                                                                    onChange={(e) => updateInstallmentRow(i, "amount", e.target.value)}
+                                                                    error={Boolean(rowTouched?.amount && rowErr?.amount)}
+                                                                />
+                                                                {rowTouched?.amount && rowErr?.amount && (
+                                                                    <Typography color="error" variant="caption">{rowErr.amount}</Typography>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <OutlinedInput
+                                                                    fullWidth
+                                                                    type="date"
+                                                                    value={row.due_date}
+                                                                    onChange={(e) => updateInstallmentRow(i, "due_date", e.target.value)}
+                                                                    error={Boolean(rowTouched?.due_date && rowErr?.due_date)}
+                                                                />
+                                                                {rowTouched?.due_date && rowErr?.due_date && (
+                                                                    <Typography color="error" variant="caption">{rowErr.due_date}</Typography>
+                                                                )}
+                                                            </div>
+                                                            <IconButton
+                                                                onClick={() => removeInstallmentRow(i)}
+                                                                disabled={formik.values.installments.length <= 2}
+                                                                sx={{ mt: 0.5 }}
+                                                            >
+                                                                <CloseCircle size={20} color={theme.palette.error.main} />
+                                                            </IconButton>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {typeof formik.errors.installments === "string" && (
+                                                    <Typography color="error" variant="caption">{formik.errors.installments}</Typography>
+                                                )}
+                                                <div>
+                                                    <Button variant="outlined" size="small" onClick={addInstallmentRow}>
+                                                        + Add Installment
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 <div className="col-span-2">
                                     <div className="input_field">
