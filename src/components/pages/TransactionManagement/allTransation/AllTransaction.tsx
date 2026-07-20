@@ -19,6 +19,7 @@ import CustomTable from '../../../molecules/Table';
 import TablePagination from '../../../molecules/Table/Pagination';
 import ConfirmationDialog from '../../../organism/ConfirmationDialog';
 import EmptyRoute from '../../../organism/EmptyRoute';
+import InstallmentScheduleDialog from '../../../organism/InstallmentScheduleDialog';
 import { CourseFilter } from '../../../organism/Filter/CourseFilter';
 import PageHeader from '../../../organism/PageHeader';
 import TableFilter from '../../../organism/TableFilter';
@@ -46,9 +47,11 @@ export default function AllTransaction({ open, setOpen }: Props) {
     const [days, setDays] = useState<number | null>(null);
 
     const [enrollmentType, setEnrollmentType] = useState<EnrollmentType>("course");
+    const [paymentType, setPaymentType] = useState<"all" | "installment" | "paid">("all");
     const [selectedTransaction, setSelectedTransaction] = useState<TransactionResponse | null>(null);
     const [openConfirm, setOpenConfirm] = useState(false);
     const [transactionToDelete, setTransactionToDelete] = useState<string[]>([]);
+    const [installmentPurchaseId, setInstallmentPurchaseId] = useState<number | null>(null);
 
     const {
         selections,
@@ -78,6 +81,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
         status: status.join(",") as Status,
         days,
         payment_method: paymentMethod.join(","),
+        payment_type: paymentType === "all" ? "" : paymentType,
         module_type: enrollmentType,
         ...customRange
     });
@@ -264,6 +268,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
                     onEdit={() => handleEdit(row.original)}
                     onView={() => handleEdit(row.original)}
                     onDelete={() => openDeleteConfirmation([row.original.id?.toString() || ""])}
+                    onManageInstallment={row.original.is_installment ? () => setInstallmentPurchaseId(Number(row.original.id)) : undefined}
                     file={row.original?.image_url || undefined}
                 />
             ),
@@ -276,6 +281,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
         setCustomRange({ startDate: "", endDate: "" });
         setSearch("");
         setDays(null);
+        setPaymentType("all");
         setQp((prev) => ({ ...prev, pageIndex: 1 }));
     }
 
@@ -334,6 +340,19 @@ export default function AllTransaction({ open, setOpen }: Props) {
                         { label: "Bundle", value: "bundle" },
                     ]}
                 />
+                <TabController
+                    size="sm"
+                    currentActive={paymentType}
+                    setActiveTab={(val) => {
+                        setPaymentType(val);
+                        setQp({ pageIndex: 1, pageSize: 8 });
+                    }}
+                    options={[
+                        { label: "All Payments", value: "all" },
+                        { label: "Full Payment", value: "paid" },
+                        { label: "Installment", value: "installment" },
+                    ]}
+                />
                 <TableFilter
                     search={search}
                     setSearch={setSearch}
@@ -389,6 +408,11 @@ export default function AllTransaction({ open, setOpen }: Props) {
                 open={open}
                 setOpen={setOpen}
                 transactionId={selectedTransaction?.id}
+            />
+
+            <InstallmentScheduleDialog
+                purchaseId={installmentPurchaseId}
+                onClose={() => setInstallmentPurchaseId(null)}
             />
 
             <CourseFilter

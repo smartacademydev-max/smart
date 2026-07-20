@@ -5,6 +5,8 @@ import type {
     InstallmentPayPayload,
     InstallmentScheduleInput,
     InstallmentScheduleResponse,
+    UserInstallmentFilter,
+    UserInstallmentsResponse,
 } from "../types/transaction";
 import { buildQueryParams } from "../utils/buildQueryParams";
 import { baseApi } from "./baseApi";
@@ -29,12 +31,25 @@ export const installmentApi = baseApi.injectEndpoints({
                 method: "POST",
                 body,
             }),
-            // Response IS the refreshed schedule (§3); still invalidate the cross-student list.
-            invalidatesTags: (result) => [
+            // The response IS the refreshed schedule (§3) — patch the open schedule cache
+            // directly instead of refetching it. Cross-student lists still get invalidated.
+            async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+                try {
+                    const { data } = await queryFulfilled;
+                    const purchaseId = data?.data?.purchase_id;
+                    if (purchaseId != null) {
+                        dispatch(
+                            installmentApi.util.updateQueryData("getInstallmentSchedule", purchaseId, (draft) => {
+                                draft.data = data.data;
+                            }),
+                        );
+                    }
+                } catch {
+                    // Mutation error is surfaced to the caller via unwrap(); nothing to patch.
+                }
+            },
+            invalidatesTags: [
                 { type: "Installment", id: "LIST" },
-                ...(result?.data?.purchase_id
-                    ? [{ type: "Installment" as const, id: `PURCHASE-${result.data.purchase_id}` }]
-                    : []),
                 { type: "Transaction", id: "LIST" },
             ],
         }),
@@ -83,6 +98,26 @@ export const installmentApi = baseApi.injectEndpoints({
                       ]
                     : [{ type: "Installment", id: "LIST" }],
         }),
+
+        // §5b — one student's installments across all their purchases.
+        // NOTE: path is /user/... (NOT /admin/...) — this endpoint sits outside the admin prefix.
+        getUserInstallments: builder.query<
+            UserInstallmentsResponse,
+            Partial<QueryParams> & { userId: number; status?: UserInstallmentFilter }
+        >({
+            query: ({ userId, status, pageIndex, pageSize }) => ({
+                url: `/user/${userId}/installments?${buildQueryParams({
+                    status,
+                    page: pageIndex,
+                    page_size: pageSize,
+                })}`,
+                method: "GET",
+            }),
+            providesTags: (_result, _error, { userId }) => [
+                { type: "Installment", id: `USER-${userId}` },
+                { type: "Installment", id: "LIST" },
+            ],
+        }),
     }),
 });
 
@@ -91,4 +126,5 @@ export const {
     usePayInstallmentMutation,
     useRegenerateInstallmentScheduleMutation,
     useGetInstallmentListQuery,
+    useGetUserInstallmentsQuery,
 } = installmentApi;

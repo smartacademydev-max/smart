@@ -184,6 +184,8 @@ export interface InstallmentPayPayload {
     payment_method: string;
     transaction_id?: string;
     invoice_id?: string;
+    /** When the money actually arrived (YYYY-MM-DD). Omit → server stamps now. Must not be future. */
+    paid_at?: string;
 }
 
 /** Row in the cross-student list (per §5) — enriched with student/course fields. */
@@ -206,6 +208,44 @@ export type InstallmentListStatus = "overdue" | "upcoming" | "pending" | "paid";
 export interface InstallmentListResponse extends GlobalResponse {
     data: {
         data: InstallmentListRow[];
+        pagination: Pagination;
+    };
+}
+
+/* -------------------------------------------------------------------------- */
+/*                    Per-user installments (§5b)                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Settlement filter for GET /user/{user_id}/installments (§5b).
+ * `pending` deliberately INCLUDES rows whose stored status is "overdue".
+ */
+export type UserInstallmentFilter = "pending" | "settled" | "all";
+
+/** One row of the per-user installments endpoint (§5b) — schedule row + student/course. */
+export interface UserInstallmentRow {
+    id: number;
+    purchase_id: number;
+    installment_number: number;
+    amount: number;
+    due_date: string;
+    paid_at: string | null;
+    status: InstallmentStatus;
+    /** Computed live (unpaid AND past due) — drive the "overdue" badge off this. */
+    is_overdue: boolean;
+    payment_method: string | null;
+    transaction_id: string | null;
+    invoice_id: string | null;
+    student_name: string | null;
+    student_email: string | null;
+    student_phone: string | null;
+    course_name: string | null;
+    is_archived: boolean;
+}
+
+export interface UserInstallmentsResponse extends GlobalResponse {
+    data: {
+        data: UserInstallmentRow[];
         pagination: Pagination;
     };
 }

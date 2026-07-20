@@ -12,7 +12,7 @@ import {
     Popper,
     useTheme
 } from "@mui/material";
-import { ArrangeHorizontal, Copy, Key, Send, Slash } from "iconsax-reactjs";
+import { ArrangeHorizontal, Copy, Key, MoneyRecive, Send, Slash, TickCircle } from "iconsax-reactjs";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
@@ -31,12 +31,14 @@ interface Props {
     onGenerateOtp?: () => void;
     onSendPasswordReset?: () => void;
     onStatus?: () => void;
+    onManageInstallment?: () => void;
+    onMarkPaid?: () => void;
     userStatus?: boolean;
     file?: string;
     courseStatus?: "published" | "draft"
 }
 
-export default function Actions({ onEdit, onDelete, onView, deleting = false, onSuspend, userStatus, file, onClone, onGenerateOtp, onSendPasswordReset, onStatus, courseStatus, viewUrl, editUrl }: Props) {
+export default function Actions({ onEdit, onDelete, onView, deleting = false, onSuspend, userStatus, file, onClone, onGenerateOtp, onSendPasswordReset, onStatus, onManageInstallment, onMarkPaid, courseStatus, viewUrl, editUrl }: Props) {
     const dispatch = useAppDispatch();
     const [open, setOpen] = useState(false);
     const anchorRef = useRef<HTMLButtonElement | null>(null);
@@ -255,6 +257,28 @@ export default function Actions({ onEdit, onDelete, onView, deleting = false, on
                                                 {courseStatus === "draft" ? <Send size={20} color={theme.palette.separator.darker} /> : <Slash size={20} color={theme.palette.separator.darker} />}
                                             </ListItemIcon>
                                             <ListItemText primary={courseStatus === "draft" ? t("actions.publish") : t("actions.unpublish")} />
+                                        </ListItemButton>
+                                    </ListItem> : ""}
+                                    {onMarkPaid ? <ListItem className="menu__item action__item">
+                                        <ListItemButton sx={{
+                                            m: 0,
+                                            border: "none"
+                                        }} onClick={() => handleMenuClick(onMarkPaid)}>
+                                            <ListItemIcon>
+                                                <TickCircle size={20} color={theme.palette.success.main} />
+                                            </ListItemIcon>
+                                            <ListItemText primary={t("actions.mark_as_paid", "Mark as Paid")} />
+                                        </ListItemButton>
+                                    </ListItem> : ""}
+                                    {onManageInstallment ? <ListItem className="menu__item action__item">
+                                        <ListItemButton sx={{
+                                            m: 0,
+                                            border: "none"
+                                        }} onClick={() => handleMenuClick(onManageInstallment)}>
+                                            <ListItemIcon>
+                                                <MoneyRecive size={20} color={theme.palette.separator.darker} />
+                                            </ListItemIcon>
+                                            <ListItemText primary={t("actions.manage_installment", "Installments")} />
                                         </ListItemButton>
                                     </ListItem> : ""}
                                     {file ? <ListItem className="menu__item action__item view__item">

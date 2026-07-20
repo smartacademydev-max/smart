@@ -15,8 +15,8 @@ export const transactionApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: [{ type: "Transaction", id: "LIST" }, { type: "MenuCounts", id: "ALL" }]
         }),
-        getAllTransactions: builder.query<TransactionList, QueryParams & { categoryFilter?: CategoryFilterParams; status?: Status, payment_method?: string, days?: number | null; device_type?: DeviceType; module_type?: EnrollmentType; }>({
-            query: ({ pageIndex, pageSize, search, startDate, endDate, days, status, categoryFilter, device_type, payment_method, module_type }) => {
+        getAllTransactions: builder.query<TransactionList, QueryParams & { categoryFilter?: CategoryFilterParams; status?: Status, payment_method?: string, payment_type?: string, days?: number | null; device_type?: DeviceType; module_type?: EnrollmentType; }>({
+            query: ({ pageIndex, pageSize, search, startDate, endDate, days, status, categoryFilter, device_type, payment_method, payment_type, module_type }) => {
                 const queryString = buildQueryParams({
                     page: pageIndex,
                     page_size: pageSize,
@@ -27,6 +27,7 @@ export const transactionApi = baseApi.injectEndpoints({
                     device_type: device_type,
                     status: status,
                     payment_method: payment_method,
+                    payment_type: payment_type,
                     module_type: module_type,
                     mega_categories: categoryFilter?.mega_category,
                     categories: categoryFilter?.category,

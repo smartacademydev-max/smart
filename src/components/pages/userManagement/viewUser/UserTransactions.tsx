@@ -15,6 +15,7 @@ import TablePagination from "../../../molecules/Table/Pagination";
 import DashboardAnalyticsCard from "../../../organism/Cards/DashboardAnalyticsCard";
 import DashboardAnalyticsLoading from "../../../organism/Cards/DashboardAnalyticsCard/Loading";
 import EmptyRoute from "../../../organism/EmptyRoute";
+import UserInstallments from "../../../organism/UserInstallments";
 import TransactionDetailDialog from "./TransactionDetailDialog";
 
 const METHOD_COLORS = ["success", "error", "primary", "warning", "info"] as const;
@@ -131,6 +132,9 @@ export default function UserTransactions() {
                     totalPages={data?.data?.pagination?.total_pages || 0}
                 /></>
             }
+
+            {/* Installments (§5b) — filterable, with per-row schedule + Mark as Paid. */}
+            <UserInstallments userId={Number(id)} showFilter enablePay defaultStatus="all" title="Installments" />
 
             <Box sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 3, p: 2.5, mt: 3 }}>
                 <Typography variant="h5" fontWeight={600} mb={1.5}>Payment Method Uses</Typography>

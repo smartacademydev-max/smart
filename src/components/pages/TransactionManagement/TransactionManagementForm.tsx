@@ -27,6 +27,7 @@ import FileDragDrop from "../../molecules/FileDragDrop";
 import TabController from "../../molecules/TabController";
 import CustomTable from "../../molecules/Table";
 import CategoryFilter from "../../organism/CategoryFilter";
+import UserInstallments from "../../organism/UserInstallments";
 
 interface Props {
     open: boolean;
@@ -495,6 +496,19 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                                 loading={isLoading}
                                 data={data?.data?.data || []}
                             />
+
+                            {/* Pre-assignment outstanding check (§5b) — warn if the selected
+                                student already owes on an existing installment plan. */}
+                            {formik.values.student_id > 0 && (
+                                <UserInstallments
+                                    userId={formik.values.student_id}
+                                    defaultStatus="pending"
+                                    compact
+                                    hideWhenEmpty
+                                    enablePay
+                                />
+                            )}
+
                             <Divider />
 
                             <TabController
