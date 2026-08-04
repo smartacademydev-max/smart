@@ -18,6 +18,7 @@ import TablePagination from "../../../../molecules/Table/Pagination";
 import DashboardAnalyticsCard from "../../../../organism/Cards/DashboardAnalyticsCard";
 import DashboardAnalyticsLoading from "../../../../organism/Cards/DashboardAnalyticsCard/Loading";
 import EmptyRoute from "../../../../organism/EmptyRoute";
+import ErrorBoundary from "../../../../organism/ErrorBoundary";
 
 type Qp = { pageIndex: number; pageSize: number };
 
@@ -52,7 +53,9 @@ function usePagedSection<T>(
     const lastTotalPages = useRef(0);
     const seenResponse = useRef(false);
 
-    const rows = result.data?.data?.data;
+    // Guard the shape: TanStack Table throws outright if `data` is anything but an array.
+    const payload = result.data?.data?.data;
+    const rows = Array.isArray(payload) ? payload : undefined;
     const totalPages = result.data?.data?.pagination?.total_pages;
 
     if (totalPages !== undefined) lastTotalPages.current = totalPages;
@@ -75,6 +78,20 @@ function usePagedSection<T>(
 /** Row number that keeps counting across pages instead of restarting at 1 on every page. */
 function serialNo(qp: Qp, index: number) {
     return (qp.pageIndex - 1) * qp.pageSize + index + 1;
+}
+
+/**
+ * Coerces a cell value to something React can render. Some rows come back with an object where a
+ * scalar is expected (a relation the API expanded, say), and handing that straight to React throws
+ * "Objects are not valid as a React child" — which unmounts the page rather than one cell.
+ */
+function display(value: unknown, fallback = "N/A"): string {
+    if (value === null || value === undefined || value === "") return fallback;
+    if (typeof value === "object") {
+        const named = value as { name?: string; title?: string };
+        return named.name ?? named.title ?? fallback;
+    }
+    return String(value);
 }
 
 function ProgressCell({ value }: { value?: number }) {
@@ -114,18 +131,20 @@ function TableSection<T extends object>({
     return (
         <Box>
             <Typography variant="h5" fontWeight={600} mb={2}>{title}</Typography>
-            {section.isEmpty
-                ? <EmptyRoute title={emptyTitle} message={emptyMessage} />
-                : <>
-                    {section.isError && (
-                        <Typography variant="body2" color="error" mb={1}>
-                            Couldn't load this page. Pick another page or reload.
-                        </Typography>
-                    )}
-                    <CustomTable data={section.rows} columns={columns} loading={section.loading} />
-                    <TablePagination qp={qp} setQp={setQp} totalPages={section.totalPages} />
-                </>
-            }
+            {section.isError && (
+                <Typography variant="body2" color="error" mb={1}>
+                    Couldn't load this page. Pick another page or reload.
+                </Typography>
+            )}
+            {/* The pagination sits outside the boundary so a page that fails to render still
+                leaves the controls to navigate back to one that works. */}
+            <ErrorBoundary title={title} resetKey={qp}>
+                {section.isEmpty
+                    ? <EmptyRoute title={emptyTitle} message={emptyMessage} />
+                    : <CustomTable data={section.rows} columns={columns} loading={section.loading} />
+                }
+            </ErrorBoundary>
+            <TablePagination qp={qp} setQp={setQp} totalPages={section.totalPages} />
         </Box>
     );
 }
@@ -154,15 +173,15 @@ export default function CoursesTab() {
             header: "Course Name",
             accessorKey: "name",
             cell: ({ row }) => (
-                <Tooltip title={row.original.name} arrow>
-                    <Typography variant="subtitle1" fontWeight={500} className="line-clamp-1">{row.original.name || "N/A"}</Typography>
+                <Tooltip title={display(row.original.name, "")} arrow>
+                    <Typography variant="subtitle1" fontWeight={500} className="line-clamp-1">{display(row.original.name)}</Typography>
                 </Tooltip>
             ),
         },
         {
             header: "Price",
             accessorKey: "sale_price",
-            cell: ({ row }) => <Typography variant="subtitle1">{row.original.sale_price || "N/A"}</Typography>,
+            cell: ({ row }) => <Typography variant="subtitle1">{display(row.original.sale_price)}</Typography>,
         },
         {
             header: "Enrolled On",
@@ -200,25 +219,25 @@ export default function CoursesTab() {
             header: "Test Name",
             accessorKey: "name",
             cell: ({ row }) => (
-                <Tooltip title={row.original.name} arrow>
-                    <Typography variant="subtitle1" fontWeight={500} className="line-clamp-1">{row.original.name || "N/A"}</Typography>
+                <Tooltip title={display(row.original.name, "")} arrow>
+                    <Typography variant="subtitle1" fontWeight={500} className="line-clamp-1">{display(row.original.name)}</Typography>
                 </Tooltip>
             ),
         },
         {
             header: "Type",
             accessorKey: "test_type",
-            cell: ({ row }) => <Typography variant="subtitle1" className="capitalize">{row.original.test_type || "N/A"}</Typography>,
+            cell: ({ row }) => <Typography variant="subtitle1" className="capitalize">{display(row.original.test_type)}</Typography>,
         },
         {
             header: "Full Mark",
             accessorKey: "full_mark",
-            cell: ({ row }) => <Typography variant="subtitle1">{row.original.full_mark ?? "N/A"}</Typography>,
+            cell: ({ row }) => <Typography variant="subtitle1">{display(row.original.full_mark)}</Typography>,
         },
         {
             header: "Pass Mark",
             accessorKey: "pass_mark",
-            cell: ({ row }) => <Typography variant="subtitle1">{row.original.pass_mark ?? "N/A"}</Typography>,
+            cell: ({ row }) => <Typography variant="subtitle1">{display(row.original.pass_mark)}</Typography>,
         },
         {
             header: "Enrolled On",
@@ -246,8 +265,8 @@ export default function CoursesTab() {
             header: "Bundle Name",
             accessorKey: "name",
             cell: ({ row }) => (
-                <Tooltip title={row.original.name} arrow>
-                    <Typography variant="subtitle1" fontWeight={500} className="line-clamp-1">{row.original.name || "N/A"}</Typography>
+                <Tooltip title={display(row.original.name, "")} arrow>
+                    <Typography variant="subtitle1" fontWeight={500} className="line-clamp-1">{display(row.original.name)}</Typography>
                 </Tooltip>
             ),
         },
