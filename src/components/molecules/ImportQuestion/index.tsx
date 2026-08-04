@@ -8,6 +8,7 @@ import { showToast } from "../../../slice/toastSlice";
 import { useAppDispatch } from "../../../store/hook";
 import type { QuestionProps } from "../../../types/question";
 import { renderHtml } from "../../../utils/renderHtml";
+import QuestionIssueDot from "../../atoms/QuestionIssueDot";
 import QuestionManagementForm from "../../pages/TestAndQuestionManagement/QuestionManagement/QuestionManagementForm";
 import FooterAction from "../FooterAction";
 
@@ -41,7 +42,10 @@ const QuestionRow = React.memo(function QuestionRow({
             sx={{ borderColor: theme.palette.separator.dark }}
         >
             <div className="flex justify-between items-center mb-6">
-                <Typography variant="body2">Question {questionIndex + 1} of {totalCount}</Typography>
+                <div className="flex items-center gap-2">
+                    <Typography variant="body2">Question {questionIndex + 1} of {totalCount}</Typography>
+                    <QuestionIssueDot question={question} reserveSpace={false} />
+                </div>
                 <div className="flex items-center gap-1">
                     <Tooltip title="Edit Question">
                         <IconButton size="small" color="primary" onClick={() => onEdit(questionIndex)}>

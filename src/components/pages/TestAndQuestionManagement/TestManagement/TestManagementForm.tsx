@@ -14,6 +14,7 @@ import { TestInitialState, testValidationSchema, type QuestionLabelProps, type Q
 import { calcHasMore } from "../../../../utils/calculateHasMore";
 import { formatDateForDisplay } from "../../../../utils/dateFormat";
 import MakuraDatePicker from "../../../atoms/MakuraDatePicker";
+import QuestionIssueDot from "../../../atoms/QuestionIssueDot";
 import TextEditor from "../../../atoms/TextEditor";
 import { YesNoSwitch } from "../../../atoms/YesNoSwitch";
 import FooterAction from "../../../molecules/FooterAction";
@@ -720,6 +721,7 @@ export default function TestManagementForm() {
                             itemIdKey="id"
                             placeholder="Search questions..."
                             groupLabelKey="label.name"
+                            renderItemPrefix={(question) => <QuestionIssueDot question={question} reserveSpace={false} />}
                         />
                         {formik.touched.question_ids && formik.errors.question_ids && (
                             <FormHelperText error>{formik.errors.question_ids}</FormHelperText>

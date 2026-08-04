@@ -19,6 +19,8 @@ interface InfiniteScrollingProps {
     placeholder?: string;
     scrollableId?: string;
     groupLabelKey?: string;
+    /** Optional marker rendered just before each item's label, e.g. a data-quality indicator. */
+    renderItemPrefix?: (item: any) => React.ReactNode;
 }
 
 export default function InfiniteScrolling({
@@ -35,6 +37,7 @@ export default function InfiniteScrolling({
     placeholder = "Search...",
     scrollableId = "scrollableDiv",
     groupLabelKey,
+    renderItemPrefix,
 }: InfiniteScrollingProps) {
 
     const theme = useTheme();
@@ -271,7 +274,8 @@ export default function InfiniteScrolling({
                                                                 />
                                                             }
                                                             label={
-                                                                <Box>
+                                                                <Box className="flex items-center gap-2">
+                                                                    {renderItemPrefix?.(item)}
                                                                     <Typography variant="subtitle1">
                                                                         {renderHtml(item[itemLabelKey])}
                                                                     </Typography>

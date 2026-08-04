@@ -17,7 +17,12 @@ type CheckableQuestion = {
  * Returns an empty array for a healthy question and for any non-MCQ type.
  */
 export function getQuestionIssues(question: CheckableQuestion | null | undefined): string[] {
-    if (!question || question.question_type !== "mcq") return [];
+    if (!question) return [];
+
+    // Skip anything explicitly typed as something other than an MCQ. An absent type still counts:
+    // the PDF import hands back parsed MCQs that don't always carry one, and that screen is
+    // exactly where these broken questions get through.
+    if (question.question_type && question.question_type !== "mcq") return [];
 
     // A missing `options` key means the payload didn't carry them, which is not the same as a
     // question having none — staying quiet beats flagging every row in the bank.

@@ -16,6 +16,7 @@ import { useState } from "react";
 import { useGetAllQuestionQuery } from "../../../../../services/questionApi";
 import type { QuestionTypeProps } from "../../../../../types/question";
 import { renderHtml } from "../../../../../utils/renderHtml";
+import QuestionIssueDot from "../../../../atoms/QuestionIssueDot";
 import TablePagination from "../../../../molecules/Table/Pagination";
 import EmptyRoute from "../../../../organism/EmptyRoute";
 
@@ -113,9 +114,12 @@ export default function AddQuestionsDialog({ open, onClose, onAdd, existingIds, 
                                             size="small"
                                         />
                                         <Box flex={1}>
-                                            <Typography variant="body2" fontWeight={500}>
-                                                {renderHtml(q.question) || "N/A"}
-                                            </Typography>
+                                            <Stack direction="row" alignItems="center" gap={1}>
+                                                <QuestionIssueDot question={q} />
+                                                <Typography variant="body2" fontWeight={500}>
+                                                    {renderHtml(q.question) || "N/A"}
+                                                </Typography>
+                                            </Stack>
                                             {alreadyAdded && (
                                                 <Typography variant="caption" color="text.secondary">Already in set</Typography>
                                             )}

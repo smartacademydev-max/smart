@@ -7,6 +7,7 @@ import { PATH } from '../../../../../routes/PATH';
 import { useGetQuestionsListInTestQuery } from "../../../../../services/questionApi";
 import { formatDateTime } from '../../../../../utils/dateFormat';
 import { renderHtml } from "../../../../../utils/renderHtml";
+import QuestionIssueDot from "../../../../atoms/QuestionIssueDot";
 
 
 const getAnswerStyle = (isCorrect: boolean, isWrong: boolean, theme: any) => ({
@@ -227,9 +228,12 @@ export default function CheckTestPaperRoot({ type }: { type?: string }) {
 		<div className="mcq__question__root">
 			{questions.map((item) => (
 				<div className="question mb-8!" key={item.id}>
-					<Typography variant="subtitle1" color="text.dark" className="mb-5!">
-						{renderHtml(item.question)}
-					</Typography>
+					<div className="flex items-center gap-2 mb-5!">
+						<QuestionIssueDot question={item} reserveSpace={false} />
+						<Typography variant="subtitle1" color="text.dark">
+							{renderHtml(item.question)}
+						</Typography>
+					</div>
 
 					<div className="flex flex-col gap-5 md:grid md:grid-cols-2">
 						{item.options?.map((option, index) => {
