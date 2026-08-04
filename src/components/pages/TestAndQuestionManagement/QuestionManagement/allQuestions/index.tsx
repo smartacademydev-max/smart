@@ -8,6 +8,7 @@ import { showToast } from '../../../../../slice/toastSlice';
 import { useAppDispatch } from '../../../../../store/hook';
 import type { QuestionProps, QuestionTypeProps } from '../../../../../types/question';
 import { renderHtml } from '../../../../../utils/renderHtml';
+import QuestionIssueDot from '../../../../atoms/QuestionIssueDot';
 import Actions from '../../../../molecules/Action';
 import TabController from '../../../../molecules/TabController';
 import CustomTable from '../../../../molecules/Table';
@@ -138,9 +139,12 @@ export default function AllQuestionListing({ open, setOpen }: Props) {
             header: "Question Name",
             accessorKey: "question",
             cell: ({ row }) => (
-                <Typography fontWeight={500} >
-                    {renderHtml(row.original.question) || "N/A"}
-                </Typography>
+                <Stack direction="row" alignItems="center" sx={{ gap: 1 }}>
+                    <QuestionIssueDot question={row.original} />
+                    <Typography fontWeight={500} >
+                        {renderHtml(row.original.question) || "N/A"}
+                    </Typography>
+                </Stack>
             ),
         },
         {
