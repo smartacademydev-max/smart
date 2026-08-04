@@ -289,11 +289,7 @@ export default function QuestionManagementForm({ setOpen, editData, onSave }: Pr
                                 )}
                                 fullWidth
                             />
-                            {formik.touched.megacategory_id && formik.errors.megacategory_id && (
-                                <Typography variant="caption" color="error">
-                                    {formik.errors.megacategory_id}
-                                </Typography>
-                            )}
+                           
                         </div>
                     </div>
 

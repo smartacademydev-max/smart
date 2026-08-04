@@ -1,6 +1,6 @@
 import { Box, LinearProgress, Stack, Tooltip, Typography } from "@mui/material";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useGetUserPurchasedCourseQuery } from "../../../../../services/transactionApi";
 import {
@@ -19,6 +19,64 @@ import DashboardAnalyticsCard from "../../../../organism/Cards/DashboardAnalytic
 import DashboardAnalyticsLoading from "../../../../organism/Cards/DashboardAnalyticsCard/Loading";
 import EmptyRoute from "../../../../organism/EmptyRoute";
 
+type Qp = { pageIndex: number; pageSize: number };
+
+type PagedResponse<T> = { data?: { data?: T[]; pagination?: { total_pages?: number } } };
+
+type PagedSection<T> = {
+    rows: T[];
+    totalPages: number;
+    loading: boolean;
+    isError: boolean;
+    isEmpty: boolean;
+};
+
+/**
+ * Turns a paginated RTK Query result into something a table section can render safely.
+ *
+ * The section used to swap itself for an empty state whenever the current page came back with
+ * zero rows — and the empty state takes the pagination controls down with it, so a page that
+ * legitimately holds no records (or a request that failed) left the section permanently blank
+ * with no way back to page 1. A list is only "empty" when the server says it has no pages at
+ * all; anything else keeps the table and its pagination on screen.
+ */
+function usePagedSection<T>(
+    result: {
+        data?: PagedResponse<T>;
+        isFetching: boolean;
+        isError: boolean;
+        isUninitialized: boolean;
+    },
+    skipped: boolean,
+): PagedSection<T> {
+    const lastTotalPages = useRef(0);
+    const seenResponse = useRef(false);
+
+    const rows = result.data?.data?.data;
+    const totalPages = result.data?.data?.pagination?.total_pages;
+
+    if (totalPages !== undefined) lastTotalPages.current = totalPages;
+    if (result.data !== undefined || result.isError) seenResponse.current = true;
+
+    // The very first render of a page sits in `uninitialized` for a frame before the request is
+    // dispatched — show the skeleton through it rather than flashing an empty table.
+    const loading = result.isFetching || (!skipped && !seenResponse.current && result.isUninitialized);
+    const resolvedTotalPages = totalPages ?? lastTotalPages.current;
+
+    return {
+        rows: rows ?? [],
+        totalPages: resolvedTotalPages,
+        loading,
+        isError: result.isError,
+        isEmpty: seenResponse.current && !loading && !result.isError && resolvedTotalPages === 0 && !rows?.length,
+    };
+}
+
+/** Row number that keeps counting across pages instead of restarting at 1 on every page. */
+function serialNo(qp: Qp, index: number) {
+    return (qp.pageIndex - 1) * qp.pageSize + index + 1;
+}
+
 function ProgressCell({ value }: { value?: number }) {
     const val = Number(value ?? 0);
     return (
@@ -36,28 +94,61 @@ function ProgressCell({ value }: { value?: number }) {
     );
 }
 
+function TableSection<T extends object>({
+    title,
+    section,
+    columns,
+    qp,
+    setQp,
+    emptyTitle,
+    emptyMessage,
+}: {
+    title: string;
+    section: PagedSection<T>;
+    columns: ColumnDef<T, any>[];
+    qp: Qp;
+    setQp: (qp: Qp) => void;
+    emptyTitle: string;
+    emptyMessage: string;
+}) {
+    return (
+        <Box>
+            <Typography variant="h5" fontWeight={600} mb={2}>{title}</Typography>
+            {section.isEmpty
+                ? <EmptyRoute title={emptyTitle} message={emptyMessage} />
+                : <>
+                    {section.isError && (
+                        <Typography variant="body2" color="error" mb={1}>
+                            Couldn't load this page. Pick another page or reload.
+                        </Typography>
+                    )}
+                    <CustomTable data={section.rows} columns={columns} loading={section.loading} />
+                    <TablePagination qp={qp} setQp={setQp} totalPages={section.totalPages} />
+                </>
+            }
+        </Box>
+    );
+}
+
 export default function CoursesTab() {
     const { id } = useParams();
     const uid = Number(id);
 
-    const [courseQp, setCourseQp] = useState({ pageIndex: 1, pageSize: 10 });
-    const [testQp, setTestQp] = useState({ pageIndex: 1, pageSize: 10 });
-    const [bundleQp, setBundleQp] = useState({ pageIndex: 1, pageSize: 10 });
+    const [courseQp, setCourseQp] = useState<Qp>({ pageIndex: 1, pageSize: 10 });
+    const [testQp, setTestQp] = useState<Qp>({ pageIndex: 1, pageSize: 10 });
+    const [bundleQp, setBundleQp] = useState<Qp>({ pageIndex: 1, pageSize: 10 });
 
     const { data: analyticsData, isLoading: analyticsLoading } = useGetUserEnrolledCourseAnalyticsQuery({ id: uid }, { skip: !uid });
-    const { data: courseData, isLoading: courseLoading } = useGetUserPurchasedCourseQuery({ ...courseQp, id: uid }, { skip: !uid });
-    const { data: testData, isLoading: testLoading } = useGetUserEnrolledTestsQuery({ id: uid, ...testQp }, { skip: !uid });
-    const { data: bundleData, isLoading: bundleLoading } = useGetUserEnrolledBundlesQuery({ id: uid, ...bundleQp }, { skip: !uid });
 
-    const courses = courseData?.data?.data ?? [];
-    const tests = testData?.data?.data ?? [];
-    const bundles = bundleData?.data?.data ?? [];
+    const courseSection = usePagedSection<CourseProps>(useGetUserPurchasedCourseQuery({ ...courseQp, id: uid }, { skip: !uid }), !uid);
+    const testSection = usePagedSection<UserEnrolledTest>(useGetUserEnrolledTestsQuery({ id: uid, ...testQp }, { skip: !uid }), !uid);
+    const bundleSection = usePagedSection<UserEnrolledBundle>(useGetUserEnrolledBundlesQuery({ id: uid, ...bundleQp }, { skip: !uid }), !uid);
 
     const courseColumns = useMemo<ColumnDef<CourseProps>[]>(() => [
         {
             header: "S.No",
             accessorKey: "index",
-            cell: ({ row }) => <Typography variant="subtitle1" fontWeight={500}>{row.index + 1}</Typography>,
+            cell: ({ row }) => <Typography variant="subtitle1" fontWeight={500}>{serialNo(courseQp, row.index)}</Typography>,
         },
         {
             header: "Course Name",
@@ -97,13 +188,13 @@ export default function CoursesTab() {
                 return <StatusPill status={label} variant={getCourseStatus(progress)} />;
             },
         },
-    ], []);
+    ], [courseQp]);
 
     const testColumns = useMemo<ColumnDef<UserEnrolledTest>[]>(() => [
         {
             header: "S.No",
             accessorKey: "index",
-            cell: ({ row }) => <Typography variant="subtitle1" fontWeight={500}>{row.index + 1}</Typography>,
+            cell: ({ row }) => <Typography variant="subtitle1" fontWeight={500}>{serialNo(testQp, row.index)}</Typography>,
         },
         {
             header: "Test Name",
@@ -143,13 +234,13 @@ export default function CoursesTab() {
                 return <StatusPill status={label} variant={getCourseStatus(progress)} />;
             },
         },
-    ], []);
+    ], [testQp]);
 
     const bundleColumns = useMemo<ColumnDef<UserEnrolledBundle>[]>(() => [
         {
             header: "S.No",
             accessorKey: "index",
-            cell: ({ row }) => <Typography variant="subtitle1" fontWeight={500}>{row.index + 1}</Typography>,
+            cell: ({ row }) => <Typography variant="subtitle1" fontWeight={500}>{serialNo(bundleQp, row.index)}</Typography>,
         },
         {
             header: "Bundle Name",
@@ -184,7 +275,7 @@ export default function CoursesTab() {
                 return <StatusPill status={label} variant={getCourseStatus(progress)} />;
             },
         },
-    ], []);
+    ], [bundleQp]);
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 4, pb: 4 }}>
@@ -197,38 +288,35 @@ export default function CoursesTab() {
                 }
             </Box>
 
-            <Box>
-                <Typography variant="h5" fontWeight={600} mb={2}>Enrolled Courses</Typography>
-                {!courseLoading && !courses.length
-                    ? <EmptyRoute title="No Enrolled Courses" message="This user has not enrolled in any courses yet." />
-                    : <>
-                        <CustomTable data={courses} columns={courseColumns} loading={courseLoading} />
-                        <TablePagination qp={courseQp} setQp={setCourseQp} totalPages={courseData?.data?.pagination?.total_pages ?? 0} />
-                    </>
-                }
-            </Box>
+            <TableSection
+                title="Enrolled Courses"
+                section={courseSection}
+                columns={courseColumns}
+                qp={courseQp}
+                setQp={setCourseQp}
+                emptyTitle="No Enrolled Courses"
+                emptyMessage="This user has not enrolled in any courses yet."
+            />
 
-            <Box>
-                <Typography variant="h5" fontWeight={600} mb={2}>Enrolled Tests</Typography>
-                {!testLoading && !tests.length
-                    ? <EmptyRoute title="No Enrolled Tests" message="This user has not enrolled in any tests yet." />
-                    : <>
-                        <CustomTable data={tests} columns={testColumns} loading={testLoading} />
-                        <TablePagination qp={testQp} setQp={setTestQp} totalPages={testData?.data?.pagination?.total_pages ?? 0} />
-                    </>
-                }
-            </Box>
+            <TableSection
+                title="Enrolled Tests"
+                section={testSection}
+                columns={testColumns}
+                qp={testQp}
+                setQp={setTestQp}
+                emptyTitle="No Enrolled Tests"
+                emptyMessage="This user has not enrolled in any tests yet."
+            />
 
-            <Box>
-                <Typography variant="h5" fontWeight={600} mb={2}>Enrolled Bundles</Typography>
-                {!bundleLoading && !bundles.length
-                    ? <EmptyRoute title="No Enrolled Bundles" message="This user has not enrolled in any bundles yet." />
-                    : <>
-                        <CustomTable data={bundles} columns={bundleColumns} loading={bundleLoading} />
-                        <TablePagination qp={bundleQp} setQp={setBundleQp} totalPages={bundleData?.data?.pagination?.total_pages ?? 0} />
-                    </>
-                }
-            </Box>
+            <TableSection
+                title="Enrolled Bundles"
+                section={bundleSection}
+                columns={bundleColumns}
+                qp={bundleQp}
+                setQp={setBundleQp}
+                emptyTitle="No Enrolled Bundles"
+                emptyMessage="This user has not enrolled in any bundles yet."
+            />
         </Box>
     );
 }
