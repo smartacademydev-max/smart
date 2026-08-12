@@ -9,23 +9,27 @@ import {
     DialogContent,
     Divider,
     IconButton,
+    InputAdornment,
     InputLabel,
     OutlinedInput,
     Stack,
     TextField,
+    Tooltip,
     Typography,
     useTheme,
 } from "@mui/material";
 import type { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
-import { CloseCircle } from "iconsax-reactjs";
+import { ArrowRotateRight, CloseCircle } from "iconsax-reactjs";
 import { useMemo, useState } from "react";
+import { useBrandSettings } from "../../../hooks/useBrandSettings";
 import { useGetInstallmentScheduleQuery, usePayInstallmentMutation } from "../../../services/installmentApi";
 import { showToast } from "../../../slice/toastSlice";
 import { useAppDispatch } from "../../../store/hook";
 import { paymentOptions } from "../../../types";
 import type { InstallmentRow } from "../../../types/transaction";
 import { formatDateForDisplay } from "../../../utils/dateFormat";
+import { generateTransactionId } from "../../../utils/generateTransactionRefs";
 import { getInstallmentStatusVariant } from "../../../utils/statusMap";
 import MakuraDatePicker from "../../atoms/MakuraDatePicker";
 import StatusPill from "../../atoms/StatusPill";
@@ -51,6 +55,7 @@ const todayStr = () => {
 export default function InstallmentScheduleDialog({ purchaseId, onClose }: Props) {
     const theme = useTheme();
     const dispatch = useAppDispatch();
+    const { brandName } = useBrandSettings();
 
     const { data, isLoading, isFetching, refetch } = useGetInstallmentScheduleQuery(purchaseId as number, {
         skip: !purchaseId,
@@ -71,9 +76,13 @@ export default function InstallmentScheduleDialog({ purchaseId, onClose }: Props
     );
 
     const openPayForm = (row: InstallmentRow) => {
-        setForm({ payment_method: "cash", transaction_id: "", invoice_id: "", paid_at: "" });
+        // Bill number is minted up front; the admin can regenerate or overwrite it.
+        setForm({ payment_method: "cash", transaction_id: generateTransactionId(brandName), invoice_id: "", paid_at: "" });
         setPayRow(row);
     };
+
+    const regenerateBillNo = () =>
+        setForm((f) => ({ ...f, transaction_id: generateTransactionId(brandName) }));
 
     const handleClose = () => {
         setPayRow(null);
@@ -222,13 +231,30 @@ export default function InstallmentScheduleDialog({ purchaseId, onClose }: Props
                                             )}
                                         </div>
                                         <div>
-                                            <InputLabel className="required mb-1!">Transaction / Bill No.</InputLabel>
+                                            <InputLabel className="required mb-1!">Transaction ID / Bill No.</InputLabel>
                                             <OutlinedInput
                                                 fullWidth
-                                                placeholder="Transaction / Bill No."
+                                                placeholder="Transaction ID / Bill No."
                                                 value={form.transaction_id}
                                                 onChange={(e) => setForm((f) => ({ ...f, transaction_id: e.target.value }))}
+                                                endAdornment={
+                                                    <InputAdornment position="end">
+                                                        <Tooltip title="Generate a new Transaction ID / Bill No." arrow>
+                                                            <IconButton
+                                                                edge="end"
+                                                                size="small"
+                                                                onClick={regenerateBillNo}
+                                                                aria-label="Generate a new Transaction ID / Bill No."
+                                                            >
+                                                                <ArrowRotateRight size={18} color={theme.palette.text.primary} />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </InputAdornment>
+                                                }
                                             />
+                                            <Typography variant="caption" color="text.secondary">
+                                                Auto-generated — overwrite it with a bank/gateway reference if needed.
+                                            </Typography>
                                         </div>
                                         <div>
                                             <InputLabel className="required mb-1!">Invoice ID</InputLabel>

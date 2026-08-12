@@ -7,6 +7,7 @@ import { useGetAllUserTransacionsQuery } from "../../../../services/transactionA
 import { useGetUserTransactionAnalyticsQuery, useGetUserTransactionPaymentMethodsQuery } from "../../../../services/userApi";
 import type { TransactionProps } from "../../../../types/transaction";
 import { formatDateForDisplay } from "../../../../utils/dateFormat";
+import { formatAmount, sameAmount } from "../../../../utils/itemPrice";
 import { getTransactionStatus } from "../../../../utils/statusMap";
 import StatusPill from "../../../atoms/StatusPill";
 import ActionIconVisible from "../../../molecules/Action/ActionIconVisible";
@@ -73,13 +74,24 @@ export default function UserTransactions() {
             ),
         },
         {
-            header: "Amount Paid",
-            accessorKey: "amount_paid",
-            cell: ({ row }) => (
-                <Typography variant="subtitle1" className="capitalize">
-                    {row.original.amount_paid || "N/A"}
-                </Typography>
-            ),
+            header: "Sold Price",
+            accessorKey: "sold_price",
+            cell: ({ row }) => {
+                // `amount_paid` is the read fallback for rows recorded before sold price existed.
+                const sold = row.original.sold_price ?? row.original.amount_paid;
+                const original = row.original.original_price;
+                if (sold == null) return <Typography variant="subtitle1">N/A</Typography>;
+                return (
+                    <Stack sx={{ gap: "2px" }}>
+                        <Typography variant="subtitle1">{formatAmount(sold)}</Typography>
+                        {original != null && !sameAmount(original, sold) && (
+                            <Typography variant="caption" color="text.secondary">
+                                <del>{formatAmount(original)}</del>
+                            </Typography>
+                        )}
+                    </Stack>
+                );
+            },
         },
         {
             header: "Invoice ID",

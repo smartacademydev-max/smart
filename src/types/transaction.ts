@@ -33,6 +33,10 @@ export interface TransactionPayload {
     transaction_id: string;
     payment_method: PaymentMethodProps;
     status: PaymentStatusProps;
+    /** Catalogue price of the item at the time of sale — reference only, not editable. */
+    original_price: number | string;
+    /** What the student was actually charged. Defaults to `original_price`, admin may override. */
+    sold_price: number | string;
     image: File | null;
     image_url?: string | null;
 }
@@ -46,6 +50,8 @@ export const TransactionInitialState: TransactionPayload = {
     transaction_id: "",
     payment_method: "cash",
     status: "success",
+    original_price: "",
+    sold_price: "",
     image: null,
 };
 
@@ -59,13 +65,17 @@ export interface InstallmentSummary {
     has_overdue: boolean;
 }
 
-export interface TransactionResponse extends TransactionPayload {
+export interface TransactionResponse extends Omit<TransactionPayload, "original_price" | "sold_price"> {
     name: string;
     added_by: string;
     course_name: string;
     email: string;
     contact: string;
     created_at: string;
+    /** Catalogue price when the sale was recorded. Absent on rows created before pricing was tracked. */
+    original_price?: number | null;
+    /** Amount actually charged. Falls back to `original_price` when never overridden. */
+    sold_price?: number | null;
     course_status?: TransactionCourseStatus;
     is_installment?: boolean;
     installment_summary?: InstallmentSummary | null;
@@ -83,7 +93,10 @@ export interface TransactionProps {
     name: string;
     payment_method: string;
     purchased_date: string;
+    /** Legacy total; kept as the read fallback for rows predating `sold_price`. */
     amount_paid: number;
+    original_price?: number | null;
+    sold_price?: number | null;
     invoice_id: string;
     status: "success" | "failed" | "pending";
 }
@@ -109,6 +122,11 @@ export interface TransactionDetail {
     status: string;
     image_url?: string | null;
     name?: string;
+    /** Catalogue price when the sale was recorded. */
+    original_price?: number | null;
+    /** Amount actually charged — the editable one. */
+    sold_price?: number | null;
+    /** Legacy total; kept as the read fallback for rows predating `sold_price`. */
     amount_paid?: number;
     purchased_date?: string;
     course_status?: TransactionCourseStatus;

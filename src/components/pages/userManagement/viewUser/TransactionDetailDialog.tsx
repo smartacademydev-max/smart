@@ -3,6 +3,7 @@ import { CloseCircle } from "iconsax-reactjs";
 import { useGetTransactionByIdQuery } from "../../../../services/transactionApi";
 import type { TransactionCourseStatus } from "../../../../types/transaction";
 import { formatDateForDisplay } from "../../../../utils/dateFormat";
+import { formatAmount, toAmount } from "../../../../utils/itemPrice";
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
     return (
@@ -39,6 +40,12 @@ export default function TransactionDetailDialog({ id, onClose }: { id: number | 
     const imageFilename = tx?.image_url ? tx.image_url.split("/").pop() ?? "image.png" : null;
     const courseAccess = courseAccessLabel(tx?.course_status);
     const paymentStatus = paymentStatusLabel(tx?.status);
+
+    // `amount_paid` is the read fallback for rows recorded before sold price existed.
+    const soldPrice = tx?.sold_price ?? tx?.amount_paid ?? null;
+    const discount = tx?.original_price != null && soldPrice != null
+        ? Math.max(toAmount(tx.original_price) - toAmount(soldPrice), 0)
+        : 0;
 
     return (
         <Dialog open={id !== null} onClose={onClose} maxWidth="xs" fullWidth>
@@ -101,7 +108,35 @@ export default function TransactionDetailDialog({ id, onClose }: { id: number | 
                         <Divider sx={{ mb: 0.5 }} />
                         <InfoRow label="Payment Method" value={<Typography variant="body2" className="capitalize">{tx.payment_method || "—"}</Typography>} />
                         <Divider />
-                        <InfoRow label="Amount Paid" value={tx.amount_paid != null ? `NRs. ${tx.amount_paid.toLocaleString()}` : "—"} />
+                        <InfoRow label="Transaction ID / Bill No." value={tx.transaction_id || "—"} />
+                        <Divider />
+                        <InfoRow
+                            label="Original Price"
+                            value={tx.original_price != null ? `NRs. ${formatAmount(tx.original_price)}` : "—"}
+                        />
+                        <Divider />
+                        <InfoRow
+                            label="Sold Price"
+                            value={
+                                soldPrice == null ? "—" : (
+                                    <Stack direction="row" alignItems="center" justifyContent="flex-end" gap={0.75}>
+                                        <Typography variant="body2" fontWeight={500}>NRs. {formatAmount(soldPrice)}</Typography>
+                                        {discount > 0 && (
+                                            <Chip
+                                                size="small"
+                                                label={`NRs. ${formatAmount(discount)} off`}
+                                                sx={{
+                                                    fontSize: 11,
+                                                    bgcolor: theme.palette.success.light,
+                                                    color: theme.palette.success.main,
+                                                    border: `1px solid ${theme.palette.success.main}`,
+                                                }}
+                                            />
+                                        )}
+                                    </Stack>
+                                )
+                            }
+                        />
                         <Divider />
                         <InfoRow label="Payment Date" value={formatDateForDisplay(tx.purchased_date ?? "") || "—"} />
                         <Divider />

@@ -11,6 +11,7 @@ import { useCourseFilter } from '../../../../store/useCourseFilter';
 import { DeviceFilter, paymentOptions, StatusFilter, type DeviceType, type Status } from '../../../../types';
 import type { EnrollmentType, TransactionResponse } from '../../../../types/transaction';
 import { formatDate } from '../../../../utils/dateFormat';
+import { formatAmount, sameAmount } from '../../../../utils/itemPrice';
 import { getPaymentTypeVariant } from '../../../../utils/statusMap';
 import StatusPill from '../../../atoms/StatusPill';
 import Actions from '../../../molecules/Action';
@@ -149,6 +150,18 @@ export default function AllTransaction({ open, setOpen }: Props) {
         setOpen(true);
     };
 
+    // Drop the previously edited row so the form opens in create mode — otherwise it
+    // reopens on the last transaction and skips the auto-generated bill number.
+    const handleCreate = () => {
+        setSelectedTransaction(null);
+        setOpen(true);
+    };
+
+    const handleFormOpenChange = (nextOpen: boolean) => {
+        if (!nextOpen) setSelectedTransaction(null);
+        setOpen(nextOpen);
+    };
+
     const columns = useMemo<ColumnDef<TransactionResponse>[]>(() => [
         {
             header: () => (
@@ -214,6 +227,25 @@ export default function AllTransaction({ open, setOpen }: Props) {
             ),
         },
         {
+            header: "Sold Price",
+            accessorKey: "sold_price",
+            cell: ({ row }) => {
+                const sold = row.original.sold_price;
+                const original = row.original.original_price;
+                if (sold == null) return <Typography variant='subtitle2'>N/A</Typography>;
+                return (
+                    <Stack sx={{ gap: "2px" }}>
+                        <Typography variant='subtitle2'>{t("messages.npr")} {formatAmount(sold)}</Typography>
+                        {original != null && !sameAmount(original, sold) && (
+                            <Typography variant='caption' color="text.secondary">
+                                <del>{t("messages.npr")} {formatAmount(original)}</del>
+                            </Typography>
+                        )}
+                    </Stack>
+                );
+            },
+        },
+        {
             header: "Invoice ID",
             accessorKey: "invoice_id",
             cell: ({ row }) => (
@@ -223,12 +255,14 @@ export default function AllTransaction({ open, setOpen }: Props) {
             ),
         },
         {
-            header: "Payment ID",
+            header: "Transaction ID / Bill No.",
             accessorKey: "transaction_id",
             cell: ({ row }) => (
-                <Typography variant='subtitle2' className="capitalize">
-                    {row.original.transaction_id || "N/A"}
-                </Typography>
+                <Tooltip title={row.original.transaction_id || ""} arrow>
+                    <Typography variant='subtitle2' className="line-clamp-1">
+                        {row.original.transaction_id || "N/A"}
+                    </Typography>
+                </Tooltip>
             ),
         },
         {
@@ -325,7 +359,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
                     cta={{
                         label: t("messages.empty_states.transaction_management.action"),
                     }}
-                    handleOpenPopup={() => setOpen(true)}
+                    handleOpenPopup={handleCreate}
                 />
                 <TabController
                     currentActive={enrollmentType}
@@ -406,7 +440,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
 
             <TransactionManagementForm
                 open={open}
-                setOpen={setOpen}
+                setOpen={handleFormOpenChange}
                 transactionId={selectedTransaction?.id}
             />
 

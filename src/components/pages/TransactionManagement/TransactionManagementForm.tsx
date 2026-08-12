@@ -1,10 +1,10 @@
-import { Autocomplete, Box, Button, Checkbox, CircularProgress, Dialog, DialogContent, Divider, FormControlLabel, IconButton, InputLabel, OutlinedInput, TextField, Typography, useTheme } from "@mui/material";
+import { Autocomplete, Box, Button, Checkbox, CircularProgress, Dialog, DialogContent, Divider, FormControlLabel, IconButton, InputAdornment, InputLabel, OutlinedInput, Stack, TextField, Tooltip, Typography, useTheme } from "@mui/material";
 import type { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
-import { CloseCircle } from "iconsax-reactjs";
+import { ArrowRotateRight, CloseCircle } from "iconsax-reactjs";
 import MakuraDatePicker from "../../atoms/MakuraDatePicker";
 import { useFormik } from "formik";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import * as Yup from "yup";
 import SearchIcon from "../../../icons/SearchIcon";
@@ -23,6 +23,9 @@ import type { EnrollmentType, InstallmentInterval, InstallmentRowInput } from ".
 import { TransactionInitialState } from "../../../types/transaction";
 import type { RegisterUserProps } from "../../../types/user";
 import { calcHasMore } from "../../../utils/calculateHasMore";
+import { generateInvoiceId, generateTransactionId } from "../../../utils/generateTransactionRefs";
+import type { PriceBearingItem } from "../../../utils/itemPrice";
+import { formatAmount, resolveMarkedPrice, resolveSellingPrice, sameAmount, toAmount } from "../../../utils/itemPrice";
 import FileDragDrop from "../../molecules/FileDragDrop";
 import TabController from "../../molecules/TabController";
 import CustomTable from "../../molecules/Table";
@@ -56,7 +59,7 @@ const enrollmentConfig = {
 export default function TransactionManagementForm({ open, setOpen, transactionId }: Props) {
     const dispatch = useAppDispatch();
     const theme = useTheme();
-    const { brandName } = useBrandSettings();
+    const { brandName, isLoading: loadingBrand } = useBrandSettings();
 
     const [enrollmentType, setEnrollmentType] = useState<EnrollmentType>("course");
 
@@ -74,6 +77,9 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
     const [courseList, setCourseList] = useState<CourseProps[]>([]);
     const [testList, setTestList] = useState<TestProps[]>([]);
     const [bundleList, setBundleList] = useState<SetProps[]>([]);
+
+    /** Selection whose catalogue price has already been copied into the form. */
+    const priceSeededFor = useRef<string | null>(null);
 
     const { data: transactionData, isLoading: loadingTransaction } = useGetTransactionByIdQuery(
         transactionId as number,
@@ -124,16 +130,6 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
     const [addTransaction, { isLoading: creatingTransaction }] = useAddTransactionMutation();
     const [updateTransaction, { isLoading: updatingTransaction }] = useUpdateTransactionByIdMutation();
 
-    const generateInvoiceId = (studentId?: number) => {
-        const date = new Date();
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const timestamp = Date.now();
-        const prefix = (brandName || "INVOICE").toUpperCase().replace(/\s+/g, "-");
-        return `${prefix}-${year}${month}${day}-${timestamp}${studentId ? `-${studentId}` : ''}`;
-    };
-
     const validationSchema = useMemo(() => Yup.object({
         student_id: Yup.number()
             .min(1, "Please select a student")
@@ -155,6 +151,10 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
         status: Yup.string()
             .oneOf(["success", "installment"])
             .required("Payment status is required"),
+        sold_price: Yup.number()
+            .typeError("Enter a valid amount")
+            .min(0, "Sold price cannot be negative")
+            .required("Sold price is required"),
         // Even-split fields — required only for installment + even split.
         installment_count: Yup.number().when(["status", "use_custom_installments"], {
             is: (status: string, custom: boolean) => status === "installment" && !custom,
@@ -182,7 +182,16 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                         .required("Amount is required"),
                     due_date: Yup.string().required("Due date is required"),
                 }))
-                .min(2, "Add at least 2 installments"),
+                .min(2, "Add at least 2 installments")
+                // The schedule settles the sale, so the rows must account for every rupee of it.
+                .test(
+                    "matches-sold-price",
+                    "Installment amounts must add up to the sold price",
+                    function (rows) {
+                        const total = (rows ?? []).reduce((sum, row) => sum + toAmount(row?.amount), 0);
+                        return sameAmount(total, this.parent?.sold_price);
+                    },
+                ),
             otherwise: (s) => s.notRequired(),
         }),
         image: Yup.mixed().nullable(),
@@ -199,6 +208,9 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
             transaction_id: transaction.transaction_id || "",
             payment_method: transaction.payment_method || "",
             status: transaction.status || "",
+            // `amount_paid` is the read fallback for rows recorded before sold price existed.
+            original_price: transaction.original_price ?? "",
+            sold_price: transaction.sold_price ?? transaction.amount_paid ?? "",
             image: null,
             image_url: transaction.image_url || null,
             ...installmentDefaults,
@@ -213,6 +225,10 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
             formData.append("transaction_id", values.transaction_id);
             formData.append("payment_method", values.payment_method);
             formData.append("status", values.status);
+            // Sold price is authoritative for what the student owes; original price rides
+            // along so the server can store what the item listed for at sale time.
+            formData.append("sold_price", String(toAmount(values.sold_price)));
+            formData.append("original_price", String(toAmount(values.original_price || values.sold_price)));
 
             if (enrollmentType === "course") {
                 formData.append("course_id", String(values.course_id));
@@ -278,6 +294,7 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
         setSearchBundle("");
         setTestQp({ pageIndex: 1, pageSize: 10 });
         setBundleQp({ pageIndex: 1, pageSize: 10 });
+        priceSeededFor.current = null;
         setOpen(false);
     };
 
@@ -286,6 +303,10 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
         formik.setFieldValue("course_id", 0);
         formik.setFieldValue("test_id", 0);
         formik.setFieldValue("bundle_id", 0);
+        // Nothing is selected any more, so the prices no longer describe anything.
+        priceSeededFor.current = null;
+        formik.setFieldValue("original_price", "");
+        formik.setFieldValue("sold_price", "");
         // Installments are courses-only — drop the status if leaving the course tab.
         if (newType !== "course" && formik.values.status === "installment") {
             formik.setFieldValue("status", "success");
@@ -298,21 +319,110 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
     };
 
     useEffect(() => {
+        // Wait for brand settings — generating early would bake in the fallback prefix.
+        if (loadingBrand) return;
         if (!transactionId && formik.values.student_id > 0 && !formik.values.invoice_id) {
-            const newInvoiceId = generateInvoiceId(formik.values.student_id);
+            const newInvoiceId = generateInvoiceId(brandName, formik.values.student_id);
             formik.setFieldValue("invoice_id", newInvoiceId);
         }
-    }, [formik.values.student_id, transactionId]);
+    }, [formik.values.student_id, transactionId, loadingBrand, brandName]);
+
+    /**
+     * Transaction ID / Bill No. is minted as soon as the dialog opens so the admin
+     * never has to invent one. It stays a normal editable field — regenerating or
+     * overwriting it is always allowed (see `regenerateTransactionId`).
+     */
+    useEffect(() => {
+        if (!open || loadingBrand) return;
+
+        if (transactionId) {
+            // Editing: only backfill rows that predate bill numbers, and only once the
+            // record has landed — reinitialisation would otherwise wipe an early fill.
+            if (transaction && !transaction.transaction_id) {
+                formik.setFieldValue("transaction_id", generateTransactionId(brandName));
+            }
+            return;
+        }
+
+        if (!formik.values.transaction_id) {
+            formik.setFieldValue("transaction_id", generateTransactionId(brandName));
+        }
+    }, [open, transactionId, transaction, loadingBrand, brandName]);
+
+    /** The catalogue row backing the current selection, whichever tab we're on. */
+    const selectedItem = useMemo<PriceBearingItem | null>(() => {
+        if (enrollmentType === "course") return courseList.find((c) => Number(c.id) === formik.values.course_id) ?? null;
+        if (enrollmentType === "test") return testList.find((t) => Number(t.id) === formik.values.test_id) ?? null;
+        return bundleList.find((b) => Number(b.id) === formik.values.bundle_id) ?? null;
+    }, [enrollmentType, courseList, testList, bundleList, formik.values.course_id, formik.values.test_id, formik.values.bundle_id]);
+
+    const catalogueSellingPrice = useMemo(() => resolveSellingPrice(selectedItem), [selectedItem]);
+    const catalogueMarkedPrice = useMemo(() => resolveMarkedPrice(selectedItem), [selectedItem]);
+
+    /** Identifies the current selection — prices are seeded once per distinct item. */
+    const priceSeedKey = `${enrollmentType}:${enrollmentType === "course"
+        ? formik.values.course_id
+        : enrollmentType === "test"
+            ? formik.values.test_id
+            : formik.values.bundle_id}`;
+
+    // Editing: mark the stored selection as already seeded so the recorded prices —
+    // which reflect the catalogue *at sale time* — aren't rewritten by today's prices.
+    useEffect(() => {
+        if (!transaction) return;
+        const type = transaction.test_id ? "test" : transaction.bundle_id ? "bundle" : "course";
+        priceSeededFor.current = `${type}:${transaction.test_id || transaction.bundle_id || transaction.course_id || 0}`;
+    }, [transaction]);
+
+    /**
+     * Picking an item seeds both prices from the catalogue — once per selection, so an
+     * admin's negotiated figure survives re-renders, list refetches and scroll paging.
+     * Choosing a different item reseeds from that item's price.
+     */
+    useEffect(() => {
+        if (!selectedItem || priceSeededFor.current === priceSeedKey) return;
+        priceSeededFor.current = priceSeedKey;
+        formik.setFieldValue("original_price", catalogueMarkedPrice || catalogueSellingPrice);
+        formik.setFieldValue("sold_price", catalogueSellingPrice);
+    }, [selectedItem, catalogueSellingPrice, catalogueMarkedPrice, priceSeedKey]);
+
+    const resetSoldPriceToCatalogue = () => {
+        formik.setFieldValue("sold_price", catalogueSellingPrice);
+        formik.setFieldTouched("sold_price", true, false);
+    };
+
+    const regenerateTransactionId = () => {
+        formik.setFieldValue("transaction_id", generateTransactionId(brandName));
+        formik.setFieldTouched("transaction_id", true, false);
+    };
+
+    const regenerateInvoiceId = () => {
+        formik.setFieldValue("invoice_id", generateInvoiceId(brandName, formik.values.student_id || undefined));
+        formik.setFieldTouched("invoice_id", true, false);
+    };
 
     const handleSelectRow = (id: number) => {
         formik.setFieldValue("student_id", Number(id));
         if (!transactionId) {
-            const newInvoiceId = generateInvoiceId(Number(id));
+            const newInvoiceId = generateInvoiceId(brandName, Number(id));
             formik.setFieldValue("invoice_id", newInvoiceId);
         }
     };
 
     const isInstallment = formik.values.status === "installment" && enrollmentType === "course";
+
+    const soldAmount = toAmount(formik.values.sold_price);
+    const originalAmount = toAmount(formik.values.original_price);
+    const discountAmount = Math.max(originalAmount - soldAmount, 0);
+    const discountPercent = originalAmount > 0 ? (discountAmount / originalAmount) * 100 : 0;
+    const isMarkedUp = originalAmount > 0 && soldAmount > originalAmount;
+
+    // The schedule has to settle the sale exactly — surfaced live so the admin can see the gap.
+    const installmentTotal = useMemo(
+        () => formik.values.installments.reduce((sum, row) => sum + toAmount(row.amount), 0),
+        [formik.values.installments],
+    );
+    const installmentTotalMatches = sameAmount(installmentTotal, soldAmount);
 
     const handleToggleCustomInstallments = (checked: boolean) => {
         formik.setFieldValue("use_custom_installments", checked);
@@ -437,6 +547,16 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
     };
 
     const itemListLoading = enrollmentType === "course" ? loadingCourses : enrollmentType === "test" ? loadingTests : loadingBundles;
+
+    const regenerateAdornment = (onClick: () => void, label: string) => (
+        <InputAdornment position="end">
+            <Tooltip title={label} arrow>
+                <IconButton edge="end" size="small" onClick={onClick} aria-label={label}>
+                    <ArrowRotateRight size={18} color={theme.palette.text.primary} />
+                </IconButton>
+            </Tooltip>
+        </InputAdornment>
+    );
 
     const activeFieldError = enrollmentType === "course"
         ? (formik.touched.course_id && formik.errors.course_id)
@@ -668,6 +788,60 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                             <div className="md:grid grid-cols-2 flex flex-col gap-6 mt-6">
                                 <div className="col-span-1">
                                     <div className="input_field">
+                                        <InputLabel>Original Price</InputLabel>
+                                        <OutlinedInput
+                                            fullWidth
+                                            disabled
+                                            placeholder="—"
+                                            value={formatAmount(formik.values.original_price)}
+                                            startAdornment={<InputAdornment position="start">NRs.</InputAdornment>}
+                                        />
+                                        <Typography variant="caption" color="text.secondary">
+                                            {selectedItem
+                                                ? `Catalogue price of the selected ${enrollmentType}.`
+                                                : "Select an item above to load its price."}
+                                        </Typography>
+                                    </div>
+                                </div>
+
+                                <div className="col-span-1">
+                                    <div className="input_field">
+                                        <InputLabel className="required">Sold Price</InputLabel>
+                                        <OutlinedInput
+                                            fullWidth
+                                            type="number"
+                                            placeholder="0"
+                                            name="sold_price"
+                                            inputProps={{ min: 0, step: "0.01" }}
+                                            value={formik.values.sold_price}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            error={formik.touched.sold_price && Boolean(formik.errors.sold_price)}
+                                            startAdornment={<InputAdornment position="start">NRs.</InputAdornment>}
+                                            endAdornment={catalogueSellingPrice > 0 && !sameAmount(soldAmount, catalogueSellingPrice)
+                                                ? regenerateAdornment(resetSoldPriceToCatalogue, `Reset to catalogue price (NRs. ${formatAmount(catalogueSellingPrice)})`)
+                                                : undefined}
+                                        />
+                                        {formik.touched.sold_price && formik.errors.sold_price ? (
+                                            <Typography color="error" variant="caption">{formik.errors.sold_price}</Typography>
+                                        ) : discountAmount > 0 ? (
+                                            <Typography variant="caption" color="success.main">
+                                                Discounted by NRs. {formatAmount(discountAmount)} ({discountPercent.toFixed(discountPercent % 1 === 0 ? 0 : 1)}% off).
+                                            </Typography>
+                                        ) : isMarkedUp ? (
+                                            <Typography variant="caption" color="warning.main">
+                                                Sold above the catalogue price by NRs. {formatAmount(soldAmount - originalAmount)}.
+                                            </Typography>
+                                        ) : (
+                                            <Typography variant="caption" color="text.secondary">
+                                                Auto-filled from the catalogue — change it to record a negotiated price.
+                                            </Typography>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="col-span-1">
+                                    <div className="input_field">
                                         <InputLabel className="required">Invoice ID</InputLabel>
                                         <OutlinedInput
                                             fullWidth
@@ -677,9 +851,14 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                                             onChange={formik.handleChange}
                                             onBlur={formik.handleBlur}
                                             error={formik.touched.invoice_id && Boolean(formik.errors.invoice_id)}
+                                            endAdornment={regenerateAdornment(regenerateInvoiceId, "Generate a new Invoice ID")}
                                         />
-                                        {formik.touched.invoice_id && formik.errors.invoice_id && (
+                                        {formik.touched.invoice_id && formik.errors.invoice_id ? (
                                             <Typography color="error" variant="caption">{formik.errors.invoice_id}</Typography>
+                                        ) : (
+                                            <Typography variant="caption" color="text.secondary">
+                                                Auto-generated — edit it if you need a different reference.
+                                            </Typography>
                                         )}
                                     </div>
                                 </div>
@@ -732,18 +911,23 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
 
                                 <div className="col-span-1">
                                     <div className="input_field">
-                                        <InputLabel className="required">Transaction/ Bill No.</InputLabel>
+                                        <InputLabel className="required">Transaction ID/ Bill No.</InputLabel>
                                         <OutlinedInput
                                             fullWidth
-                                            placeholder="Transaction/ Bill No."
+                                            placeholder="Transaction ID/ Bill No."
                                             name="transaction_id"
                                             value={formik.values.transaction_id}
                                             onChange={formik.handleChange}
                                             onBlur={formik.handleBlur}
                                             error={formik.touched.transaction_id && Boolean(formik.errors.transaction_id)}
+                                            endAdornment={regenerateAdornment(regenerateTransactionId, "Generate a new Transaction ID / Bill No.")}
                                         />
-                                        {formik.touched.transaction_id && formik.errors.transaction_id && (
+                                        {formik.touched.transaction_id && formik.errors.transaction_id ? (
                                             <Typography color="error" variant="caption">{formik.errors.transaction_id}</Typography>
+                                        ) : (
+                                            <Typography variant="caption" color="text.secondary">
+                                                Auto-generated — overwrite it with a bank/gateway reference if needed.
+                                            </Typography>
                                         )}
                                     </div>
                                 </div>
@@ -818,7 +1002,7 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                                                 </div>
 
                                                 <Typography variant="caption" color="text.secondary" className="col-span-3">
-                                                    Amounts are split evenly by the server; any rounding remainder is added to the final installment.
+                                                    NRs. {formatAmount(soldAmount)} is split evenly by the server; any rounding remainder is added to the final installment.
                                                 </Typography>
                                             </div>
                                         ) : (
@@ -867,11 +1051,21 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                                                 {typeof formik.errors.installments === "string" && (
                                                     <Typography color="error" variant="caption">{formik.errors.installments}</Typography>
                                                 )}
-                                                <div>
+                                                <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
                                                     <Button variant="outlined" size="small" onClick={addInstallmentRow}>
                                                         + Add Installment
                                                     </Button>
-                                                </div>
+                                                    <Typography
+                                                        variant="caption"
+                                                        color={installmentTotalMatches ? "success.main" : "error"}
+                                                        fontWeight={500}
+                                                    >
+                                                        Scheduled NRs. {formatAmount(installmentTotal)} of NRs. {formatAmount(soldAmount)}
+                                                        {installmentTotalMatches
+                                                            ? ""
+                                                            : ` · NRs. ${formatAmount(Math.abs(soldAmount - installmentTotal))} ${installmentTotal > soldAmount ? "over" : "remaining"}`}
+                                                    </Typography>
+                                                </Stack>
                                             </div>
                                         )}
                                     </div>
