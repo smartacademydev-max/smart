@@ -1,4 +1,4 @@
-import { Autocomplete, Box, Button, Checkbox, CircularProgress, Dialog, DialogContent, Divider, FormControlLabel, IconButton, InputAdornment, InputLabel, OutlinedInput, Stack, TextField, Tooltip, Typography, useTheme } from "@mui/material";
+import { Autocomplete, Box, Button, Checkbox, CircularProgress, Dialog, DialogContent, Divider, FormControlLabel, FormHelperText, IconButton, InputAdornment, InputLabel, OutlinedInput, Stack, TextField, Tooltip, Typography, useTheme } from "@mui/material";
 import type { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
 import { ArrowRotateRight, CloseCircle } from "iconsax-reactjs";
@@ -9,8 +9,9 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import * as Yup from "yup";
 import SearchIcon from "../../../icons/SearchIcon";
 import { useBrandSettings } from "../../../hooks/useBrandSettings";
-import { useGetAllCourseQuery } from "../../../services/courseApi";
+import { useGetAllCourseQuery, useGetCourseByIdQuery } from "../../../services/courseApi";
 import { useGetAllBundleQuery, useGetAllIndividualTestQuery } from "../../../services/questionApi";
+import { useGetAllSubscriptionQuery } from "../../../services/subscriptionPlanApi";
 import { useAddTransactionMutation, useGetTransactionByIdQuery, useUpdateTransactionByIdMutation } from "../../../services/transactionApi";
 import { useGetAllUserQuery } from "../../../services/userApi";
 import { showToast } from "../../../slice/toastSlice";
@@ -19,6 +20,7 @@ import { useCourseFilter } from "../../../store/useCourseFilter";
 import { paymentOptions } from "../../../types";
 import type { CourseProps } from "../../../types/course";
 import type { SetProps, TestProps } from "../../../types/question";
+import type { SubscriptionPlanProps } from "../../../types/subscriptionPlan";
 import type { EnrollmentType, InstallmentInterval, InstallmentRowInput } from "../../../types/transaction";
 import { TransactionInitialState } from "../../../types/transaction";
 import type { RegisterUserProps } from "../../../types/user";
@@ -77,6 +79,7 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
     const [courseList, setCourseList] = useState<CourseProps[]>([]);
     const [testList, setTestList] = useState<TestProps[]>([]);
     const [bundleList, setBundleList] = useState<SetProps[]>([]);
+    const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
 
     /** Selection whose catalogue price has already been copied into the form. */
     const priceSeededFor = useRef<string | null>(null);
@@ -101,6 +104,35 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
     }, [search]);
 
     const { data, isLoading } = useGetAllUserQuery({ ...qp, search: debounceSearch });
+
+    /* ----------------------------- Subscription plans ----------------------------- */
+
+    // `course_subscription` only comes back on the detail endpoint, so the selected
+    // course has to be fetched in full before its plans can be offered. Mirrored into
+    // state rather than read off formik — this runs before `useFormik` is initialised.
+    const { data: selectedCourseData, isFetching: loadingCourseDetail } = useGetCourseByIdQuery(
+        { id: String(selectedCourseId ?? "") },
+        { skip: !selectedCourseId },
+    );
+    const { data: subscriptionData } = useGetAllSubscriptionQuery(
+        { pageIndex: 1, pageSize: 100, search: "" },
+        { skip: enrollmentType !== "course" },
+    );
+
+    const selectedCourse = selectedCourseData?.data
+        ?? courseList.find((c) => Number(c.id) === selectedCourseId);
+
+    const isSubscriptionCourse = enrollmentType === "course" && selectedCourse?.course_type === "subscription";
+
+    // Plans carry only `subscription_id`; the readable name/description lives on the plan catalogue.
+    const coursePlans = useMemo(() => {
+        const plans = selectedCourse?.course_subscription ?? [];
+        const catalogue: SubscriptionPlanProps[] = subscriptionData?.data?.data ?? [];
+        return plans.map((plan) => {
+            const match = catalogue.find((item) => Number(item.id) === plan.subscription_id);
+            return { ...plan, name: match?.name || `Plan ${plan.subscription_id}`, description: match?.description || "" };
+        });
+    }, [selectedCourse, subscriptionData]);
 
     // Installments are courses-only (§1) — hide the option for test/bundle.
     const paymentStatus = useMemo(() => {
@@ -143,6 +175,9 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
         bundle_id: enrollmentType === "bundle"
             ? Yup.number().min(1, "Please select a bundle").required("Please select a bundle")
             : Yup.number(),
+        subscription_id: isSubscriptionCourse
+            ? Yup.number().min(1, "Please select a subscription plan").required("Please select a subscription plan")
+            : Yup.number(),
         invoice_id: Yup.string().required("Invoice ID is required"),
         transaction_id: Yup.string().required("Transaction/Bill No. is required"),
         payment_method: Yup.string()
@@ -151,10 +186,22 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
         status: Yup.string()
             .oneOf(["success", "installment"])
             .required("Payment status is required"),
+        // Only a completed sale states a settled amount. On an installment plan the
+        // schedule is what the student owes, so the price stays optional here.
         sold_price: Yup.number()
+            .transform((value, original) => (original === "" || original === null ? undefined : value))
             .typeError("Enter a valid amount")
             .min(0, "Sold price cannot be negative")
-            .required("Sold price is required"),
+            .when("status", {
+                is: "success",
+                then: (s) => s.required("Sold price is required"),
+                otherwise: (s) => s.notRequired(),
+            }),
+        original_price: Yup.number()
+            .transform((value, original) => (original === "" || original === null ? undefined : value))
+            .typeError("Enter a valid amount")
+            .min(0, "Original price cannot be negative")
+            .notRequired(),
         // Even-split fields — required only for installment + even split.
         installment_count: Yup.number().when(["status", "use_custom_installments"], {
             is: (status: string, custom: boolean) => status === "installment" && !custom,
@@ -183,20 +230,23 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                     due_date: Yup.string().required("Due date is required"),
                 }))
                 .min(2, "Add at least 2 installments")
-                // The schedule settles the sale, so the rows must account for every rupee of it.
+                // Sold price is optional on an installment plan; when the admin does state
+                // one, the rows have to account for every rupee of it.
                 .test(
                     "matches-sold-price",
                     "Installment amounts must add up to the sold price",
                     function (rows) {
+                        const sold = toAmount(this.parent?.sold_price);
+                        if (sold <= 0) return true;
                         const total = (rows ?? []).reduce((sum, row) => sum + toAmount(row?.amount), 0);
-                        return sameAmount(total, this.parent?.sold_price);
+                        return sameAmount(total, sold);
                     },
                 ),
             otherwise: (s) => s.notRequired(),
         }),
         image: Yup.mixed().nullable(),
         image_url: Yup.string().nullable()
-    }), [enrollmentType, todayStr]);
+    }), [enrollmentType, todayStr, isSubscriptionCourse]);
 
     const formik = useFormik({
         initialValues: transaction ? {
@@ -204,6 +254,7 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
             course_id: transaction.course_id || 0,
             test_id: transaction.test_id || 0,
             bundle_id: transaction.bundle_id || 0,
+            subscription_id: transaction.subscription_id || 0,
             invoice_id: transaction.invoice_id || ``,
             transaction_id: transaction.transaction_id || "",
             payment_method: transaction.payment_method || "",
@@ -226,12 +277,20 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
             formData.append("payment_method", values.payment_method);
             formData.append("status", values.status);
             // Sold price is authoritative for what the student owes; original price rides
-            // along so the server can store what the item listed for at sale time.
-            formData.append("sold_price", String(toAmount(values.sold_price)));
-            formData.append("original_price", String(toAmount(values.original_price || values.sold_price)));
+            // along so the server can store what the item listed for at sale time. Both are
+            // omitted when left blank (only possible on an installment plan) so the server
+            // keeps deriving the amount rather than being told the sale was free.
+            if (String(values.sold_price).trim() !== "") {
+                formData.append("sold_price", String(toAmount(values.sold_price)));
+                formData.append("original_price", String(toAmount(values.original_price || values.sold_price)));
+            }
 
             if (enrollmentType === "course") {
                 formData.append("course_id", String(values.course_id));
+                // Subscription courses are sold per plan — the plan decides price and duration.
+                if (values.subscription_id && values.subscription_id > 0) {
+                    formData.append("subscription_id", String(values.subscription_id));
+                }
             } else if (enrollmentType === "test") {
                 formData.append("test_id", String(values.test_id));
             } else if (enrollmentType === "bundle") {
@@ -294,6 +353,7 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
         setSearchBundle("");
         setTestQp({ pageIndex: 1, pageSize: 10 });
         setBundleQp({ pageIndex: 1, pageSize: 10 });
+        setSelectedCourseId(null);
         priceSeededFor.current = null;
         setOpen(false);
     };
@@ -303,6 +363,8 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
         formik.setFieldValue("course_id", 0);
         formik.setFieldValue("test_id", 0);
         formik.setFieldValue("bundle_id", 0);
+        formik.setFieldValue("subscription_id", 0);
+        setSelectedCourseId(null);
         // Nothing is selected any more, so the prices no longer describe anything.
         priceSeededFor.current = null;
         formik.setFieldValue("original_price", "");
@@ -349,19 +411,32 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
         }
     }, [open, transactionId, transaction, loadingBrand, brandName]);
 
-    /** The catalogue row backing the current selection, whichever tab we're on. */
+    const selectedPlan = useMemo(
+        () => coursePlans.find((plan) => plan.subscription_id === formik.values.subscription_id) ?? null,
+        [coursePlans, formik.values.subscription_id],
+    );
+
+    /**
+     * The catalogue row backing the current selection, whichever tab we're on.
+     * A subscription course has no single price — the chosen plan carries it — so the
+     * plan stands in as the priced item once one is selected.
+     */
     const selectedItem = useMemo<PriceBearingItem | null>(() => {
-        if (enrollmentType === "course") return courseList.find((c) => Number(c.id) === formik.values.course_id) ?? null;
+        if (enrollmentType === "course") {
+            if (isSubscriptionCourse) return selectedPlan;
+            return courseList.find((c) => Number(c.id) === formik.values.course_id) ?? null;
+        }
         if (enrollmentType === "test") return testList.find((t) => Number(t.id) === formik.values.test_id) ?? null;
         return bundleList.find((b) => Number(b.id) === formik.values.bundle_id) ?? null;
-    }, [enrollmentType, courseList, testList, bundleList, formik.values.course_id, formik.values.test_id, formik.values.bundle_id]);
+    }, [enrollmentType, isSubscriptionCourse, selectedPlan, courseList, testList, bundleList, formik.values.course_id, formik.values.test_id, formik.values.bundle_id]);
 
     const catalogueSellingPrice = useMemo(() => resolveSellingPrice(selectedItem), [selectedItem]);
     const catalogueMarkedPrice = useMemo(() => resolveMarkedPrice(selectedItem), [selectedItem]);
 
-    /** Identifies the current selection — prices are seeded once per distinct item. */
+    /** Identifies the current selection — prices are seeded once per distinct item.
+     *  Includes the plan, so switching plans on a subscription course reseeds. */
     const priceSeedKey = `${enrollmentType}:${enrollmentType === "course"
-        ? formik.values.course_id
+        ? `${formik.values.course_id}:${formik.values.subscription_id}`
         : enrollmentType === "test"
             ? formik.values.test_id
             : formik.values.bundle_id}`;
@@ -370,8 +445,11 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
     // which reflect the catalogue *at sale time* — aren't rewritten by today's prices.
     useEffect(() => {
         if (!transaction) return;
-        const type = transaction.test_id ? "test" : transaction.bundle_id ? "bundle" : "course";
-        priceSeededFor.current = `${type}:${transaction.test_id || transaction.bundle_id || transaction.course_id || 0}`;
+        priceSeededFor.current = transaction.test_id
+            ? `test:${transaction.test_id}`
+            : transaction.bundle_id
+                ? `bundle:${transaction.bundle_id}`
+                : `course:${transaction.course_id || 0}:${transaction.subscription_id || 0}`;
     }, [transaction]);
 
     /**
@@ -409,7 +487,33 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
         }
     };
 
+    /** Picking a course drops any plan chosen for the previous one. */
+    const handleSelectCourse = (course: CourseProps) => {
+        formik.setFieldValue("course_id", course.id ?? 0);
+        formik.setFieldValue("subscription_id", 0);
+    };
+
+    // Mirror the picked course into state so the detail query (which owns
+    // `course_subscription`) can run — see the plan block above.
+    useEffect(() => {
+        const courseId = Number(formik.values.course_id ?? 0);
+        setSelectedCourseId(courseId > 0 ? courseId : null);
+    }, [formik.values.course_id]);
+
+    // A plan on a non-subscription course would be sent as a bogus id. Waits for the
+    // detail query — until it lands the course type is unknown, and clearing early would
+    // drop the stored plan when editing a subscription transaction.
+    useEffect(() => {
+        if (loadingCourseDetail) return;
+        if (!isSubscriptionCourse && formik.values.subscription_id !== 0) {
+            formik.setFieldValue("subscription_id", 0);
+        }
+    }, [isSubscriptionCourse, loadingCourseDetail, formik.values.subscription_id]);
+
     const isInstallment = formik.values.status === "installment" && enrollmentType === "course";
+
+    /** Only a completed sale has to state its amount — see the `sold_price` schema. */
+    const priceRequired = formik.values.status === "success";
 
     const soldAmount = toAmount(formik.values.sold_price);
     const originalAmount = toAmount(formik.values.original_price);
@@ -696,7 +800,7 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                                                                     control={
                                                                         <Checkbox
                                                                             checked={formik.values.course_id === Number(course.id)}
-                                                                            onChange={() => formik.setFieldValue("course_id", course.id)}
+                                                                            onChange={() => handleSelectCourse(course)}
                                                                             color="primary"
                                                                         />
                                                                     }
@@ -783,6 +887,72 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                                         </Typography>
                                     )}
                                 </div>
+
+                                {/* Subscription courses are sold per plan — the plan sets both
+                                    the price and the access duration, so one must be chosen. */}
+                                {isSubscriptionCourse && (
+                                    <Box
+                                        className="col-span-12 rounded-lg p-4"
+                                        sx={{ border: `1px solid ${theme.palette.separator.dark}` }}
+                                    >
+                                        <InputLabel className="required mb-2">Select Subscription Plan</InputLabel>
+                                        {loadingCourseDetail && coursePlans.length === 0 ? (
+                                            <Box className="flex justify-center p-4"><CircularProgress size={22} /></Box>
+                                        ) : coursePlans.length > 0 ? (
+                                            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap" useFlexGap>
+                                                {coursePlans.map((plan, index) => {
+                                                    const isSelected = formik.values.subscription_id === plan.subscription_id;
+                                                    return (
+                                                        <Box
+                                                            key={`${plan.subscription_id}-${index}`}
+                                                            onClick={() => formik.setFieldValue("subscription_id", plan.subscription_id)}
+                                                            sx={{
+                                                                border: isSelected
+                                                                    ? `2px solid ${theme.palette.primary.main}`
+                                                                    : `1px solid ${theme.palette.divider}`,
+                                                                borderRadius: 2,
+                                                                p: 2,
+                                                                flex: "1 1 200px",
+                                                                cursor: "pointer",
+                                                                transition: "border-color 0.15s ease",
+                                                                backgroundColor: isSelected
+                                                                    ? theme.palette.action.selected
+                                                                    : theme.palette.background.paper,
+                                                                "&:hover": { borderColor: theme.palette.primary.main },
+                                                            }}
+                                                        >
+                                                            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                                                                <Typography variant="subtitle2" fontWeight={600}>
+                                                                    {plan.name}
+                                                                </Typography>
+                                                                {isSelected && (
+                                                                    <Typography variant="caption" sx={{ color: theme.palette.primary.main }}>
+                                                                        Selected
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
+                                                            <Stack gap={0.5} mt={1}>
+                                                                <Typography variant="body2">
+                                                                    <strong>Price:</strong> NRs. {formatAmount(resolveSellingPrice(plan)) || "N/A"}
+                                                                </Typography>
+                                                                <Typography variant="body2">
+                                                                    <strong>Duration:</strong> {plan.number} {plan.billing_cycle}
+                                                                </Typography>
+                                                            </Stack>
+                                                        </Box>
+                                                    );
+                                                })}
+                                            </Stack>
+                                        ) : (
+                                            <Typography color="error" variant="body2">
+                                                No subscription plans configured for this course. Add plans before recording a transaction.
+                                            </Typography>
+                                        )}
+                                        {(formik.touched.subscription_id || formik.submitCount > 0) && formik.errors.subscription_id && (
+                                            <FormHelperText error sx={{ mt: 1 }}>{formik.errors.subscription_id}</FormHelperText>
+                                        )}
+                                    </Box>
+                                )}
                             </div>
 
                             <div className="md:grid grid-cols-2 flex flex-col gap-6 mt-6">
@@ -806,7 +976,9 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
 
                                 <div className="col-span-1">
                                     <div className="input_field">
-                                        <InputLabel className="required">Sold Price</InputLabel>
+                                        <InputLabel className={priceRequired ? "required" : ""}>
+                                            Sold Price{priceRequired ? "" : " (optional)"}
+                                        </InputLabel>
                                         <OutlinedInput
                                             fullWidth
                                             type="number"
@@ -834,7 +1006,9 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                                             </Typography>
                                         ) : (
                                             <Typography variant="caption" color="text.secondary">
-                                                Auto-filled from the catalogue — change it to record a negotiated price.
+                                                {priceRequired
+                                                    ? "Auto-filled from the catalogue — change it to record a negotiated price."
+                                                    : "Optional on an installment plan — the schedule sets what is owed."}
                                             </Typography>
                                         )}
                                     </div>
@@ -1002,7 +1176,9 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                                                 </div>
 
                                                 <Typography variant="caption" color="text.secondary" className="col-span-3">
-                                                    NRs. {formatAmount(soldAmount)} is split evenly by the server; any rounding remainder is added to the final installment.
+                                                    {soldAmount > 0
+                                                        ? `NRs. ${formatAmount(soldAmount)} is split evenly by the server`
+                                                        : "The total is split evenly by the server"}; any rounding remainder is added to the final installment.
                                                 </Typography>
                                             </div>
                                         ) : (
@@ -1057,13 +1233,19 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                                                     </Button>
                                                     <Typography
                                                         variant="caption"
-                                                        color={installmentTotalMatches ? "success.main" : "error"}
+                                                        color={soldAmount <= 0 ? "text.secondary" : installmentTotalMatches ? "success.main" : "error"}
                                                         fontWeight={500}
                                                     >
-                                                        Scheduled NRs. {formatAmount(installmentTotal)} of NRs. {formatAmount(soldAmount)}
-                                                        {installmentTotalMatches
-                                                            ? ""
-                                                            : ` · NRs. ${formatAmount(Math.abs(soldAmount - installmentTotal))} ${installmentTotal > soldAmount ? "over" : "remaining"}`}
+                                                        {soldAmount <= 0 ? (
+                                                            `Scheduled NRs. ${formatAmount(installmentTotal)}`
+                                                        ) : (
+                                                            <>
+                                                                Scheduled NRs. {formatAmount(installmentTotal)} of NRs. {formatAmount(soldAmount)}
+                                                                {installmentTotalMatches
+                                                                    ? ""
+                                                                    : ` · NRs. ${formatAmount(Math.abs(soldAmount - installmentTotal))} ${installmentTotal > soldAmount ? "over" : "remaining"}`}
+                                                            </>
+                                                        )}
                                                     </Typography>
                                                 </Stack>
                                             </div>

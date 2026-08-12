@@ -289,6 +289,24 @@ export const courseApi = baseApi.injectEndpoints({
                 { type: "TestCategory", id: "LIST" },
             ],
         }),
+        /**
+         * Attach-only counterpart to `assignTestAndTestCategoryToCourse`, which REPLACES
+         * the category's test set with whatever is posted. The add dialog no longer knows
+         * the full set (by design — see AssignTestDialog), so it must never post to the
+         * replacing endpoint. This one only ever adds; removal goes through
+         * `removeTestToCourse` from the listing.
+         */
+        attachTestsToTestCategory: builder.mutation<GlobalResponse, { course_id: number | null; test_ids: number[], test_category_id: number }>({
+            query: (body) => ({
+                url: `/admin/test-category/attach`,
+                method: "POST",
+                body
+            }),
+            invalidatesTags: [
+                { type: "Test", id: "LIST" },
+                { type: "TestCategory", id: "LIST" },
+            ],
+        }),
         detachTestCategoryToCourse: builder.mutation<GlobalResponse, { course_id: number | null; test_category_ids: number[] }>({
             query: (body) => {
                 return {
@@ -317,6 +335,25 @@ export const courseApi = baseApi.injectEndpoints({
                         { type: "TestCategory", id: "LIST" },
                     ]
                     : [{ type: "TestCategory", id: "LIST" }],
+        }),
+        /**
+         * Tests that are NOT yet attached to this course — the pool the "Add More Tests"
+         * dialog picks from. Assigning is additive, so the dialog never needs to know
+         * (or resend) what is already on the course.
+         */
+        getUnassignedTestsForCourse: builder.query<TestList, QueryParams & { course_id: number }>({
+            query: ({ course_id, pageIndex, pageSize, search }) => ({
+                url: `/admin/course/${course_id}/unassigned-tests?${buildQueryParams({
+                    page: pageIndex,
+                    page_size: pageSize,
+                    search: search,
+                })}`,
+                method: "GET",
+            }),
+            providesTags: [
+                { type: "Test", id: "LIST" },
+                { type: "TestCategory", id: "LIST" },
+            ],
         }),
         getSelectedTestBasedOnTestCategoryAndCourseId: builder.query<TestList, QueryParams & { course_id: number; test_category_id: number, search?: string; }>({
             query: ({ course_id, test_category_id, pageIndex, pageSize, search }) => ({
@@ -426,6 +463,8 @@ export const {
     useGetSinglePlaylistQuery,
     useAssignTestAndTestCategoryToCourseMutation,
     useGetSelectedTestBasedOnTestCategoryAndCourseIdQuery,
+    useGetUnassignedTestsForCourseQuery,
+    useAttachTestsToTestCategoryMutation,
     useUseGetAllTestCategoryInACourseQuery,
     useDetachTestCategoryToCourseMutation
 } = courseApi;

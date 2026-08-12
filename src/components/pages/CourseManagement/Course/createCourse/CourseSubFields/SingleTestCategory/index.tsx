@@ -45,6 +45,7 @@ export default function SingleTestCategory({ allowMultiple = true }: { allowMult
     };
 
     const handleTestRemoval = async () => {
+        if (selectedItems.size === 0) return;
         try {
             const response = await removeTestFromCourse({ id: Number(id) || null, body: Array.from(selectedItems) }).unwrap();
             dispatch(
@@ -53,6 +54,9 @@ export default function SingleTestCategory({ allowMultiple = true }: { allowMult
                     severity: "success"
                 })
             )
+            // This listing is the only place a test can be detached now, so don't leave
+            // stale ids checked — the next removal would re-send them.
+            setSelectedItems(new Set());
         }
         catch (e: any) {
             dispatch(
