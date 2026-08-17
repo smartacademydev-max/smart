@@ -158,8 +158,6 @@ export default function AllTransaction({ open, setOpen }: Props) {
         setOpen(true);
     };
 
-    // Drop the previously edited row so the form opens in create mode — otherwise it
-    // reopens on the last transaction and skips the auto-generated bill number.
     const handleCreate = () => {
         setSelectedTransaction(null);
         setOpen(true);
@@ -197,13 +195,11 @@ export default function AllTransaction({ open, setOpen }: Props) {
             size: 80,
         },
         {
-            // Paired with "added by" rather than given its own column — one fewer column
-            // is width the truncated course name and IDs need more than the separation.
+          
             header: "Student Name",
             accessorKey: "name",
             cell: ({ row }) => (
-                // `span` + inline-flex: CustomTable wraps every cell in a <Typography>
-                // paragraph, and a block-level child gets hoisted out of it.
+               
                 <Stack component="span" sx={{ display: "inline-flex", flexDirection: "column", gap: "2px", alignItems: "flex-start" }}>
                     <Typography variant='subtitle2' className="capitalize">
                         {row.original.name || "N/A"}
@@ -219,8 +215,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
             accessorKey: "course_name",
             cell: ({ row }) => (
                 <Tooltip title={row.original.course_name} arrow>
-                    {/* Two lines is free — neighbouring cells already stack two deep, so this
-                        costs no row height and recovers most of what was being clipped. */}
+                   
                     <Typography variant='subtitle2' className="capitalize line-clamp-2" sx={{ maxWidth: 220 }}>
                         {row.original.course_name || "N/A"}
                     </Typography>
@@ -244,8 +239,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
                 const original = row.original.original_price;
                 if (sold == null) return <Typography variant='subtitle2'>N/A</Typography>;
                 return (
-                    // Same reason as the status cell — the cell's <Typography> wrapper is a
-                    // paragraph, so a block-level Stack would be hoisted out and unstack.
+                 
                     <Stack component="span" sx={{ display: "inline-flex", flexDirection: "column", gap: "2px" }}>
                         <Typography variant='subtitle2'>{t("messages.npr")} {formatAmount(sold)}</Typography>
                         {original != null && !sameAmount(original, sold) && (
@@ -258,9 +252,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
             },
         },
         {
-            // Both IDs stacked and labelled. Apart they were two wide columns that still
-            // truncated; together they read as one reference block, and each keeps a
-            // tooltip because these values are long enough to clip either way.
+           
             header: "Invoice / Transaction",
             accessorKey: "invoice_id",
             cell: ({ row }) => (
@@ -294,13 +286,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
             accessorKey: "status",
             cell: ({ row }) => {
                 const { status, is_refunded, refunded_amount } = row.original;
-                // One badge only — the dominant one.
-                //
-                // `refunded` already arrives ready to badge and outranks `installment`
-                // server-side. A *partial* refund keeps its original status in the response,
-                // so it gets ranked here instead: money having gone back matters more to an
-                // admin scanning the list than how the sale was paid. The underlying status
-                // is still on the detail view, which carries the full refund breakdown.
+                
                 const partiallyRefunded = !is_refunded && Number(refunded_amount ?? 0) > 0;
 
                 if (partiallyRefunded) {
@@ -334,11 +320,9 @@ export default function AllTransaction({ open, setOpen }: Props) {
                     onView={() => handleEdit(row.original)}
                     onDelete={() => openDeleteConfirmation([row.original.id?.toString() || ""])}
                     onManageInstallment={row.original.is_installment ? () => setInstallmentPurchaseId(Number(row.original.id)) : undefined}
-                    // Hidden outright without the permission — the API would 403 anyway.
-                    // Nothing to give back on a fully refunded row, nor on one that never
-                    // collected money in the first place.
+                    
                     onRefund={canRefund && isRefundable(row.original) ? () => setRefundTarget(row.original) : undefined}
-                    // A receipt is only truthful once the money is settled and still held.
+                   
                     onInvoice={isPaymentComplete(row.original) ? () => setInvoiceTarget(row.original) : undefined}
                     file={row.original?.image_url || undefined}
                 />
@@ -495,8 +479,6 @@ export default function AllTransaction({ open, setOpen }: Props) {
 
             <RefundDialog
                 purchaseId={refundTarget ? Number(refundTarget.id) : null}
-                // Send back the module the row was listed under — course and test/bundle
-                // purchases share ID numbers across two tables.
                 moduleType={enrollmentType}
                 studentName={refundTarget?.name}
                 itemName={refundTarget?.course_name}

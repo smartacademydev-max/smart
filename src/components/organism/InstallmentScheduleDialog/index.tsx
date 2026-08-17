@@ -30,7 +30,7 @@ import { useAppDispatch } from "../../../store/hook";
 import { paymentOptions } from "../../../types";
 import type { EnrollmentType, InstallmentRow } from "../../../types/transaction";
 import { formatDateForDisplay } from "../../../utils/dateFormat";
-import { generateTransactionId } from "../../../utils/generateTransactionRefs";
+import { generateInvoiceId, generateTransactionId } from "../../../utils/generateTransactionRefs";
 import { getInstallmentStatusVariant } from "../../../utils/statusMap";
 import { isInstallmentPlanSettled } from "../../../utils/transactionState";
 import MakuraDatePicker from "../../atoms/MakuraDatePicker";
@@ -96,13 +96,22 @@ export default function InstallmentScheduleDialog({ purchaseId, onClose, moduleT
     );
 
     const openPayForm = (row: InstallmentRow) => {
-        // Bill number is minted up front; the admin can regenerate or overwrite it.
-        setForm({ payment_method: "cash", transaction_id: generateTransactionId(brandName), invoice_id: "", paid_at: "" });
+        // Both references are minted up front — same as the transaction form — so the
+        // admin only types when they have a real bank/gateway reference to use instead.
+        setForm({
+            payment_method: "cash",
+            transaction_id: generateTransactionId(brandName),
+            invoice_id: generateInvoiceId(brandName),
+            paid_at: "",
+        });
         setPayRow(row);
     };
 
     const regenerateBillNo = () =>
         setForm((f) => ({ ...f, transaction_id: generateTransactionId(brandName) }));
+
+    const regenerateInvoiceNo = () =>
+        setForm((f) => ({ ...f, invoice_id: generateInvoiceId(brandName) }));
 
     const handleClose = () => {
         setPayRow(null);
@@ -307,7 +316,24 @@ export default function InstallmentScheduleDialog({ purchaseId, onClose, moduleT
                                                 placeholder="Invoice ID"
                                                 value={form.invoice_id}
                                                 onChange={(e) => setForm((f) => ({ ...f, invoice_id: e.target.value }))}
+                                                endAdornment={
+                                                    <InputAdornment position="end">
+                                                        <Tooltip title="Generate a new Invoice ID" arrow>
+                                                            <IconButton
+                                                                edge="end"
+                                                                size="small"
+                                                                onClick={regenerateInvoiceNo}
+                                                                aria-label="Generate a new Invoice ID"
+                                                            >
+                                                                <ArrowRotateRight size={18} color={theme.palette.text.primary} />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </InputAdornment>
+                                                }
                                             />
+                                            <Typography variant="caption" color="text.secondary">
+                                                Auto-generated — edit it if you need a different reference.
+                                            </Typography>
                                         </div>
                                     </div>
 
