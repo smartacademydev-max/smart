@@ -23,11 +23,12 @@ import dayjs from "dayjs";
 import { ArrowRotateRight, CloseCircle } from "iconsax-reactjs";
 import { useMemo, useState } from "react";
 import { useBrandSettings } from "../../../hooks/useBrandSettings";
+import { useHasPermission } from "../../../hooks/useHasPermission";
 import { useGetInstallmentScheduleQuery, usePayInstallmentMutation } from "../../../services/installmentApi";
 import { showToast } from "../../../slice/toastSlice";
 import { useAppDispatch } from "../../../store/hook";
 import { paymentOptions } from "../../../types";
-import type { InstallmentRow } from "../../../types/transaction";
+import type { EnrollmentType, InstallmentRow } from "../../../types/transaction";
 import { formatDateForDisplay } from "../../../utils/dateFormat";
 import { generateTransactionId } from "../../../utils/generateTransactionRefs";
 import { getInstallmentStatusVariant } from "../../../utils/statusMap";
@@ -35,11 +36,14 @@ import MakuraDatePicker from "../../atoms/MakuraDatePicker";
 import StatusPill from "../../atoms/StatusPill";
 import Actions from "../../molecules/Action";
 import CustomTable from "../../molecules/Table";
+import RefundDialog from "../RefundDialog";
 
 interface Props {
     /** Purchase whose schedule to show. `null` keeps the dialog closed. */
     purchaseId: number | null;
     onClose: () => void;
+    /** Passed through to the refund call — course and test/bundle IDs are not interchangeable. */
+    moduleType?: EnrollmentType;
 }
 
 const todayStr = () => {
@@ -47,15 +51,28 @@ const todayStr = () => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
+/** Rows that will never be collected — paid already, or cancelled by a full refund. */
+const isSettled = (row: InstallmentRow) => row.status === "paid" || row.status === "cancelled";
+
+/** Cancelled rows stay in the schedule (§3d) but read as struck through. */
+const cancelledSx = (row: InstallmentRow) =>
+    row.status === "cancelled"
+        ? { textDecoration: "line-through", opacity: 0.55 }
+        : undefined;
+
 /**
  * Schedule for one purchase (§2) with per-row "Mark as Paid" (§3).
  * The pay response IS the refreshed schedule and the mutation invalidates the
  * PURCHASE tag, so this query re-renders with fresh state — no manual refetch.
  */
-export default function InstallmentScheduleDialog({ purchaseId, onClose }: Props) {
+export default function InstallmentScheduleDialog({ purchaseId, onClose, moduleType = "course" }: Props) {
     const theme = useTheme();
     const dispatch = useAppDispatch();
     const { brandName } = useBrandSettings();
+    const canRefund = useHasPermission("add_refunds");
+
+    // The paid installment being refunded, if any — scopes the refund dialog to one row.
+    const [refundRow, setRefundRow] = useState<InstallmentRow | null>(null);
 
     const { data, isLoading, isFetching, refetch } = useGetInstallmentScheduleQuery(purchaseId as number, {
         skip: !purchaseId,
@@ -116,27 +133,35 @@ export default function InstallmentScheduleDialog({ purchaseId, onClose }: Props
         {
             header: "#",
             accessorKey: "installment_number",
-            cell: ({ row }) => <Typography variant="subtitle2" fontWeight={400}>#{row.original.installment_number}</Typography>,
+            cell: ({ row }) => (
+                <Typography variant="subtitle2" fontWeight={400} sx={cancelledSx(row.original)}>
+                    #{row.original.installment_number}
+                </Typography>
+            ),
         },
         {
             header: "Amount",
             accessorKey: "amount",
             cell: ({ row }) => (
-                <Typography variant="subtitle2" fontWeight={400}>NRs. {Number(row.original.amount).toLocaleString()}</Typography>
+                <Typography variant="subtitle2" fontWeight={400} sx={cancelledSx(row.original)}>
+                    NRs. {Number(row.original.amount).toLocaleString()}
+                </Typography>
             ),
         },
         {
             header: "Due Date",
             accessorKey: "due_date",
             cell: ({ row }) => (
-                <Typography variant="subtitle2" fontWeight={400}>{formatDateForDisplay(row.original.due_date) || "N/A"}</Typography>
+                <Typography variant="subtitle2" fontWeight={400} sx={cancelledSx(row.original)}>
+                    {formatDateForDisplay(row.original.due_date) || "N/A"}
+                </Typography>
             ),
         },
         {
             header: "Paid On",
             accessorKey: "paid_at",
             cell: ({ row }) => (
-                <Typography variant="subtitle2" fontWeight={400}>
+                <Typography variant="subtitle2" fontWeight={400} sx={cancelledSx(row.original)}>
                     {row.original.paid_at ? formatDateForDisplay(row.original.paid_at) : "—"}
                 </Typography>
             ),
@@ -145,8 +170,9 @@ export default function InstallmentScheduleDialog({ purchaseId, onClose }: Props
             header: "Status",
             accessorKey: "status",
             cell: ({ row }) => {
-                // Badge off is_overdue (live), not the stored status (§2).
-                const effective = row.original.is_overdue && row.original.status !== "paid"
+                // Badge off is_overdue (live), not the stored status (§2) — except for
+                // cancelled rows, which are closed and can never go overdue.
+                const effective = row.original.is_overdue && !isSettled(row.original)
                     ? "overdue"
                     : row.original.status;
                 return <StatusPill status={effective} variant={getInstallmentStatusVariant(effective)} />;
@@ -155,17 +181,23 @@ export default function InstallmentScheduleDialog({ purchaseId, onClose }: Props
         {
             header: "Action",
             accessorKey: "action",
-            cell: ({ row }) => (
-                row.original.status === "paid" ? (
-                    <Typography variant="caption" color="text.secondary">Paid</Typography>
-                ) : (
-                    <Actions onMarkPaid={() => openPayForm(row.original)} />
-                )
-            ),
+            cell: ({ row }) => {
+                // Closed by a full refund — nothing is owed and nothing can be collected.
+                if (row.original.status === "cancelled") {
+                    return <Typography variant="caption" color="text.secondary">Cancelled</Typography>;
+                }
+                if (row.original.status === "paid") {
+                    return canRefund
+                        ? <Actions onRefund={() => setRefundRow(row.original)} />
+                        : <Typography variant="caption" color="text.secondary">Paid</Typography>;
+                }
+                return <Actions onMarkPaid={() => openPayForm(row.original)} />;
+            },
         },
-    ], []);
+    ], [canRefund]);
 
     return (
+        <>
         <Dialog open={!!purchaseId} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogContent className="flex flex-col gap-4" sx={{ background: theme.palette.primary.contrastText }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -284,5 +316,20 @@ export default function InstallmentScheduleDialog({ purchaseId, onClose }: Props
                 )}
             </DialogContent>
         </Dialog>
+
+        <RefundDialog
+            purchaseId={refundRow ? purchaseId : null}
+            moduleType={moduleType}
+            studentName={schedule?.student_name}
+            itemName={schedule?.course_name}
+            isInstallment
+            installment={refundRow ? {
+                id: refundRow.id,
+                installment_number: refundRow.installment_number,
+                amount: Number(refundRow.amount),
+            } : null}
+            onClose={() => setRefundRow(null)}
+        />
+        </>
     );
 }

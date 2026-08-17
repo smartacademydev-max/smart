@@ -12,7 +12,7 @@ import type { DeviceRequestStatus } from "../types/deviceReset";
 import type { GorkhapatraTypes } from "../types/gorkhapatra";
 import type { TestTypeProps } from "../types/question";
 import type { TicketPriority, TicketStatus } from "../types/ticket";
-import type { TransactionCourseStatus } from "../types/transaction";
+import type { InstallmentStatus, TransactionCourseStatus, TransactionReadStatus } from "../types/transaction";
 
 export const getTransactionStatusVariant = statusMap<TransactionCourseStatus>({
     purchase: "success",
@@ -41,10 +41,25 @@ export const getPaymentTypeVariant = statusMap<"installment" | "paid">({
     paid: "success",
 });
 
-export const getInstallmentStatusVariant = statusMap<"pending" | "paid" | "overdue">({
+export const getInstallmentStatusVariant = statusMap<InstallmentStatus>({
     pending: "warning",
     paid: "success",
     overdue: "error",
+    // Closed by a full refund — no money owed, and it can never go overdue.
+    cancelled: "info",
+});
+
+/**
+ * Presented transaction status. `refunded` is a presentation value the API emits
+ * for fully refunded purchases — the stored row is still `success`.
+ */
+export const getTransactionReadStatusVariant = statusMap<TransactionReadStatus | "pending">({
+    success: "success",
+    failed: "error",
+    pending: "warning",
+    processing: "warning",
+    installment: "warning",
+    refunded: "error",
 });
 
 export const getCourseStatus = (progress?: number): StatusVariant => {

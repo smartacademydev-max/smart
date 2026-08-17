@@ -378,7 +378,10 @@
         "view_all": "View All",
         "back": "Back",
         "hide": "Hide",
-        "show": "Show"
+        "show": "Show",
+        "mark_as_paid": "Mark as Paid",
+        "manage_installment": "Installments",
+        "refund": "Refund"
     },
     "labels": {
         "title": "Title",

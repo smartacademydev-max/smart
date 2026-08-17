@@ -2,11 +2,21 @@ import type { Pagination } from "./roleAndPermission";
 import type { GlobalResponse } from "./user";
 
 export type PaymentMethodProps = "esewa" | "khalti" | "cash" | "fonepay"
+/** Statuses the admin can *write* when recording a sale. */
 export type PaymentStatusProps = "success" | "installment"
+/**
+ * Statuses the API can *present* on a read.
+ *
+ * `refunded` is presentation-only — the underlying row stays `success` in the
+ * database so historic revenue is never rewritten, and the refund lives in its
+ * own ledger. Badge it directly; never compute it.
+ */
+export type TransactionReadStatus = "success" | "failed" | "processing" | "installment" | "refunded";
 export type EnrollmentType = "course" | "test" | "bundle"
 
 export type InstallmentInterval = "monthly" | "weekly";
-export type InstallmentStatus = "pending" | "paid" | "overdue";
+/** `cancelled` is set on the unpaid rows of a plan whose purchase was fully refunded. */
+export type InstallmentStatus = "pending" | "paid" | "overdue" | "cancelled";
 
 /** A single custom row when the admin wants uneven amounts / hand-picked dates. */
 export interface InstallmentRowInput {
@@ -65,13 +75,15 @@ export interface InstallmentSummary {
     has_overdue: boolean;
 }
 
-export interface TransactionResponse extends Omit<TransactionPayload, "original_price" | "sold_price"> {
+export interface TransactionResponse extends Omit<TransactionPayload, "original_price" | "sold_price" | "status"> {
     name: string;
     added_by: string;
     course_name: string;
     email: string;
     contact: string;
     created_at: string;
+    /** Presented status — may read `refunded` even though the stored row is still `success`. */
+    status: TransactionReadStatus;
     /** Catalogue price when the sale was recorded. Absent on rows created before pricing was tracked. */
     original_price?: number | null;
     /** Amount actually charged. Falls back to `original_price` when never overridden. */
@@ -79,6 +91,12 @@ export interface TransactionResponse extends Omit<TransactionPayload, "original_
     course_status?: TransactionCourseStatus;
     is_installment?: boolean;
     installment_summary?: InstallmentSummary | null;
+    /** True only when **fully** refunded. Partials leave this `false`. */
+    is_refunded?: boolean;
+    /** Running total refunded so far; `0` when none. */
+    refunded_amount?: number;
+    /** Timestamp of the refund that settled it. */
+    refunded_at?: string | null;
 }
 
 export interface TransactionList {
@@ -98,7 +116,8 @@ export interface TransactionProps {
     original_price?: number | null;
     sold_price?: number | null;
     invoice_id: string;
-    status: "success" | "failed" | "pending";
+    /** Same presented value as the admin list — `refunded` is possible here too. */
+    status: TransactionReadStatus | "pending";
 }
 
 
@@ -131,6 +150,15 @@ export interface TransactionDetail {
     purchased_date?: string;
     course_status?: TransactionCourseStatus;
     issued_to?: string;
+    /** True only when **fully** refunded. */
+    is_refunded?: boolean;
+    /** Running total refunded so far; `0` when none. */
+    refunded_amount?: number;
+    refunded_at?: string | null;
+    /** Detail endpoint only — what is still refundable. */
+    refundable_amount?: number;
+    /** Present when the relation is eager-loaded. */
+    refunds?: RefundRow[];
 }
 
 export interface TransactionDetailResponse extends GlobalResponse {
@@ -267,3 +295,62 @@ export interface UserInstallmentsResponse extends GlobalResponse {
         pagination: Pagination;
     };
 }
+/* -------------------------------------------------------------------------- */
+/*                                  Refunds                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * One row of the refunds ledger.
+ *
+ * A refund never overwrites the sale — it is written as a separate row so that
+ * "revenue = sum of successful transactions" keeps reporting historic figures
+ * correctly. Net revenue is sales minus refunds.
+ */
+export interface RefundRow {
+    id: number;
+    amount: number;
+    reason: string;
+    refund_method: string | null;
+    reference_id: string | null;
+    /** Set when the refund was made against one specific paid installment. */
+    installment_id: number | null;
+    /** Only emitted when the installment relation is eager-loaded — never depend on it. */
+    installment_number?: number;
+    refunded_at: string;
+    refunded_by: string;
+    created_at: string;
+}
+
+/** Ledger for one purchase — GET /admin/transaction/{purchase_id}/refund. */
+export interface RefundLedger {
+    refunded_amount: number;
+    /** Live ceiling for the next refund. Cap the amount input on it; `0` disables refunding. */
+    refundable_amount: number;
+    /** True only when **fully** refunded. */
+    is_refunded: boolean;
+    refunds: RefundRow[];
+}
+
+export interface RefundLedgerResponse extends GlobalResponse {
+    data: RefundLedger;
+}
+
+export interface RefundCreateResponse extends GlobalResponse {
+    data: RefundRow;
+}
+
+/** Body for POST /admin/transaction/{purchase_id}/refund. */
+export interface RefundPayload {
+    /** Shown in the ledger. Required, max 1000 chars. */
+    reason: string;
+    /** Omit to refund the full remaining balance — the common case. */
+    amount?: number;
+    /** Refund one specific *paid* installment; courses only. */
+    installment_id?: number;
+    /** How the money was returned, e.g. `cash`, `bank`. */
+    refund_method?: string;
+    /** The admin's own reference for the refund payment. */
+    reference_id?: string;
+}
+
+export const REFUND_REASON_MAX = 1000;

@@ -12,6 +12,12 @@ import CustomTable from "../../molecules/Table";
 import TablePagination from "../../molecules/Table/Pagination";
 import InstallmentScheduleDialog from "../InstallmentScheduleDialog";
 
+/** Cancelled rows stay in the schedule but read as closed — struck through, dimmed. */
+const cancelledSx = (row: UserInstallmentRow) =>
+    row.status === "cancelled"
+        ? { textDecoration: "line-through", opacity: 0.55 }
+        : undefined;
+
 interface Props {
     userId: number;
 
@@ -79,29 +85,37 @@ export default function UserInstallments({
             header: "Installment",
             accessorKey: "installment_number",
             cell: ({ row }) => (
-                <Typography variant="subtitle2" fontWeight={400}>#{row.original.installment_number}</Typography>
+                <Typography variant="subtitle2" fontWeight={400} sx={cancelledSx(row.original)}>
+                    #{row.original.installment_number}
+                </Typography>
             ),
         },
         {
             header: "Amount",
             accessorKey: "amount",
             cell: ({ row }) => (
-                <Typography variant="subtitle2" fontWeight={400}>NRs. {Number(row.original.amount).toLocaleString()}</Typography>
+                <Typography variant="subtitle2" fontWeight={400} sx={cancelledSx(row.original)}>
+                    NRs. {Number(row.original.amount).toLocaleString()}
+                </Typography>
             ),
         },
         {
             header: "Due Date",
             accessorKey: "due_date",
             cell: ({ row }) => (
-                <Typography variant="subtitle2" fontWeight={400}>{formatDateForDisplay(row.original.due_date) || "N/A"}</Typography>
+                <Typography variant="subtitle2" fontWeight={400} sx={cancelledSx(row.original)}>
+                    {formatDateForDisplay(row.original.due_date) || "N/A"}
+                </Typography>
             ),
         },
         {
             header: "Status",
             accessorKey: "status",
             cell: ({ row }) => {
-
-                const effective = row.original.is_overdue && row.original.status !== "paid"
+                // Overdue is computed live, but a row settled by payment — or cancelled by a
+                // full refund — is closed and can never go overdue.
+                const settled = row.original.status === "paid" || row.original.status === "cancelled";
+                const effective = row.original.is_overdue && !settled
                     ? "overdue"
                     : row.original.status;
                 return <StatusPill status={effective} variant={getInstallmentStatusVariant(effective)} />;

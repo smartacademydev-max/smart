@@ -3,16 +3,17 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { useHasPermission } from '../../../../hooks/useHasPermission';
 import { useDownloadCsvMutation } from '../../../../services/activityApi';
 import { useDeleteTransactionMutation, useGetAllTransactionsQuery } from '../../../../services/transactionApi';
 import { showToast } from '../../../../slice/toastSlice';
 import { useAppDispatch } from '../../../../store/hook';
 import { useCourseFilter } from '../../../../store/useCourseFilter';
-import { DeviceFilter, paymentOptions, StatusFilter, type DeviceType, type Status } from '../../../../types';
+import { DeviceFilter, paymentOptions, TransactionStatusFilter, type DeviceType, type Status } from '../../../../types';
 import type { EnrollmentType, TransactionResponse } from '../../../../types/transaction';
 import { formatDate } from '../../../../utils/dateFormat';
 import { formatAmount, sameAmount } from '../../../../utils/itemPrice';
-import { getPaymentTypeVariant } from '../../../../utils/statusMap';
+import { getTransactionReadStatusVariant } from '../../../../utils/statusMap';
 import StatusPill from '../../../atoms/StatusPill';
 import Actions from '../../../molecules/Action';
 import TabController from '../../../molecules/TabController';
@@ -23,8 +24,19 @@ import EmptyRoute from '../../../organism/EmptyRoute';
 import InstallmentScheduleDialog from '../../../organism/InstallmentScheduleDialog';
 import { CourseFilter } from '../../../organism/Filter/CourseFilter';
 import PageHeader from '../../../organism/PageHeader';
+import RefundDialog from '../../../organism/RefundDialog';
 import TableFilter from '../../../organism/TableFilter';
 import TransactionManagementForm from '../TransactionManagementForm';
+
+/**
+ * A refund needs money to have actually been collected, and something left of it.
+ * `refunded` already means fully refunded; `failed` / `processing` never took payment.
+ */
+const isRefundable = (transaction: TransactionResponse) =>
+    !transaction.is_refunded
+    && transaction.status !== "refunded"
+    && transaction.status !== "failed"
+    && transaction.status !== "processing";
 
 interface Props {
     open: boolean;
@@ -53,6 +65,9 @@ export default function AllTransaction({ open, setOpen }: Props) {
     const [openConfirm, setOpenConfirm] = useState(false);
     const [transactionToDelete, setTransactionToDelete] = useState<string[]>([]);
     const [installmentPurchaseId, setInstallmentPurchaseId] = useState<number | null>(null);
+    const [refundTarget, setRefundTarget] = useState<TransactionResponse | null>(null);
+
+    const canRefund = useHasPermission("add_refunds");
 
     const {
         selections,
@@ -234,7 +249,9 @@ export default function AllTransaction({ open, setOpen }: Props) {
                 const original = row.original.original_price;
                 if (sold == null) return <Typography variant='subtitle2'>N/A</Typography>;
                 return (
-                    <Stack sx={{ gap: "2px" }}>
+                    // Same reason as the status cell — the cell's <Typography> wrapper is a
+                    // paragraph, so a block-level Stack would be hoisted out and unstack.
+                    <Stack component="span" sx={{ display: "inline-flex", flexDirection: "column", gap: "2px" }}>
                         <Typography variant='subtitle2'>{t("messages.npr")} {formatAmount(sold)}</Typography>
                         {original != null && !sameAmount(original, sold) && (
                             <Typography variant='caption' color="text.secondary">
@@ -275,11 +292,41 @@ export default function AllTransaction({ open, setOpen }: Props) {
             ),
         },
         {
-            header: "Payment Type",
-            accessorKey: "is_installment",
+            header: "Status",
+            accessorKey: "status",
             cell: ({ row }) => {
-                const type = row.original.is_installment ? "installment" : "paid";
-                return <StatusPill status={type} variant={getPaymentTypeVariant(type)} />;
+                const { status, is_installment, is_refunded, refunded_amount } = row.original;
+                // `refunded` arrives ready to badge — the API presents it even though the
+                // stored row is still `success`, and it already outranks `installment`.
+                // A *partial* refund keeps its original status server-side, so rank it the
+                // same way here: money having gone back matters more to an admin scanning
+                // the list than how the sale was paid. The demoted status stays as a caption.
+                const partiallyRefunded = !is_refunded && Number(refunded_amount ?? 0) > 0;
+                const planLabel = is_installment ? "Installment plan" : status;
+                const caption = partiallyRefunded
+                    ? planLabel
+                    : (is_installment && status !== "installment" ? "Installment plan" : null);
+                return (
+                    // `span` + inline-flex on purpose: CustomTable wraps every cell in a
+                    // <Typography> paragraph, and a block child would be hoisted out of it.
+                    <Stack
+                        component="span"
+                        sx={{ display: "inline-flex", flexDirection: "column", gap: "3px", alignItems: "flex-start" }}
+                    >
+                        {partiallyRefunded ? (
+                            <Tooltip title={`${t("messages.npr")} ${formatAmount(refunded_amount)} refunded so far`} arrow>
+                                <span><StatusPill status="Partially Refunded" variant="error" /></span>
+                            </Tooltip>
+                        ) : (
+                            <StatusPill status={status} variant={getTransactionReadStatusVariant(status)} />
+                        )}
+                        {caption && (
+                            <Typography variant="caption" color="text.secondary" className="text-nowrap capitalize">
+                                {caption}
+                            </Typography>
+                        )}
+                    </Stack>
+                );
             },
         },
         {
@@ -303,11 +350,15 @@ export default function AllTransaction({ open, setOpen }: Props) {
                     onView={() => handleEdit(row.original)}
                     onDelete={() => openDeleteConfirmation([row.original.id?.toString() || ""])}
                     onManageInstallment={row.original.is_installment ? () => setInstallmentPurchaseId(Number(row.original.id)) : undefined}
+                    // Hidden outright without the permission — the API would 403 anyway.
+                    // Nothing to give back on a fully refunded row, nor on one that never
+                    // collected money in the first place.
+                    onRefund={canRefund && isRefundable(row.original) ? () => setRefundTarget(row.original) : undefined}
                     file={row.original?.image_url || undefined}
                 />
             ),
         },
-    ], [selectedRows, isAllSelected, isSomeSelected, deleting, navigate, qp, enrollmentType]);
+    ], [selectedRows, isAllSelected, isSomeSelected, deleting, navigate, qp, enrollmentType, canRefund]);
 
 
     const handleResetFilter = () => {
@@ -447,6 +498,18 @@ export default function AllTransaction({ open, setOpen }: Props) {
             <InstallmentScheduleDialog
                 purchaseId={installmentPurchaseId}
                 onClose={() => setInstallmentPurchaseId(null)}
+                moduleType={enrollmentType}
+            />
+
+            <RefundDialog
+                purchaseId={refundTarget ? Number(refundTarget.id) : null}
+                // Send back the module the row was listed under — course and test/bundle
+                // purchases share ID numbers across two tables.
+                moduleType={enrollmentType}
+                studentName={refundTarget?.name}
+                itemName={refundTarget?.course_name}
+                isInstallment={Boolean(refundTarget?.is_installment)}
+                onClose={() => setRefundTarget(null)}
             />
 
             <CourseFilter
@@ -461,7 +524,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
                 loadingMegaCategory={loadingMegaCategory}
                 onApplyFilter={handleApplyFilter}
                 onResetFilter={resetFilters}
-                status={StatusFilter || []}
+                status={TransactionStatusFilter || []}
                 deviceType={DeviceFilter || []}
                 paymentMethod={paymentOptions || []}
             />

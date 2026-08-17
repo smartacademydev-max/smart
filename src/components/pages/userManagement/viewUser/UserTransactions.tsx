@@ -8,7 +8,7 @@ import { useGetUserTransactionAnalyticsQuery, useGetUserTransactionPaymentMethod
 import type { TransactionProps } from "../../../../types/transaction";
 import { formatDateForDisplay } from "../../../../utils/dateFormat";
 import { formatAmount, sameAmount } from "../../../../utils/itemPrice";
-import { getTransactionStatus } from "../../../../utils/statusMap";
+import { getTransactionReadStatusVariant } from "../../../../utils/statusMap";
 import StatusPill from "../../../atoms/StatusPill";
 import ActionIconVisible from "../../../molecules/Action/ActionIconVisible";
 import CustomTable from "../../../molecules/Table";
@@ -106,7 +106,7 @@ export default function UserTransactions() {
             header: "Status",
             accessorKey: "status",
             cell: ({ row }) => (
-                <StatusPill status={row.original.status} variant={getTransactionStatus(row.original.status)} />
+                <StatusPill status={row.original.status} variant={getTransactionReadStatusVariant(row.original.status)} />
             ),
         },
         {

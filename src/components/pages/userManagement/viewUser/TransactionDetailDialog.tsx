@@ -1,9 +1,11 @@
 import { Box, Button, Chip, CircularProgress, Dialog, DialogContent, DialogTitle, Divider, IconButton, Stack, Typography, useTheme } from "@mui/material";
 import { CloseCircle } from "iconsax-reactjs";
+import { useHasPermission } from "../../../../hooks/useHasPermission";
 import { useGetTransactionByIdQuery } from "../../../../services/transactionApi";
 import type { TransactionCourseStatus } from "../../../../types/transaction";
-import { formatDateForDisplay } from "../../../../utils/dateFormat";
+import { formatDateForDisplay, formatDateTime } from "../../../../utils/dateFormat";
 import { formatAmount, toAmount } from "../../../../utils/itemPrice";
+import RefundHistory from "../../../organism/RefundHistory";
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
     return (
@@ -28,12 +30,16 @@ function paymentStatusLabel(status?: string): { label: string; color: "success" 
     if (!status) return { label: "—", color: "info" };
     if (status === "success") return { label: "Completed", color: "success" };
     if (status === "failed") return { label: "Failed", color: "error" };
-    if (status === "pending") return { label: "Pending", color: "warning" };
+    if (status === "pending" || status === "processing") return { label: "Pending", color: "warning" };
+    // Presentation-only — the stored row is still `success`, so revenue reporting is untouched.
+    if (status === "refunded") return { label: "Refunded", color: "error" };
+    if (status === "installment") return { label: "Installment", color: "warning" };
     return { label: status, color: "info" };
 }
 
 export default function TransactionDetailDialog({ id, onClose }: { id: number | null; onClose: () => void }) {
     const theme = useTheme();
+    const canViewRefunds = useHasPermission("view_refunds");
     const { data, isLoading } = useGetTransactionByIdQuery(id!, { skip: id === null });
     const tx = data?.data;
 
@@ -46,9 +52,12 @@ export default function TransactionDetailDialog({ id, onClose }: { id: number | 
     const discount = tx?.original_price != null && soldPrice != null
         ? Math.max(toAmount(tx.original_price) - toAmount(soldPrice), 0)
         : 0;
+    // `0` on an untouched sale — the refund block only appears once money went back.
+    const refundedAmount = toAmount(tx?.refunded_amount);
 
     return (
-        <Dialog open={id !== null} onClose={onClose} maxWidth="xs" fullWidth>
+        // `sm` rather than `xs`: the refund ledger below is tabular and needs the room.
+        <Dialog open={id !== null} onClose={onClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 1 }}>
                 <Typography variant="h5" fontWeight={600}>Transaction Details</Typography>
                 <IconButton size="small" onClick={onClose}>
@@ -155,6 +164,61 @@ export default function TransactionDetailDialog({ id, onClose }: { id: number | 
                                 />
                             }
                         />
+
+                        {refundedAmount > 0 && (
+                            <>
+                                <SectionHeader title="Refund" />
+                                <Divider sx={{ mb: 0.5 }} />
+                                <InfoRow
+                                    label="Refunded"
+                                    value={
+                                        <Typography variant="body2" fontWeight={500} color="error.main">
+                                            − NRs. {formatAmount(refundedAmount)}
+                                        </Typography>
+                                    }
+                                />
+                                <Divider />
+                                {/* Only the detail endpoint carries the live ceiling. */}
+                                {tx.refundable_amount != null && (
+                                    <>
+                                        <InfoRow label="Still Refundable" value={`NRs. ${formatAmount(tx.refundable_amount)}`} />
+                                        <Divider />
+                                    </>
+                                )}
+                                <InfoRow
+                                    label="Refund Type"
+                                    value={
+                                        <Chip
+                                            size="small"
+                                            label={tx.is_refunded ? "Fully refunded" : "Partially refunded"}
+                                            sx={{
+                                                fontSize: 11,
+                                                bgcolor: theme.palette[tx.is_refunded ? "error" : "warning"].light,
+                                                color: theme.palette[tx.is_refunded ? "error" : "warning"].main,
+                                                border: `1px solid ${theme.palette[tx.is_refunded ? "error" : "warning"].main}`,
+                                            }}
+                                        />
+                                    }
+                                />
+                                {tx.refunded_at && (
+                                    <>
+                                        <Divider />
+                                        <InfoRow label="Refunded On" value={formatDateTime(tx.refunded_at) || "—"} />
+                                    </>
+                                )}
+                                {/*
+                                  * The totals above are plain transaction fields, but the itemised
+                                  * ledger — who refunded, why, against what reference — is the refund
+                                  * module's own read, so it needs `view_refunds`. `refunds` also only
+                                  * arrives when the relation is eager-loaded.
+                                  */}
+                                {canViewRefunds && tx.refunds?.length ? (
+                                    <Box mt={1.5}>
+                                        <RefundHistory refunds={tx.refunds} title="Refund History" />
+                                    </Box>
+                                ) : null}
+                            </>
+                        )}
 
                         <SectionHeader title="Invoice" />
                         <Divider sx={{ mb: 0.5 }} />

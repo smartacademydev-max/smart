@@ -22,12 +22,23 @@ export interface CategoryFilterParams {
     device?: DeviceType[];
 }
 
-export type Status = "success" | "failed" | "pending" | "completed" | "not_completed" | "approved" | "rejected";
+export type Status = "success" | "failed" | "pending" | "completed" | "not_completed" | "approved" | "rejected" | "refunded";
 
 export const StatusFilter: { label: string; value: Status }[] = [
     { label: "Success", value: "success" },
     { label: "Pending", value: "pending" },
     { label: "Failed", value: "failed" },
+]
+
+/**
+ * Transaction-only status filter.
+ *
+ * `success` and `installment` exclude refunded rows server-side, so the three
+ * options partition cleanly — a refunded transaction appears under exactly one.
+ */
+export const TransactionStatusFilter: { label: string; value: Status }[] = [
+    ...StatusFilter,
+    { label: "Refunded", value: "refunded" },
 ]
 
 export type DeviceType = "web" | "mobile";
@@ -44,4 +55,16 @@ export const paymentOptions = [
     { label: "Khalti", value: "khalti" },
     { label: "Cash", value: "cash" },
     { label: "Fonepay", value: "fonepay" },
+];
+
+/**
+ * How the money was handed back. Gateways have no refund API wired in, so every
+ * refund is settled by hand — these are records of what the admin actually did.
+ */
+export const refundMethodOptions = [
+    { label: "Cash", value: "cash" },
+    { label: "Bank Transfer", value: "bank" },
+    { label: "Cheque", value: "cheque" },
+    { label: "Esewa", value: "esewa" },
+    { label: "Khalti", value: "khalti" },
 ];
