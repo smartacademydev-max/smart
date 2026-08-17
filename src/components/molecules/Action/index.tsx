@@ -12,7 +12,7 @@ import {
     Popper,
     useTheme
 } from "@mui/material";
-import { ArrangeHorizontal, Copy, Key, MoneyRecive, MoneyRemove, Send, Slash, TickCircle } from "iconsax-reactjs";
+import { ArrangeHorizontal, Copy, Key, MoneyRecive, MoneyRemove, ReceiptText, Send, Slash, TickCircle } from "iconsax-reactjs";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
@@ -35,12 +35,14 @@ interface Props {
     onMarkPaid?: () => void;
     /** Gate on the `add_refunds` permission — pass `undefined` to hide it. */
     onRefund?: () => void;
+    /** Only meaningful on a settled payment — pass `undefined` otherwise. */
+    onInvoice?: () => void;
     userStatus?: boolean;
     file?: string;
     courseStatus?: "published" | "draft"
 }
 
-export default function Actions({ onEdit, onDelete, onView, deleting = false, onSuspend, userStatus, file, onClone, onGenerateOtp, onSendPasswordReset, onStatus, onManageInstallment, onMarkPaid, onRefund, courseStatus, viewUrl, editUrl }: Props) {
+export default function Actions({ onEdit, onDelete, onView, deleting = false, onSuspend, userStatus, file, onClone, onGenerateOtp, onSendPasswordReset, onStatus, onManageInstallment, onMarkPaid, onRefund, onInvoice, courseStatus, viewUrl, editUrl }: Props) {
     const dispatch = useAppDispatch();
     const [open, setOpen] = useState(false);
     const anchorRef = useRef<HTMLButtonElement | null>(null);
@@ -281,6 +283,17 @@ export default function Actions({ onEdit, onDelete, onView, deleting = false, on
                                                 <MoneyRecive size={20} color={theme.palette.separator.darker} />
                                             </ListItemIcon>
                                             <ListItemText primary={t("actions.manage_installment", "Installments")} />
+                                        </ListItemButton>
+                                    </ListItem> : ""}
+                                    {onInvoice ? <ListItem className="menu__item action__item">
+                                        <ListItemButton sx={{
+                                            m: 0,
+                                            border: "none"
+                                        }} onClick={() => handleMenuClick(onInvoice)}>
+                                            <ListItemIcon>
+                                                <ReceiptText size={20} color={theme.palette.separator.darker} />
+                                            </ListItemIcon>
+                                            <ListItemText primary={t("actions.generate_invoice", "Generate Invoice")} />
                                         </ListItemButton>
                                     </ListItem> : ""}
                                     {onRefund ? <ListItem className="menu__item action__item">

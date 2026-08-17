@@ -381,7 +381,8 @@
         "show": "Show",
         "mark_as_paid": "Mark as Paid",
         "manage_installment": "Installments",
-        "refund": "Refund"
+        "refund": "Refund",
+        "generate_invoice": "Generate Invoice"
     },
     "labels": {
         "title": "Title",

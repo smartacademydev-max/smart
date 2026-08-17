@@ -32,6 +32,7 @@ import type { EnrollmentType, InstallmentRow } from "../../../types/transaction"
 import { formatDateForDisplay } from "../../../utils/dateFormat";
 import { generateTransactionId } from "../../../utils/generateTransactionRefs";
 import { getInstallmentStatusVariant } from "../../../utils/statusMap";
+import { isInstallmentPlanSettled } from "../../../utils/transactionState";
 import MakuraDatePicker from "../../atoms/MakuraDatePicker";
 import StatusPill from "../../atoms/StatusPill";
 import Actions from "../../molecules/Action";
@@ -81,6 +82,8 @@ export default function InstallmentScheduleDialog({ purchaseId, onClose, moduleT
 
     const schedule = data?.data;
     const rows = schedule?.installments ?? [];
+    // Refunds only open up once the last installment has been paid.
+    const planSettled = isInstallmentPlanSettled(schedule);
 
     // The row currently being paid (drives the payment sub-form).
     const [payRow, setPayRow] = useState<InstallmentRow | null>(null);
@@ -187,14 +190,16 @@ export default function InstallmentScheduleDialog({ purchaseId, onClose, moduleT
                     return <Typography variant="caption" color="text.secondary">Cancelled</Typography>;
                 }
                 if (row.original.status === "paid") {
-                    return canRefund
+                    // Refunding is withheld until the whole plan is settled, so a paid row
+                    // in a plan that still owes money offers nothing.
+                    return canRefund && planSettled
                         ? <Actions onRefund={() => setRefundRow(row.original)} />
                         : <Typography variant="caption" color="text.secondary">Paid</Typography>;
                 }
                 return <Actions onMarkPaid={() => openPayForm(row.original)} />;
             },
         },
-    ], [canRefund]);
+    ], [canRefund, planSettled]);
 
     return (
         <>
@@ -222,7 +227,14 @@ export default function InstallmentScheduleDialog({ purchaseId, onClose, moduleT
                             )}
                         </Stack>
 
-
+                        {/* Say why the refund action is absent — otherwise an admin who holds
+                            the permission just sees it missing and assumes something is broken. */}
+                        {canRefund && !planSettled && (
+                            <Alert severity="info" sx={{ background: "transparent", p: 0 }}>
+                                Refunds open up once the last installment is paid — {schedule.paid_count} of{" "}
+                                {schedule.total_count} settled, NRs. {Number(schedule.outstanding_amount ?? 0).toLocaleString()} outstanding.
+                            </Alert>
+                        )}
 
                         <CustomTable data={rows} columns={columns} loading={isFetching} skeletonRows={rows.length || 3} />
 

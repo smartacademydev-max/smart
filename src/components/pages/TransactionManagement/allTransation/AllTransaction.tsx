@@ -14,6 +14,7 @@ import type { EnrollmentType, TransactionResponse } from '../../../../types/tran
 import { formatDate } from '../../../../utils/dateFormat';
 import { formatAmount, sameAmount } from '../../../../utils/itemPrice';
 import { getTransactionReadStatusVariant } from '../../../../utils/statusMap';
+import { isPaymentComplete, isRefundable } from '../../../../utils/transactionState';
 import StatusPill from '../../../atoms/StatusPill';
 import Actions from '../../../molecules/Action';
 import TabController from '../../../molecules/TabController';
@@ -21,22 +22,13 @@ import CustomTable from '../../../molecules/Table';
 import TablePagination from '../../../molecules/Table/Pagination';
 import ConfirmationDialog from '../../../organism/ConfirmationDialog';
 import EmptyRoute from '../../../organism/EmptyRoute';
-import InstallmentScheduleDialog from '../../../organism/InstallmentScheduleDialog';
 import { CourseFilter } from '../../../organism/Filter/CourseFilter';
+import InstallmentScheduleDialog from '../../../organism/InstallmentScheduleDialog';
+import InvoiceDialog from '../../../organism/InvoiceDialog';
 import PageHeader from '../../../organism/PageHeader';
 import RefundDialog from '../../../organism/RefundDialog';
 import TableFilter from '../../../organism/TableFilter';
 import TransactionManagementForm from '../TransactionManagementForm';
-
-/**
- * A refund needs money to have actually been collected, and something left of it.
- * `refunded` already means fully refunded; `failed` / `processing` never took payment.
- */
-const isRefundable = (transaction: TransactionResponse) =>
-    !transaction.is_refunded
-    && transaction.status !== "refunded"
-    && transaction.status !== "failed"
-    && transaction.status !== "processing";
 
 interface Props {
     open: boolean;
@@ -66,6 +58,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
     const [transactionToDelete, setTransactionToDelete] = useState<string[]>([]);
     const [installmentPurchaseId, setInstallmentPurchaseId] = useState<number | null>(null);
     const [refundTarget, setRefundTarget] = useState<TransactionResponse | null>(null);
+    const [invoiceTarget, setInvoiceTarget] = useState<TransactionResponse | null>(null);
 
     const canRefund = useHasPermission("add_refunds");
 
@@ -204,21 +197,21 @@ export default function AllTransaction({ open, setOpen }: Props) {
             size: 80,
         },
         {
+            // Paired with "added by" rather than given its own column — one fewer column
+            // is width the truncated course name and IDs need more than the separation.
             header: "Student Name",
             accessorKey: "name",
             cell: ({ row }) => (
-                <Typography variant='subtitle2' className="capitalize">
-                    {row.original.name || "N/A"}
-                </Typography>
-            ),
-        },
-        {
-            header: "Added By",
-            accessorKey: "added_by",
-            cell: ({ row }) => (
-                <Typography variant='subtitle2' className="capitalize">
-                    {row.original.added_by || "N/A"}
-                </Typography>
+                // `span` + inline-flex: CustomTable wraps every cell in a <Typography>
+                // paragraph, and a block-level child gets hoisted out of it.
+                <Stack component="span" sx={{ display: "inline-flex", flexDirection: "column", gap: "2px", alignItems: "flex-start" }}>
+                    <Typography variant='subtitle2' className="capitalize">
+                        {row.original.name || "N/A"}
+                    </Typography>
+                    <Typography variant='caption' color="text.secondary" className="capitalize">
+                        Added by {row.original.added_by || "N/A"}
+                    </Typography>
+                </Stack>
             ),
         },
         {
@@ -226,7 +219,9 @@ export default function AllTransaction({ open, setOpen }: Props) {
             accessorKey: "course_name",
             cell: ({ row }) => (
                 <Tooltip title={row.original.course_name} arrow>
-                    <Typography variant='subtitle2' className="capitalize line-clamp-1">
+                    {/* Two lines is free — neighbouring cells already stack two deep, so this
+                        costs no row height and recovers most of what was being clipped. */}
+                    <Typography variant='subtitle2' className="capitalize line-clamp-2" sx={{ maxWidth: 220 }}>
                         {row.original.course_name || "N/A"}
                     </Typography>
                 </Tooltip>
@@ -263,23 +258,26 @@ export default function AllTransaction({ open, setOpen }: Props) {
             },
         },
         {
-            header: "Invoice ID",
+            // Both IDs stacked and labelled. Apart they were two wide columns that still
+            // truncated; together they read as one reference block, and each keeps a
+            // tooltip because these values are long enough to clip either way.
+            header: "Invoice / Transaction",
             accessorKey: "invoice_id",
             cell: ({ row }) => (
-                <Typography variant='subtitle2' className="">
-                    {row.original.invoice_id || "N/A"}
-                </Typography>
-            ),
-        },
-        {
-            header: "Transaction ID / Bill No.",
-            accessorKey: "transaction_id",
-            cell: ({ row }) => (
-                <Tooltip title={row.original.transaction_id || ""} arrow>
-                    <Typography variant='subtitle2' className="line-clamp-1">
-                        {row.original.transaction_id || "N/A"}
-                    </Typography>
-                </Tooltip>
+                <Stack component="span" sx={{ display: "inline-flex", flexDirection: "column", gap: "2px", alignItems: "flex-start", maxWidth: 230 }}>
+                    <Tooltip title={row.original.invoice_id || ""} arrow>
+                        <Typography variant='subtitle2' className="line-clamp-1">
+                            <Box component="span" color="text.secondary">Invoice: </Box>
+                            {row.original.invoice_id || "N/A"}
+                        </Typography>
+                    </Tooltip>
+                    <Tooltip title={row.original.transaction_id || ""} arrow>
+                        <Typography variant='caption' className="line-clamp-1">
+                            <Box component="span" color="text.secondary">Txn / Bill: </Box>
+                            {row.original.transaction_id || "N/A"}
+                        </Typography>
+                    </Tooltip>
+                </Stack>
             ),
         },
         {
@@ -340,6 +338,8 @@ export default function AllTransaction({ open, setOpen }: Props) {
                     // Nothing to give back on a fully refunded row, nor on one that never
                     // collected money in the first place.
                     onRefund={canRefund && isRefundable(row.original) ? () => setRefundTarget(row.original) : undefined}
+                    // A receipt is only truthful once the money is settled and still held.
+                    onInvoice={isPaymentComplete(row.original) ? () => setInvoiceTarget(row.original) : undefined}
                     file={row.original?.image_url || undefined}
                 />
             ),
@@ -485,6 +485,12 @@ export default function AllTransaction({ open, setOpen }: Props) {
                 purchaseId={installmentPurchaseId}
                 onClose={() => setInstallmentPurchaseId(null)}
                 moduleType={enrollmentType}
+            />
+
+            <InvoiceDialog
+                transaction={invoiceTarget}
+                moduleType={enrollmentType}
+                onClose={() => setInvoiceTarget(null)}
             />
 
             <RefundDialog
