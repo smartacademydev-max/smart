@@ -295,38 +295,24 @@ export default function AllTransaction({ open, setOpen }: Props) {
             header: "Status",
             accessorKey: "status",
             cell: ({ row }) => {
-                const { status, is_installment, is_refunded, refunded_amount } = row.original;
-                // `refunded` arrives ready to badge — the API presents it even though the
-                // stored row is still `success`, and it already outranks `installment`.
-                // A *partial* refund keeps its original status server-side, so rank it the
-                // same way here: money having gone back matters more to an admin scanning
-                // the list than how the sale was paid. The demoted status stays as a caption.
+                const { status, is_refunded, refunded_amount } = row.original;
+                // One badge only — the dominant one.
+                //
+                // `refunded` already arrives ready to badge and outranks `installment`
+                // server-side. A *partial* refund keeps its original status in the response,
+                // so it gets ranked here instead: money having gone back matters more to an
+                // admin scanning the list than how the sale was paid. The underlying status
+                // is still on the detail view, which carries the full refund breakdown.
                 const partiallyRefunded = !is_refunded && Number(refunded_amount ?? 0) > 0;
-                const planLabel = is_installment ? "Installment plan" : status;
-                const caption = partiallyRefunded
-                    ? planLabel
-                    : (is_installment && status !== "installment" ? "Installment plan" : null);
-                return (
-                    // `span` + inline-flex on purpose: CustomTable wraps every cell in a
-                    // <Typography> paragraph, and a block child would be hoisted out of it.
-                    <Stack
-                        component="span"
-                        sx={{ display: "inline-flex", flexDirection: "column", gap: "3px", alignItems: "flex-start" }}
-                    >
-                        {partiallyRefunded ? (
-                            <Tooltip title={`${t("messages.npr")} ${formatAmount(refunded_amount)} refunded so far`} arrow>
-                                <span><StatusPill status="Partially Refunded" variant="error" /></span>
-                            </Tooltip>
-                        ) : (
-                            <StatusPill status={status} variant={getTransactionReadStatusVariant(status)} />
-                        )}
-                        {caption && (
-                            <Typography variant="caption" color="text.secondary" className="text-nowrap capitalize">
-                                {caption}
-                            </Typography>
-                        )}
-                    </Stack>
-                );
+
+                if (partiallyRefunded) {
+                    return (
+                        <Tooltip title={`${t("messages.npr")} ${formatAmount(refunded_amount)} refunded so far`} arrow>
+                            <span><StatusPill status="Partially Refunded" variant="error" /></span>
+                        </Tooltip>
+                    );
+                }
+                return <StatusPill status={status} variant={getTransactionReadStatusVariant(status)} />;
             },
         },
         {
