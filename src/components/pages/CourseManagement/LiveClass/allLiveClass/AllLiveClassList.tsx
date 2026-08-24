@@ -15,6 +15,7 @@ import Actions from "../../../../molecules/Action";
 import TabController from "../../../../molecules/TabController";
 import CustomTable from "../../../../molecules/Table";
 import TablePagination from "../../../../molecules/Table/Pagination";
+import ActiveFilterBar from "../../../../organism/ActiveFilterBar";
 import ConfirmationDialog from "../../../../organism/ConfirmationDialog";
 import EmptyRoute from "../../../../organism/EmptyRoute";
 import { CourseFilter } from "../../../../organism/Filter/CourseFilter";
@@ -46,6 +47,7 @@ export default function AllLiveClassList() {
 
   const {
     selections,
+    appliedPills,
     megaCategories,
     categories,
     subCategories,
@@ -57,7 +59,7 @@ export default function AllLiveClassList() {
     getCategoryFilterParams,
     filterDialogOpen,
     setFilterDialogOpen
-  } = useCourseFilter();
+  } = useCourseFilter({ persistOnMount: true, namespace: "liveclass" });
 
   const categoryFilter = getCategoryFilterParams();
 
@@ -294,6 +296,7 @@ export default function AllLiveClassList() {
           setDays={setDays}
           handleResetFilter={handleResetFilter}
         />
+        <ActiveFilterBar pills={appliedPills} onClearAll={resetFilters} />
         <TabController
           options={LiveClassTabs}
           currentActive={activeTab}

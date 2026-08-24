@@ -8,12 +8,13 @@ import {
     DialogTitle,
     Divider,
     InputLabel,
+    Link,
     OutlinedInput,
     Switch,
     Typography,
 } from "@mui/material";
 import { useFormik } from "formik";
-import { Add } from "iconsax-reactjs";
+import { Add, InfoCircle } from "iconsax-reactjs";
 import { useState } from "react";
 import {
     useCreateZoomAccountMutation,
@@ -24,14 +25,17 @@ import {
 } from "../../../../../services/settingApi";
 import { showToast } from "../../../../../slice/toastSlice";
 import { useAppDispatch } from "../../../../../store/hook";
+import type { Theme } from "@mui/material/styles";
 import type { ZoomAccount } from "../../../../../types/setting";
 import Password from "../../../../atoms/Password";
 import ActionIconVisible from "../../../../molecules/Action/ActionIconVisible";
+import ZoomSetupGuide from "../../../../organism/ZoomSetupGuide";
 
 function ZoomAccountDialog({ open, account, onClose }: { open: boolean; account: ZoomAccount | null; onClose: () => void }) {
     const dispatch = useAppDispatch();
     const [createAccount, { isLoading: creating }] = useCreateZoomAccountMutation();
     const [updateAccount, { isLoading: updating }] = useUpdateZoomAccountMutation();
+    const [guideOpen, setGuideOpen] = useState(false);
 
     const isEdit = !!account;
     const isLoading = creating || updating;
@@ -102,6 +106,37 @@ function ZoomAccountDialog({ open, account, onClose }: { open: boolean; account:
                 <Divider />
                 <DialogContent dividers className="flex flex-col gap-5!" sx={{ overflowY: "auto" }}>
 
+                    {/* Guide CTA - placed at the top of the form because
+                        setup is the hard part, not the paste. Reading order:
+                        "here is help" then "now fill this in". */}
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.25,
+                            p: 1.5,
+                            borderRadius: 2,
+                            bgcolor: (theme: Theme) => theme.palette.primary.light,
+                            border: (theme: Theme) => `1px solid ${theme.palette.primary.main}`,
+                        }}
+                    >
+                        <InfoCircle size={18} variant="Bold" color="currentColor" style={{ color: "inherit", flexShrink: 0 }} />
+                        <Typography variant="body2" sx={{ flex: 1, color: "primary.main", fontWeight: 500 }}>
+                            First time? Zoom needs <strong>two apps</strong> configured — we walk you through both.
+                        </Typography>
+                        <Button
+                            size="small"
+                            variant="contained"
+                            disableElevation
+                            onClick={() => setGuideOpen(true)}
+                            sx={{ textTransform: "none", fontWeight: 600, borderRadius: 1.5, flexShrink: 0 }}
+                        >
+                            Open setup guide
+                        </Button>
+                    </Box>
+
+                    <ZoomSetupGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
+
                     <div>
                         <InputLabel className="required">Zoom Account Email</InputLabel>
                         <OutlinedInput
@@ -117,6 +152,18 @@ function ZoomAccountDialog({ open, account, onClose }: { open: boolean; account:
                     <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 2 }}>
                         <Typography variant="caption" color="text.secondary" fontWeight={500} className="uppercase tracking-wide">
                             Server App — Create &amp; Host Meetings
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5, lineHeight: 1.5 }}>
+                            Copy from{" "}
+                            <Link
+                                href="https://marketplace.zoom.us/develop/create"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                sx={{ fontWeight: 600 }}
+                            >
+                                Zoom Marketplace → Develop → Build App → Server-to-Server OAuth
+                            </Link>{" "}
+                            → <strong>App Credentials</strong> tab.
                         </Typography>
                         <div className="grid grid-cols-1 gap-4 mt-3">
                             <div>
@@ -154,6 +201,18 @@ function ZoomAccountDialog({ open, account, onClose }: { open: boolean; account:
                     <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 2 }}>
                         <Typography variant="caption" color="text.secondary" fontWeight={500} className="uppercase tracking-wide">
                             SDK App — Public Join
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5, lineHeight: 1.5 }}>
+                            Copy from{" "}
+                            <Link
+                                href="https://marketplace.zoom.us/develop/create"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                sx={{ fontWeight: 600 }}
+                            >
+                                Zoom Marketplace → Develop → Build App → Meeting SDK
+                            </Link>{" "}
+                            → <strong>App Credentials</strong> tab.
                         </Typography>
                         <div className="grid grid-cols-1 gap-4 mt-3">
                             <div>
@@ -199,6 +258,7 @@ export default function ZoomSettingRoot() {
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<ZoomAccount | null>(null);
+    const [guideOpen, setGuideOpen] = useState(false);
 
     const accounts = data?.data ?? [];
 
@@ -224,11 +284,21 @@ export default function ZoomSettingRoot() {
 
     return (
         <div className="app__settings__page__root pb-4 lg:pb-6 flex flex-col h-full">
-            <div className="flex items-center justify-between shrink-0">
+            <div className="flex items-center justify-between shrink-0 gap-2 flex-wrap">
                 <Typography variant="h5">Zoom Accounts</Typography>
-                <Button variant="contained" startIcon={<Add size={18} />} onClick={openAdd}>
-                    Add Account
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outlined"
+                        startIcon={<InfoCircle size={16} variant="Bold" />}
+                        onClick={() => setGuideOpen(true)}
+                        sx={{ textTransform: "none", fontWeight: 600 }}
+                    >
+                        Setup guide
+                    </Button>
+                    <Button variant="contained" startIcon={<Add size={18} />} onClick={openAdd}>
+                        Add Account
+                    </Button>
+                </div>
             </div>
             <Divider className="mt-4! mb-4!" />
 
@@ -237,6 +307,17 @@ export default function ZoomSettingRoot() {
                     <Box sx={{ border: "1px dashed", borderColor: "divider", borderRadius: 2, p: 4, textAlign: "center" }}>
                         <Typography color="text.secondary" variant="body2">
                             No Zoom accounts configured. Add one to get started.
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+                            First time setting up Zoom?{" "}
+                            <Link
+                                component="button"
+                                onClick={() => setGuideOpen(true)}
+                                sx={{ fontWeight: 600 }}
+                            >
+                                Open the step-by-step guide
+                            </Link>
+                            .
                         </Typography>
                     </Box>
                 ) : (
@@ -292,6 +373,8 @@ export default function ZoomSettingRoot() {
                 account={editTarget}
                 onClose={() => setDialogOpen(false)}
             />
+
+            <ZoomSetupGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
         </div>
     );
 }

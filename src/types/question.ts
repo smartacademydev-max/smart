@@ -112,6 +112,10 @@ export interface TestProps {
     discount: number | null;
     discount_type: DiscountTypeProps;
     omr_format?: number | null
+    /** Auto-graded tests (mcq/omr) only. Off by default — no deduction for wrong answers. */
+    negative_marking_enabled?: boolean;
+    /** Percent of the question's marks deducted per wrong answer. API returns it as a string ("25.00"), or null while disabled. */
+    negative_marking_percentage?: number | string | null;
 }
 
 export const TestInitialState: TestProps = {
@@ -137,6 +141,8 @@ export const TestInitialState: TestProps = {
     discount: null,
     discount_type: "percentage",
     omr_format: null,
+    negative_marking_enabled: false,
+    negative_marking_percentage: null,
 };
 
 export interface TestList {
@@ -208,6 +214,23 @@ export const testValidationSchema = Yup.object().shape({
     pass_mark: Yup.number()
         .min(0, "Pass marks must be at least 0")
         .required("Pass marks is required"),
+
+    negative_marking_enabled: Yup.boolean().default(false),
+
+    // Mirrors the backend's `required_if` rule: only demanded when the toggle is on,
+    // and only for the two auto-graded test types that can deduct marks.
+    negative_marking_percentage: Yup.number()
+        .nullable()
+        .when(["test_type", "negative_marking_enabled"], {
+            is: (testType: string, enabled: boolean) =>
+                (testType === "mcq" || testType === "omr") && enabled === true,
+            then: (schema) => schema
+                .typeError("Negative marking percentage is required")
+                .min(0, "Percentage must be at least 0")
+                .max(100, "Percentage cannot exceed 100")
+                .required("Negative marking percentage is required"),
+            otherwise: (schema) => schema.notRequired().nullable(),
+        }),
     is_scheduled: Yup.boolean().default(false).required(),
     start_datetime: Yup.string().when("is_scheduled", { is: true, then: (schema) => schema.required("Start date & time is required"), otherwise: (schema) => schema.notRequired() }),
     end_datetime: Yup.string().when("is_scheduled", {

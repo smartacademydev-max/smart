@@ -14,6 +14,7 @@ import Actions from "../../../molecules/Action";
 import ScheduleNotification from "../../../molecules/Action/ScheduleNotification";
 import CustomTable from "../../../molecules/Table";
 import TablePagination from "../../../molecules/Table/Pagination";
+import ActiveFilterBar from "../../../organism/ActiveFilterBar";
 import ConfirmationDialog from "../../../organism/ConfirmationDialog";
 import EmptyRoute from "../../../organism/EmptyRoute";
 import { CourseFilter } from "../../../organism/Filter/CourseFilter";
@@ -40,6 +41,7 @@ export default function AllNotifications() {
 
     const {
         selections,
+        appliedPills,
         loadingMegaCategory,
         handleCategoryChange,
         handleApplyFilter,
@@ -49,7 +51,7 @@ export default function AllNotifications() {
         status,
         paymentMethod,
         targetAudience
-    } = useCourseFilter();
+    } = useCourseFilter({ persistOnMount: true, namespace: "notifications" });
 
 
     const { data, isLoading } = useGetAllNotificationQuery({
@@ -243,6 +245,7 @@ export default function AllNotifications() {
                     setDays={setDays}
                     handleResetFilter={handleResetFilter}
                 />
+                <ActiveFilterBar pills={appliedPills} onClearAll={resetFilters} />
             </div>
             {!isLoading && !notifications.length ?
                 <EmptyRoute

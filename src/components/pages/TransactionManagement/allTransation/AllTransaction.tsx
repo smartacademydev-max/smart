@@ -20,6 +20,7 @@ import Actions from '../../../molecules/Action';
 import TabController from '../../../molecules/TabController';
 import CustomTable from '../../../molecules/Table';
 import TablePagination from '../../../molecules/Table/Pagination';
+import ActiveFilterBar from '../../../organism/ActiveFilterBar';
 import ConfirmationDialog from '../../../organism/ConfirmationDialog';
 import EmptyRoute from '../../../organism/EmptyRoute';
 import { CourseFilter } from '../../../organism/Filter/CourseFilter';
@@ -64,6 +65,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
 
     const {
         selections,
+        appliedPills,
         megaCategories,
         categories,
         subCategories,
@@ -78,7 +80,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
         device,
         status,
         paymentMethod
-    } = useCourseFilter();
+    } = useCourseFilter({ persistOnMount: true, namespace: "transactions" });
 
     const categoryFilter = getCategoryFilterParams();
 
@@ -421,6 +423,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
                     onDownload={handleDownload}
                     donwloading={downloading}
                 />
+                <ActiveFilterBar pills={appliedPills} onClearAll={resetFilters} />
             </div>
             {
                 !isLoading && !transactions.length ? <EmptyRoute

@@ -13,6 +13,7 @@ import StatusPill from '../../../../atoms/StatusPill';
 import Actions from '../../../../molecules/Action';
 import CustomTable from '../../../../molecules/Table';
 import TablePagination from '../../../../molecules/Table/Pagination';
+import ActiveFilterBar from '../../../../organism/ActiveFilterBar';
 import ConfirmationDialog from '../../../../organism/ConfirmationDialog';
 import EmptyRoute from '../../../../organism/EmptyRoute';
 import { CourseFilter } from '../../../../organism/Filter/CourseFilter';
@@ -45,6 +46,7 @@ export default function AllTestListing() {
     const [days, setDays] = useState<number | null>(null);
     const {
         selections,
+        appliedPills,
         megaCategories,
         categories,
         subCategories,
@@ -56,7 +58,7 @@ export default function AllTestListing() {
         getCategoryFilterParams,
         filterDialogOpen,
         setFilterDialogOpen
-    } = useCourseFilter();
+    } = useCourseFilter({ persistOnMount: true, namespace: "alltest" });
 
     const categoryFilter = getCategoryFilterParams();
 
@@ -294,6 +296,7 @@ export default function AllTestListing() {
                     setDays={setDays}
                     handleResetFilter={handleResetFilter}
                 />
+                <ActiveFilterBar pills={appliedPills} onClearAll={resetFilters} />
             </div>
 
             {!isLoading && !tests.length ?

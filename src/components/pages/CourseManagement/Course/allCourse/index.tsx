@@ -1,7 +1,7 @@
 import { Add } from "@mui/icons-material";
 import { Box, Button, Checkbox, Dialog, DialogActions, DialogContent, FormControlLabel, IconButton, List, ListItem, Stack, Tooltip, Typography } from "@mui/material";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
@@ -17,6 +17,7 @@ import Actions from "../../../../molecules/Action";
 import TabController from "../../../../molecules/TabController";
 import CustomTable from "../../../../molecules/Table";
 import TablePagination from "../../../../molecules/Table/Pagination";
+import ActiveFilterBar from "../../../../organism/ActiveFilterBar";
 import ConfirmationDialog from "../../../../organism/ConfirmationDialog";
 import EmptyRoute from "../../../../organism/EmptyRoute";
 import { CourseFilter } from "../../../../organism/Filter/CourseFilter";
@@ -58,6 +59,7 @@ export default function AllCourse() {
 
     const {
         selections,
+        appliedPills,
         megaCategories,
         categories,
         subCategories,
@@ -72,7 +74,7 @@ export default function AllCourse() {
         getCategoryFilterParams,
         filterDialogOpen,
         setFilterDialogOpen
-    } = useCourseFilter();
+    } = useCourseFilter({ persistOnMount: true, namespace: "allcourse" });
 
     const categoryFilter = getCategoryFilterParams();
 
@@ -89,10 +91,6 @@ export default function AllCourse() {
         status: activeTab
     });
     const [changeStatus] = useChangeCourseStatusMutation();
-
-    useEffect(() => {
-        resetFilters();
-    }, [])
 
     const [deleteCourse, { isLoading: deleting }] = useDeleteCourseMutation();
 
@@ -352,6 +350,9 @@ export default function AllCourse() {
                     onFilter={() => setFilterDialogOpen(true)}
                 />
             </div>
+
+            <ActiveFilterBar pills={appliedPills} onClearAll={resetFilters} />
+
             <TabController
                 options={[
                     { label: "All Course", value: "all" },

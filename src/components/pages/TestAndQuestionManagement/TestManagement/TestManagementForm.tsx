@@ -91,7 +91,13 @@ export default function TestManagementForm() {
                 rules: test.rules,
                 discount: test.discount,
                 discount_type: test.discount_type,
-                omr_format: test.omr_format
+                omr_format: test.omr_format,
+                negative_marking_enabled: test.negative_marking_enabled ?? false,
+                // API sends this back as a string ("25.00") or null
+                negative_marking_percentage:
+                    test.negative_marking_percentage != null
+                        ? Number(test.negative_marking_percentage)
+                        : null,
             };
         }
         return TestInitialState;
@@ -104,7 +110,14 @@ export default function TestManagementForm() {
         enableReinitialize: true,
         onSubmit: async (values) => {
             try {
-                const { set_question_count: _sqc, ...submitValues } = values;
+                const { set_question_count: _sqc, ...rest } = values;
+                const submitValues: TestProps = {
+                    ...rest,
+                    // Backend stores null while disabled — never send a stale percentage
+                    negative_marking_percentage: rest.negative_marking_enabled
+                        ? Number(rest.negative_marking_percentage)
+                        : null,
+                };
                 const response = await createTest({ body: submitValues }).unwrap();
                 dispatch(
                     showToast({
@@ -263,6 +276,9 @@ export default function TestManagementForm() {
 
         if (value === "subjective") {
             formik.setFieldValue("marks_per_question", 0);
+            // Subjective tests aren't auto-graded, so negative marking doesn't apply
+            formik.setFieldValue("negative_marking_enabled", false);
+            formik.setFieldValue("negative_marking_percentage", null);
         }
 
         if (value === "mcq") {
@@ -423,6 +439,53 @@ export default function TestManagementForm() {
                             )}
                         </div>
                     </div>
+                ) : ""}
+
+                {formik.values.test_type === "mcq" || formik.values.test_type === "omr" ? (
+                    <>
+                        <div className="col-span-2 flex items-center gap-2">
+                            <Typography variant="subtitle1" color="text.middle">Enable negative marking?</Typography>
+                            <YesNoSwitch
+                                checked={Boolean(formik.values.negative_marking_enabled)}
+                                onChange={(event) => {
+                                    formik.setFieldValue("negative_marking_enabled", event.target.checked);
+                                    if (!event.target.checked) {
+                                        formik.setFieldValue("negative_marking_percentage", null);
+                                        formik.setFieldTouched("negative_marking_percentage", false);
+                                    }
+                                }}
+                            />
+                        </div>
+
+                        {formik.values.negative_marking_enabled && (
+                            <div className="col-span-1">
+                                <div className="input__field">
+                                    <InputLabel className="required">Negative Marking (%)</InputLabel>
+                                    <OutlinedInput
+                                        fullWidth
+                                        name="negative_marking_percentage"
+                                        value={formik.values.negative_marking_percentage ?? ""}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        placeholder="Enter Percentage (0 - 100)"
+                                        type="number"
+                                        error={formik.touched.negative_marking_percentage && Boolean(formik.errors.negative_marking_percentage)}
+                                        inputProps={{ min: 0, max: 100, step: "any" }}
+                                    />
+                                    {formik.touched.negative_marking_percentage && formik.errors.negative_marking_percentage ? (
+                                        <FormHelperText error>{formik.errors.negative_marking_percentage}</FormHelperText>
+                                    ) : (
+                                        <FormHelperText>
+                                            Deducts this percent of the question&apos;s marks for each wrong answer
+                                            {Number(formik.values.marks_per_question) > 0 && Number(formik.values.negative_marking_percentage) > 0
+                                                ? ` (−${((Number(formik.values.marks_per_question) * Number(formik.values.negative_marking_percentage)) / 100).toFixed(2)} marks per wrong answer).`
+                                                : "."}
+                                        </FormHelperText>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 ) : ""}
                 <div className="col-span-1">
                     <div className="input__field">

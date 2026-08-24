@@ -16,6 +16,7 @@ import type { RegisterUserProps } from "../../../../types/user";
 import Actions from "../../../molecules/Action";
 import CustomTable from "../../../molecules/Table";
 import TablePagination from "../../../molecules/Table/Pagination";
+import ActiveFilterBar from "../../../organism/ActiveFilterBar";
 import ConfirmationDialog from "../../../organism/ConfirmationDialog";
 import OtpDialog from "../../../organism/Dialog/OtpDialog";
 import ResetLinkDialog from "../../../organism/Dialog/ResetLinkDialog";
@@ -51,6 +52,7 @@ export default function AllUserTable() {
 
     const {
         selections,
+        appliedPills,
         handleCategoryChange,
         handleApplyFilter,
         resetFilters,
@@ -59,7 +61,7 @@ export default function AllUserTable() {
         setFilterDialogOpen,
         roles,
         activeTab,
-    } = useCourseFilter();
+    } = useCourseFilter({ persistOnMount: true, namespace: "users" });
 
     const [otp, setOtp] = useState<string>("");
     const [customRange, setCustomRange] = useState({
@@ -499,6 +501,7 @@ export default function AllUserTable() {
                             onImport={() => setImportOpen(true)}
                             donwloading={downloading}
                         />
+                        <ActiveFilterBar pills={appliedPills} onClearAll={resetFilters} />
                         {!user.length && !isLoading ? (
                             <EmptyRoute
                                 icon={(<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -1,6 +1,8 @@
 
 import {
     Autocomplete,
+    Box,
+    Button,
     Checkbox,
     Divider,
     FormControlLabel,
@@ -13,6 +15,7 @@ import {
 import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
 import { useFormik } from "formik";
+import { InfoCircle } from "iconsax-reactjs";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { PATH } from "../../../../routes/PATH";
@@ -33,6 +36,7 @@ import { YesNoSwitch } from "../../../atoms/YesNoSwitch";
 import FooterAction from "../../../molecules/FooterAction";
 import InfiniteScrolling from "../../../molecules/InfiniteScrolling";
 import CategoryFilter from "../../../organism/CategoryFilter";
+import ZoomSetupGuide from "../../../organism/ZoomSetupGuide";
 
 export default function LiveClassManagementForm() {
     const dispatch = useAppDispatch();
@@ -103,6 +107,8 @@ export default function LiveClassManagementForm() {
 
     const { data: zoomAccountsData } = useGetZoomAccountsQuery();
     const activeZoomAccounts = (zoomAccountsData?.data ?? []).filter((a) => a.is_active);
+    const hasNoZoomAccounts = activeZoomAccounts.length === 0;
+    const [zoomGuideOpen, setZoomGuideOpen] = useState(false);
 
     const { data: teachers } = useGetAllUserQuery({
         pageIndex: 1,
@@ -287,7 +293,28 @@ export default function LiveClassManagementForm() {
 
                     {/* ZOOM ACCOUNT */}
                     <div className="col-span-1">
-                        <InputLabel className="required">Zoom Account</InputLabel>
+                        <Box className="flex items-center justify-between gap-2 flex-wrap">
+                            <InputLabel className="required" sx={{ mb: 0 }}>Zoom Account</InputLabel>
+                            {/* Always-visible help affordance. Setting Zoom up
+                                is where clients get stuck - the field itself is
+                                only useful once the six credentials are in
+                                place on the Settings page. */}
+                            <Button
+                                size="small"
+                                onClick={() => setZoomGuideOpen(true)}
+                                startIcon={<InfoCircle size={14} variant="Bold" />}
+                                sx={{
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    fontSize: 12,
+                                    minHeight: 0,
+                                    py: 0.25,
+                                    px: 0.75,
+                                }}
+                            >
+                                How to set up Zoom?
+                            </Button>
+                        </Box>
                         <Autocomplete
                             options={activeZoomAccounts}
                             getOptionLabel={(option) => option.email || ""}
@@ -297,15 +324,32 @@ export default function LiveClassManagementForm() {
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
-                                    placeholder="Select Zoom Account"
+                                    placeholder={hasNoZoomAccounts ? "No Zoom account yet - set one up first" : "Select Zoom Account"}
                                 />
                             )}
                             disabled={!!id}
+                            noOptionsText={
+                                <Box sx={{ textAlign: "center", py: 0.5 }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                                        No active Zoom accounts.
+                                    </Typography>
+                                    <Button
+                                        size="small"
+                                        variant="text"
+                                        onClick={() => setZoomGuideOpen(true)}
+                                        sx={{ textTransform: "none", fontWeight: 600 }}
+                                    >
+                                        See how to add one
+                                    </Button>
+                                </Box>
+                            }
                         />
 
                         {formik.touched.account_id && formik.errors.account_id && (
                             <Typography color="error" variant="caption">{formik.errors.account_id}</Typography>
                         )}
+
+                        <ZoomSetupGuide open={zoomGuideOpen} onClose={() => setZoomGuideOpen(false)} />
                     </div>
 
                     {/* AGENDA */}
