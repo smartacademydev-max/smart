@@ -31,6 +31,11 @@ const PAPER = {
     deduction: "#DC2626",
     paid: "#047857",
     paidBg: "#ECFDF5",
+    /** A plan still collecting — neither settled nor failed. */
+    partial: "#B45309",
+    partialBg: "#FFFBEB",
+    /** Money given back. Shares the deduction ink; only the wash differs. */
+    refundBg: "#FEF2F2",
 };
 
 interface Props {
@@ -47,9 +52,13 @@ const moduleLabel: Record<EnrollmentType, string> = {
 };
 
 /**
- * Printable receipt for a settled transaction — the admin-side counterpart of the
- * receipt a student gets on the purchase success screen, built from the same
- * fields so both documents agree.
+ * Printable tax invoice for a transaction — the admin-side counterpart of the receipt
+ * a student gets on the purchase success screen, built from the same fields so both
+ * documents agree.
+ *
+ * It describes the transaction in whatever state it is actually in: settled, a plan
+ * still collecting, or refunded in whole or in part. The figures shift to match, but
+ * the invoiced total is never rewritten — refunds are shown against it.
  *
  * Download is `window.print()` against a print-only stylesheet rather than a
  * generated PDF: it keeps the rendered markup as the single source of truth and
@@ -126,9 +135,49 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
     const vatAmount = toAmount(transaction.vat_amount);
     const vatPercentage = toAmount(transaction.vat_percentage);
     const hasVat = vatAmount > 0;
-    const totalAmount = transaction.total_amount != null
-        ? toAmount(transaction.total_amount)
-        : taxable + vatAmount;
+    /**
+     * Derived, never read off the row. `total_amount` already exists on the API as an
+     * *installment plan* total — 0 on an ordinary sale — so trusting a field by that
+     * name printed a zero total on every non-installment invoice.
+     */
+    const totalAmount = taxable + vatAmount;
+
+    /**
+     * A plan mid-flight still gets an invoice, but it must not claim the whole sum was
+     * collected. `installment_summary` carries the outstanding balance; what has been
+     * paid is the rest of the total.
+     */
+    const outstanding = toAmount(summary?.outstanding_amount);
+    const isPartiallyPaid = Boolean(transaction.is_installment && summary && outstanding > 0);
+    const paidSoFar = Math.max(totalAmount - outstanding, 0);
+
+    /**
+     * A refunded sale still gets an invoice — withholding it would leave no record of
+     * the transaction at all. The document carries the refund instead, so the printed
+     * figure matches what the student was ultimately left paying.
+     *
+     * A full refund with no `refunded_amount` on the row falls back to the whole total,
+     * so the net can never overstate what was kept.
+     */
+    const isFullyRefunded = Boolean(transaction.is_refunded || transaction.status === "refunded");
+    const rawRefund = toAmount(transaction.refunded_amount);
+    const refundedAmount = isFullyRefunded && rawRefund <= 0 ? totalAmount : rawRefund;
+    const hasRefund = refundedAmount > 0;
+    const isPartiallyRefunded = hasRefund && !isFullyRefunded;
+    const netAmount = Math.max(totalAmount - refundedAmount, 0);
+
+    const statusLabel = isFullyRefunded
+        ? "Refunded"
+        : isPartiallyRefunded
+            ? "Partially Refunded"
+            : isPartiallyPaid
+                ? "Partially Paid"
+                : "Paid";
+    const statusInk = isFullyRefunded || isPartiallyRefunded
+        ? { fg: PAPER.deduction, bg: PAPER.refundBg }
+        : isPartiallyPaid
+            ? { fg: PAPER.partial, bg: PAPER.partialBg }
+            : { fg: PAPER.paid, bg: PAPER.paidBg };
 
     const handlePrint = () => {
         try {
@@ -285,20 +334,22 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                                     px: 1.5,
                                     py: 0.25,
                                     borderRadius: 99,
-                                    background: PAPER.paidBg,
-                                    color: PAPER.paid,
+                                    background: statusInk.bg,
+                                    color: statusInk.fg,
                                     fontWeight: 600,
                                     fontSize: 13,
                                 }}
                             >
-                                Paid
+                                {statusLabel}
                             </Box>
                         ))}
 
-                        {/* Settled plans only reach this dialog, so the count is a closed fact. */}
+                        {/* Mid-plan invoices are allowed, so state progress rather than a total. */}
                         {transaction.is_installment && summary && row("Paid In", (
                             <Typography variant="subtitle1" fontWeight={600}>
-                                {summary.total_count} installment{summary.total_count === 1 ? "" : "s"}
+                                {isPartiallyPaid
+                                    ? `${summary.paid_count} of ${summary.total_count} installments`
+                                    : `${summary.total_count} installment${summary.total_count === 1 ? "" : "s"}`}
                             </Typography>
                         ))}
 
@@ -336,11 +387,63 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                                 NRs. {formatAmount(totalAmount) || "0"}
                             </Typography>
                         </div>
+
+                        {/* Split the total only while a balance is still owed — on a settled
+                            plan "paid so far" and the total are the same number twice. */}
+                        {isPartiallyPaid && (
+                            <>
+                                {row("Paid So Far", (
+                                    <Typography variant="subtitle1" fontWeight={600}>
+                                        NRs. {formatAmount(paidSoFar) || "0"}
+                                    </Typography>
+                                ), PAPER.paid)}
+
+                                {row("Outstanding", (
+                                    <Typography variant="subtitle1" fontWeight={600}>
+                                        NRs. {formatAmount(outstanding)}
+                                    </Typography>
+                                ), PAPER.partial)}
+
+                                {summary?.next_due_date && row("Next Due", (
+                                    <Typography variant="subtitle1" fontWeight={600}>
+                                        {formatDateCustom(summary.next_due_date, { shortMonth: true })}
+                                    </Typography>
+                                ))}
+                            </>
+                        )}
+
+                        {/* The total above stays what was invoiced; the refund and the net
+                            sit under it so the document shows both, not a rewritten figure. */}
+                        {hasRefund && (
+                            <>
+                                {row(isFullyRefunded ? "Refunded (full)" : "Refunded", (
+                                    <Typography variant="subtitle1" fontWeight={600}>
+                                        − NRs. {formatAmount(refundedAmount)}
+                                    </Typography>
+                                ), PAPER.deduction)}
+
+                                {transaction.refunded_at && row("Refunded On", (
+                                    <Typography variant="subtitle1" fontWeight={600}>
+                                        {formatDateCustom(transaction.refunded_at, { shortMonth: true })}
+                                    </Typography>
+                                ))}
+
+                                <Box sx={{ borderTop: `1px dashed ${PAPER.muted}`, my: 1.5 }} />
+                                <div className="grid grid-cols-2 gap-2 items-center">
+                                    <Typography variant="subtitle1" fontWeight={600} sx={{ color: PAPER.ink }}>
+                                        Net Amount
+                                    </Typography>
+                                    <Typography variant="h5" fontWeight={700} sx={{ color: PAPER.ink }} className="text-end">
+                                        NRs. {formatAmount(netAmount) || "0"}
+                                    </Typography>
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     <Box sx={{ borderTop: `1px solid ${PAPER.line}`, mt: 2 }} />
                     <Typography variant="caption" sx={{ color: PAPER.muted }} className="block text-center pt-3">
-                        This is a computer-generated receipt and does not require a signature.
+                        This is a computer-generated invoice and does not require a signature.
                         {issuerEmail ? ` For any queries, contact ${issuerEmail}.` : ""}
                     </Typography>
                 </Box>

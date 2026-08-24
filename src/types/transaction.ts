@@ -105,8 +105,11 @@ export interface TransactionResponse extends Omit<TransactionPayload, "original_
     vat_amount?: number | string | null;
     /** Rate applied at sale time, so historical invoices survive a future rate change. */
     vat_percentage?: number | string | null;
-    /** Backend-computed `sold_price + vat_amount`. Falls back to that sum when absent. */
-    total_amount?: number | string | null;
+    /**
+     * Deliberately absent. The invoice total is derived as `sold_price + vat_amount` —
+     * `total_amount` is already taken by {@link InstallmentSchedule} for the plan total,
+     * so a field of that name here is ambiguous and must not be read as an invoice total.
+     */
     /** Buyer's PAN, when they have one on file. */
     customer_pan?: string | null;
 }

@@ -14,7 +14,7 @@ import type { EnrollmentType, TransactionResponse } from '../../../../types/tran
 import { formatDate } from '../../../../utils/dateFormat';
 import { formatAmount, sameAmount } from '../../../../utils/itemPrice';
 import { getTransactionReadStatusVariant } from '../../../../utils/statusMap';
-import { isPaymentComplete, isRefundable } from '../../../../utils/transactionState';
+import { canGenerateInvoice, isRefundable } from '../../../../utils/transactionState';
 import StatusPill from '../../../atoms/StatusPill';
 import Actions from '../../../molecules/Action';
 import TabController from '../../../molecules/TabController';
@@ -325,7 +325,7 @@ export default function AllTransaction({ open, setOpen }: Props) {
                     
                     onRefund={canRefund && isRefundable(row.original) ? () => setRefundTarget(row.original) : undefined}
                    
-                    onInvoice={isPaymentComplete(row.original) ? () => setInvoiceTarget(row.original) : undefined}
+                    onInvoice={canGenerateInvoice(row.original) ? () => setInvoiceTarget(row.original) : undefined}
                     file={row.original?.image_url || undefined}
                 />
             ),

@@ -41,14 +41,18 @@ export const isRefundable = (transaction: TransactionResponse): boolean => {
 /**
  * Whether an invoice may be generated.
  *
- * Stricter than {@link isRefundable}: a receipt states what the student paid and
- * kept, so any refund — whole or partial — disqualifies it, since the printed
- * figure would no longer match reality.
+ * Every transaction where money actually changed hands qualifies — including plans
+ * still collecting, and sales since refunded in whole or in part. The document states
+ * its own position (partially paid, refunded, net of refund) rather than being
+ * withheld, so an admin can always produce a record of what happened.
+ *
+ * Only rows where nothing was ever collected are excluded, since there is no
+ * transaction to describe.
  */
-export const isPaymentComplete = (transaction: TransactionResponse): boolean => {
-    if (transaction.is_refunded || transaction.status === "refunded") return false;
-    if (toAmount(transaction.refunded_amount) > 0) return false;
+export const canGenerateInvoice = (transaction: TransactionResponse): boolean => {
     if (!collectedAndHeld(transaction)) return false;
-    if (transaction.is_installment) return isInstallmentPlanSettled(transaction.installment_summary);
-    return transaction.status === "success";
+    // A plan's status stays `installment` until it settles, so it never satisfies the
+    // check below — qualify it on its own terms instead.
+    if (transaction.is_installment) return true;
+    return transaction.status === "success" || transaction.status === "refunded";
 };
