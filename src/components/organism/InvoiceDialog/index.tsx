@@ -46,16 +46,6 @@ const moduleLabel: Record<EnrollmentType, string> = {
     bundle: "Bundle",
 };
 
-/** `"Makura Creations"` → `"MC"`. Feeds the placeholder mark when no logo is set. */
-const initialsOf = (name: string) =>
-    name
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((word) => word[0])
-        .join("")
-        .toUpperCase();
-
 /**
  * Printable receipt for a settled transaction — the admin-side counterpart of the
  * receipt a student gets on the purchase success screen, built from the same
@@ -69,14 +59,19 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
     const theme = useTheme();
     const dispatch = useAppDispatch();
 
-    const { companyName, brandName, tagline, logoUrl } = useBrandSettings();
+    const { companyName, brandName, tagline, logoUrl, tpin } = useBrandSettings();
     const { data: appSettings } = useGetAppSettingsQuery();
 
     const issuerName = companyName || brandName;
     const issuerPhone = appSettings?.data?.phones?.[0]?.value ?? "";
     const issuerEmail = appSettings?.data?.emails?.[0]?.value ?? "";
-    // Always the light logo — this is a white document, not a themed surface.
-    const hasLogo = Boolean(logoUrl);
+    /**
+     * The receipt is always white paper, never a themed surface, so it needs the
+     * dark-inked mark. `/logo-dark.svg` is that one despite the name — `/logo.svg`
+     * is solid white and would print invisible here.
+     */
+    const invoiceLogo = logoUrl || "/logo-dark.svg";
+    const hasCustomLogo = Boolean(logoUrl);
 
     // Scoped to the mounted dialog so the rule never leaks into other screens.
     useEffect(() => {
@@ -121,6 +116,20 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
     const showDiscount = discount > 0 && !sameAmount(original, sold);
     const summary = transaction.installment_summary;
 
+    /**
+     * VAT is exclusive — added on top of the discounted price, the same basis the
+     * purchase flow uses (`finalPrice = price + vat - discount`). The amount and rate
+     * come from the transaction rather than being recomputed here, so a rate change
+     * never rewrites what an old invoice says was charged.
+     */
+    const taxable = toAmount(sold ?? original ?? 0);
+    const vatAmount = toAmount(transaction.vat_amount);
+    const vatPercentage = toAmount(transaction.vat_percentage);
+    const hasVat = vatAmount > 0;
+    const totalAmount = transaction.total_amount != null
+        ? toAmount(transaction.total_amount)
+        : taxable + vatAmount;
+
     const handlePrint = () => {
         try {
             window.print();
@@ -157,9 +166,9 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                     </IconButton>
                 </Stack>
 
-                {/* The receipt carries the brand mark, so an unset logo is a real gap —
-                    say so rather than quietly printing the placeholder. */}
-                {!hasLogo && (
+                {/* The receipt carries the brand mark, so falling back to the bundled
+                    default is worth saying out loud rather than doing quietly. */}
+                {!hasCustomLogo && (
                     <Alert
                         severity="warning"
                         className="invoice__no-print"
@@ -170,8 +179,8 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                             </Button>
                         }
                     >
-                        No brand logo is set, so this receipt prints a placeholder mark. Upload one
-                        under Settings → Site Info before issuing invoices to students.
+                        No brand logo is set, so this invoice prints the bundled default logo.
+                        Upload your own under Settings → Site Info before issuing invoices to students.
                     </Alert>
                 )}
 
@@ -182,29 +191,7 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                 >
                     {/* Issuer — who this receipt is from. Centred masthead. */}
                     <div className="text-center flex flex-col items-center gap-1 mb-4">
-                        {hasLogo ? (
-                            <img src={logoUrl} alt="" style={{ height: 40, objectFit: "contain" }} />
-                        ) : (
-                            // Placeholder monogram — keeps the masthead composed on paper
-                            // instead of leaving a hole where the logo belongs.
-                            <Box
-                                sx={{
-                                    width: 40,
-                                    height: 40,
-                                    borderRadius: "50%",
-                                    border: `1.5px dashed ${PAPER.muted}`,
-                                    color: PAPER.muted,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    fontWeight: 700,
-                                    fontSize: 14,
-                                    letterSpacing: "0.05em",
-                                }}
-                            >
-                                {initialsOf(issuerName) || "LOGO"}
-                            </Box>
-                        )}
+                        <img src={invoiceLogo} alt="" style={{ height: 40, objectFit: "contain" }} />
                         {issuerName && (
                             <Typography variant="h5" fontWeight={700} sx={{ color: PAPER.ink }} className="uppercase tracking-wide">
                                 {issuerName}
@@ -216,13 +203,18 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                                 {[issuerPhone, issuerEmail].filter(Boolean).join("  ·  ")}
                             </Typography>
                         )}
+                        {tpin && (
+                            <Typography variant="caption" fontWeight={600} sx={{ color: PAPER.ink }}>
+                                TPIN No.: {tpin}
+                            </Typography>
+                        )}
                     </div>
 
                     {/* Document title — a rule with the label sitting on it. */}
                     <div className="flex items-center gap-3 mb-4">
                         <Box sx={{ flex: 1, borderTop: `1px solid ${PAPER.line}` }} />
                         <Typography variant="caption" fontWeight={700} sx={{ color: PAPER.muted }} className="uppercase tracking-[0.2em]">
-                            Payment Receipt
+                            Tax Invoice
                         </Typography>
                         <Box sx={{ flex: 1, borderTop: `1px solid ${PAPER.line}` }} />
                     </div>
@@ -253,6 +245,13 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                                 )}
                             </>
                         ))}
+                        {/* A tax invoice names the buyer's PAN when they have one; a dash
+                            records that it was asked for and not supplied. */}
+                        {row("Customer PAN No.", (
+                            <Typography variant="subtitle1" fontWeight={600}>
+                                {transaction.customer_pan || "—"}
+                            </Typography>
+                        ), transaction.customer_pan ? PAPER.ink : PAPER.muted)}
                     </div>
 
                     <Box sx={{ background: PAPER.panel, border: `1px solid ${PAPER.line}` }} className="rounded-md p-4 mb-4">
@@ -316,11 +315,25 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                             </Typography>
                         ), PAPER.deduction)}
 
+                        {/* Only shown once VAT is actually charged — on a zero-VAT sale the
+                            taxable amount and the total are the same figure twice. */}
+                        {hasVat && row("Taxable Amount", (
+                            <Typography variant="subtitle1" fontWeight={600}>
+                                NRs. {formatAmount(taxable) || "0"}
+                            </Typography>
+                        ))}
+
+                        {hasVat && row(`VAT @ ${formatAmount(vatPercentage) || "13"}%`, (
+                            <Typography variant="subtitle1" fontWeight={600}>
+                                NRs. {formatAmount(vatAmount)}
+                            </Typography>
+                        ))}
+
                         <Box sx={{ borderTop: `1px dashed ${PAPER.muted}`, my: 1.5 }} />
                         <div className="grid grid-cols-2 gap-2 items-center">
-                            <Typography variant="subtitle1" fontWeight={600} sx={{ color: PAPER.ink }}>Amount Paid</Typography>
+                            <Typography variant="subtitle1" fontWeight={600} sx={{ color: PAPER.ink }}>Total Amount</Typography>
                             <Typography variant="h5" fontWeight={700} sx={{ color: PAPER.ink }} className="text-end">
-                                NRs. {formatAmount(sold ?? original ?? 0) || "0"}
+                                NRs. {formatAmount(totalAmount) || "0"}
                             </Typography>
                         </div>
                     </div>

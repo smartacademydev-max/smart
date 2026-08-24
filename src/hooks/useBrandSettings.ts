@@ -11,6 +11,7 @@ export function useBrandSettings() {
         companyName: brand?.company_name ?? "",
         metaDescription: brand?.meta_description ?? "",
         tagline: brand?.tagline ?? "",
+        tpin: brand?.tpin ?? "",
         logoUrl: brand?.logo_url ?? "",
         logoDarkUrl: brand?.logo_dark_url ?? "",
         favIconUrl: brand?.favicon_url ?? "",

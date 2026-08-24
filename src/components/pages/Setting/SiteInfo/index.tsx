@@ -18,6 +18,7 @@ export default function SiteInfoRoot() {
             brand_name: data?.data?.brand_name || "",
             tagline: data?.data?.tagline || "",
             meta_description: data?.data?.meta_description || "",
+            tpin: data?.data?.tpin || "",
             logo_url: data?.data?.logo_url || "",
             logo_dark_url: data?.data?.logo_dark_url || "",
             favicon_url: data?.data?.favicon_url || "",
@@ -32,6 +33,7 @@ export default function SiteInfoRoot() {
             fd.append("brand_name", values.brand_name);
             fd.append("tagline", values.tagline);
             fd.append("meta_description", values.meta_description);
+            fd.append("tpin", values.tpin ?? "");
             if (values.logo) fd.append("logo", values.logo);
             else if (values.logo_url) fd.append("logo_url", values.logo_url);
             if (values.logo_dark) fd.append("logo_dark", values.logo_dark);
@@ -94,6 +96,21 @@ export default function SiteInfoRoot() {
                         onBlur={formik.handleBlur}
                         placeholder="e.g. Learn smarter, grow faster"
                     />
+                </div>
+
+                <div>
+                    <InputLabel>TPIN / VAT No.</InputLabel>
+                    <OutlinedInput
+                        fullWidth
+                        name="tpin"
+                        value={formik.values.tpin}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        placeholder="e.g. 610143957"
+                    />
+                    <Typography variant="caption" color="text.middle">
+                        Printed on the tax invoice masthead. Leave blank to omit the line.
+                    </Typography>
                 </div>
 
                 <div className="md:col-span-2">

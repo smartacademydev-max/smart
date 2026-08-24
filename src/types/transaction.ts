@@ -97,6 +97,18 @@ export interface TransactionResponse extends Omit<TransactionPayload, "original_
     refunded_amount?: number;
     /** Timestamp of the refund that settled it. */
     refunded_at?: string | null;
+    /**
+     * Tax fields for the printed tax invoice. VAT is exclusive — charged on top of
+     * `sold_price` — matching the purchase flow's `finalPrice = price + vat - discount`.
+     * Absent on rows recorded before VAT was collected, which read as zero VAT.
+     */
+    vat_amount?: number | string | null;
+    /** Rate applied at sale time, so historical invoices survive a future rate change. */
+    vat_percentage?: number | string | null;
+    /** Backend-computed `sold_price + vat_amount`. Falls back to that sum when absent. */
+    total_amount?: number | string | null;
+    /** Buyer's PAN, when they have one on file. */
+    customer_pan?: string | null;
 }
 
 export interface TransactionList {

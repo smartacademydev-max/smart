@@ -28,6 +28,8 @@ export interface ThemeSettingProps {
     brand_name: string;
     tagline: string;
     meta_description: string;
+    /** Issuer's tax PIN, printed on the tax invoice masthead. Per-deployment, so it lives in settings. */
+    tpin?: string;
     logo_url?: string;
     logo_dark_url?: string;
     favicon_url?: string;
