@@ -4,6 +4,7 @@ import { useGetThemeSettingsQuery, useUpdateThemeSettingMutation } from "../../.
 import { showToast } from "../../../../slice/toastSlice";
 import { useAppDispatch } from "../../../../store/hook";
 import type { ThemeSettingFormProps } from "../../../../types/setting";
+import { YesNoSwitch } from "../../../atoms/YesNoSwitch";
 import FileDragDrop from "../../../molecules/FileDragDrop";
 
 export default function SiteInfoRoot() {
@@ -19,6 +20,8 @@ export default function SiteInfoRoot() {
             tagline: data?.data?.tagline || "",
             meta_description: data?.data?.meta_description || "",
             tpin: data?.data?.tpin || "",
+            vat_percentage: data?.data?.vat_percentage ?? 13,
+            vat_inclusive: Boolean(data?.data?.vat_inclusive),
             logo_url: data?.data?.logo_url || "",
             logo_dark_url: data?.data?.logo_dark_url || "",
             favicon_url: data?.data?.favicon_url || "",
@@ -34,6 +37,8 @@ export default function SiteInfoRoot() {
             fd.append("tagline", values.tagline);
             fd.append("meta_description", values.meta_description);
             fd.append("tpin", values.tpin ?? "");
+            fd.append("vat_percentage", String(values.vat_percentage ?? 0));
+            fd.append("vat_inclusive", values.vat_inclusive ? "1" : "0");
             if (values.logo) fd.append("logo", values.logo);
             else if (values.logo_url) fd.append("logo_url", values.logo_url);
             if (values.logo_dark) fd.append("logo_dark", values.logo_dark);
@@ -110,6 +115,45 @@ export default function SiteInfoRoot() {
                     />
                     <Typography variant="caption" color="text.middle">
                         Printed on the tax invoice masthead. Leave blank to omit the line.
+                    </Typography>
+                </div>
+
+                <div>
+                    <InputLabel>VAT Rate (%)</InputLabel>
+                    <OutlinedInput
+                        fullWidth
+                        type="number"
+                        inputProps={{ min: 0, max: 100, step: 0.5 }}
+                        name="vat_percentage"
+                        value={formik.values.vat_percentage}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        placeholder="13"
+                    />
+                    <Typography variant="caption" color="text.middle">
+                        Applied to new sales. Set to 0 to stop charging VAT — invoices already
+                        issued keep the rate they recorded.
+                    </Typography>
+                </div>
+
+                <div>
+                    <InputLabel>Prices Include VAT</InputLabel>
+                    <div className="flex items-center gap-3">
+                        <YesNoSwitch
+                            name="vat_inclusive"
+                            checked={Boolean(formik.values.vat_inclusive)}
+                            onChange={(e) =>
+                                formik.setFieldValue("vat_inclusive", e.target.checked)
+                            }
+                        />
+                        <Typography variant="body2">
+                            {formik.values.vat_inclusive ? "Inclusive" : "Exclusive"}
+                        </Typography>
+                    </div>
+                    <Typography variant="caption" color="text.middle">
+                        {formik.values.vat_inclusive
+                            ? "The listed price is the total — VAT is shown as the share already within it, and the customer pays exactly the listed price."
+                            : "VAT is added on top of the listed price, so the customer pays more than the price shown."}
                     </Typography>
                 </div>
 

@@ -30,6 +30,16 @@ export interface ThemeSettingProps {
     meta_description: string;
     /** Issuer's tax PIN, printed on the tax invoice masthead. Per-deployment, so it lives in settings. */
     tpin?: string;
+    /**
+     * VAT charged on new sales, as a percentage. In settings rather than config
+     * so it can change without a deploy; issued invoices keep their own rate.
+     */
+    vat_percentage?: number;
+    /**
+     * True when the listed price already contains VAT. False adds the rate on
+     * top, so the customer pays more than the price shown.
+     */
+    vat_inclusive?: boolean;
     logo_url?: string;
     logo_dark_url?: string;
     favicon_url?: string;

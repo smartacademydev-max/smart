@@ -117,6 +117,8 @@ export interface TransactionResponse extends Omit<TransactionPayload, "original_
     customer_pan?: string | null;
     /** Issue date in Bikram Sambat, converted server-side (e.g. "2083/05/09"). */
     issued_on_bs?: string | null;
+    /** True when the sold price already contained the VAT recorded against it. */
+    vat_inclusive?: boolean | null;
 }
 
 export interface TransactionList {
