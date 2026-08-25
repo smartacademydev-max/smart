@@ -38,7 +38,16 @@ export const questionApi = baseApi.injectEndpoints({
                 ...(body.id ? [{ type: "Questions" as const, id: body.id }] : [])
             ]
         }),
-        getAllQuestion: builder.query<QuestionList, QueryParams & { type?: QuestionTypeProps; days?: number | null; set_ids?: number[]; }>({
+        getAllQuestion: builder.query<QuestionList, QueryParams & {
+            /**
+             * A single format, "all", or a comma-separated list — the API
+             * filters with whereIn, so a test picker can ask for every
+             * objective format at once.
+             */
+            type?: QuestionTypeProps | "all" | (string & {});
+            days?: number | null;
+            set_ids?: number[];
+        }>({
             query: ({ type, pageIndex, pageSize, search, days, startDate, endDate, set_ids }) => {
                 const queryString = buildQueryParams({
                     page: pageIndex,

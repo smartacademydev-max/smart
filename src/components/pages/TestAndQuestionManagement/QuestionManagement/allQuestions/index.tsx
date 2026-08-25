@@ -6,8 +6,10 @@ import { useTranslation } from 'react-i18next';
 import { useBulkUpdateQuestionMarksMutation, useDeleteQuestionMutation, useGetAllQuestionQuery } from '../../../../../services/questionApi';
 import { showToast } from '../../../../../slice/toastSlice';
 import { useAppDispatch } from '../../../../../store/hook';
+import { QUESTION_TYPE_LABELS } from '../../../../../types/question';
 import type { QuestionProps, QuestionTypeProps } from '../../../../../types/question';
 import { renderHtml } from '../../../../../utils/renderHtml';
+import { gapsAsBlanks } from '../../../../../utils/questionText';
 import QuestionIssueDot from '../../../../atoms/QuestionIssueDot';
 import Actions from '../../../../molecules/Action';
 import TabController from '../../../../molecules/TabController';
@@ -34,7 +36,8 @@ export default function AllQuestionListing({ open, setOpen }: Props) {
     })
     const [openConfirm, setOpenConfirm] = useState(false);
     const [questionsToDelete, setQuestionsToDelete] = useState<string[]>([]);
-    const [activeTab, setActiveTab] = useState<QuestionTypeProps>("mcq");
+    // "all" is a filter value, not a question type, so the tab state widens.
+    const [activeTab, setActiveTab] = useState<QuestionTypeProps | "all">("all");
     const [customRange, setCustomRange] = useState({
         startDate: "",
         endDate: ""
@@ -142,9 +145,18 @@ export default function AllQuestionListing({ open, setOpen }: Props) {
                 <Stack direction="row" alignItems="center" sx={{ gap: 1 }}>
                     <QuestionIssueDot question={row.original} />
                     <Typography fontWeight={500} >
-                        {renderHtml(row.original.question) || "N/A"}
+                        {renderHtml(gapsAsBlanks(row.original.question || "")) || "N/A"}
                     </Typography>
                 </Stack>
+            ),
+        },
+        {
+            header: "Type",
+            accessorKey: "question_type",
+            cell: ({ row }) => (
+                <Typography fontWeight={500}>
+                    {QUESTION_TYPE_LABELS[row.original.question_type] || row.original.question_type}
+                </Typography>
             ),
         },
         {
@@ -214,7 +226,21 @@ export default function AllQuestionListing({ open, setOpen }: Props) {
                     handleOpenPopup={() => setOpen(true)}
                 />
                 <TabController
-                    options={[{ label: "MCQs", value: "mcq" }, { label: "Subjective", value: "subjective" }]}
+                    options={[
+                        // "All" first: a question authored as any of the newer
+                        // formats is otherwise invisible from this list.
+                        { label: "All", value: "all" },
+                        { label: "MCQs", value: "mcq" },
+                        { label: QUESTION_TYPE_LABELS.sata, value: "sata" },
+                        { label: QUESTION_TYPE_LABELS.select_n, value: "select_n" },
+                        { label: QUESTION_TYPE_LABELS.matrix, value: "matrix" },
+                        { label: QUESTION_TYPE_LABELS.cloze, value: "cloze" },
+                        { label: QUESTION_TYPE_LABELS.highlight, value: "highlight" },
+                        { label: QUESTION_TYPE_LABELS.drag_drop, value: "drag_drop" },
+                        { label: QUESTION_TYPE_LABELS.drag_into_text, value: "drag_into_text" },
+                        { label: QUESTION_TYPE_LABELS.bow_tie, value: "bow_tie" },
+                        { label: "Subjective", value: "subjective" }
+                    ]}
                     setActiveTab={setActiveTab}
                     currentActive={activeTab}
                 />

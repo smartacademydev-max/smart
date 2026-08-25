@@ -40,6 +40,8 @@ export interface TransactionPayload {
     bundle_id?: number;
     subscription_id: number;
     invoice_id: string;
+    /** Typed by the admin for a walk-in sale; falls back to the profile. */
+    customer_pan?: string | null;
     transaction_id: string;
     payment_method: PaymentMethodProps;
     status: PaymentStatusProps;
@@ -57,6 +59,7 @@ export const TransactionInitialState: TransactionPayload = {
     bundle_id: 0,
     subscription_id: 0,
     invoice_id: "",
+    customer_pan: "",
     transaction_id: "",
     payment_method: "cash",
     status: "success",
@@ -112,6 +115,8 @@ export interface TransactionResponse extends Omit<TransactionPayload, "original_
      */
     /** Buyer's PAN, when they have one on file. */
     customer_pan?: string | null;
+    /** Issue date in Bikram Sambat, converted server-side (e.g. "2083/05/09"). */
+    issued_on_bs?: string | null;
 }
 
 export interface TransactionList {
@@ -131,6 +136,7 @@ export interface TransactionProps {
     original_price?: number | null;
     sold_price?: number | null;
     invoice_id: string;
+    customer_pan?: string | null;
     /** Same presented value as the admin list — `refunded` is possible here too. */
     status: TransactionReadStatus | "pending";
 }
@@ -145,6 +151,7 @@ export interface UserTransactionResponse extends GlobalResponse {
 
 export interface TransactionDetail {
     id?: number;
+    customer_pan?: string | null;
     student_id: number;
     course_id?: number;
     test_id?: number;

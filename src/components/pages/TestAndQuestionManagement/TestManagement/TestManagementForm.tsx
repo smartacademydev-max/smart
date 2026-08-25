@@ -10,7 +10,7 @@ import { showToast } from "../../../../slice/toastSlice";
 import { useAppDispatch } from "../../../../store/hook";
 import { useCourseFilter } from "../../../../store/useCourseFilter";
 import type { CourseProps, DiscountTypeProps } from "../../../../types/course";
-import { TestInitialState, testValidationSchema, type QuestionLabelProps, type QuestionProps, type TestProps, type TestTypeProps } from "../../../../types/question";
+import { OBJECTIVE_QUESTION_TYPES, TestInitialState, testValidationSchema, type QuestionLabelProps, type QuestionProps, type TestProps, type TestTypeProps } from "../../../../types/question";
 import { calcHasMore } from "../../../../utils/calculateHasMore";
 import { formatDateForDisplay } from "../../../../utils/dateFormat";
 import MakuraDatePicker from "../../../atoms/MakuraDatePicker";
@@ -144,7 +144,19 @@ export default function TestManagementForm() {
     const { data: courses, isLoading: loadingCourses } = useGetAllCourseQuery({ ...courseQp, categoryFilter: { ...categoryFilter } });
     const { data: questions, isLoading: loadingQuestions } = useGetAllQuestionQuery({
         ...questionQp,
-        type: formik.values.test_type === "omr" ? "mcq" : formik.values.test_type,
+        /**
+         * `test_type` names the kind of test (mcq / subjective / omr), not a
+         * question format. An "MCQ" test accepts every objective format, so
+         * sending it verbatim hid Bow-tie, Matrix, Cloze and the rest from the
+         * picker — they were authored but unselectable. OMR is the exception:
+         * a scanned sheet can only carry plain multiple choice.
+         */
+        type:
+            formik.values.test_type === "omr"
+                ? "mcq"
+                : formik.values.test_type === "subjective"
+                    ? "subjective"
+                    : OBJECTIVE_QUESTION_TYPES.join(","),
         set_ids: formik.values.set_ids.length ? formik.values.set_ids : undefined,
     });
     const { data: questionSets, isLoading: loadingSets } = useGetAllQuestionSetsQuery({ ...setQp });
@@ -422,7 +434,13 @@ export default function TestManagementForm() {
                 {formik.values.test_type === "mcq" || formik.values.test_type === "omr" ? (
                     <div className="col-span-1">
                         <div className="input__field">
-                            <InputLabel className="required">Marks Per Question</InputLabel>
+                            <InputLabel className="required">
+                                Marks Per Question{" "}
+                                <Typography variant="caption" color="text.secondary" className="inline-block">
+                                    Applies to multiple choice. Other formats set their own marks on
+                                    the question, and the paper is worth their sum.
+                                </Typography>
+                            </InputLabel>
                             <OutlinedInput
                                 fullWidth
                                 name="marks_per_question"

@@ -233,10 +233,24 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                     </Alert>
                 )}
 
+                {/**
+                  * Two copies print: the tax invoice for the customer and a
+                  * plain "Invoice" retained by the office. Rendered from one
+                  * function so the two can never drift apart.
+                  */}
+                {(["Tax Invoice", "Invoice"] as const).map((heading, copyIndex) => (
                 <Box
-                    id={PRINT_AREA_ID}
-                    className="rounded-md py-6 px-4"
-                    sx={{ border: `1px solid ${PAPER.line}`, background: PAPER.bg, color: PAPER.ink }}
+                    key={heading}
+                    id={copyIndex === 0 ? PRINT_AREA_ID : undefined}
+                    className="rounded-md py-6 px-4 invoice__copy"
+                    sx={{
+                        border: `1px solid ${PAPER.line}`,
+                        background: PAPER.bg,
+                        color: PAPER.ink,
+                        mt: copyIndex === 0 ? 0 : 3,
+                        // Each copy starts its own sheet when printed.
+                        "@media print": copyIndex === 0 ? {} : { pageBreakBefore: "always" }
+                    }}
                 >
                     {/* Issuer — who this receipt is from. Centred masthead. */}
                     <div className="text-center flex flex-col items-center gap-1 mb-4">
@@ -263,7 +277,7 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                     <div className="flex items-center gap-3 mb-4">
                         <Box sx={{ flex: 1, borderTop: `1px solid ${PAPER.line}` }} />
                         <Typography variant="caption" fontWeight={700} sx={{ color: PAPER.muted }} className="uppercase tracking-[0.2em]">
-                            Tax Invoice
+                            {heading}
                         </Typography>
                         <Box sx={{ flex: 1, borderTop: `1px solid ${PAPER.line}` }} />
                     </div>
@@ -279,9 +293,20 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                         </div>
                         {row("Issued On", (
                             <Typography variant="subtitle1" fontWeight={600}>
-                                {formatDateCustom(transaction.created_at || "", { shortMonth: true })}
+                                {/* Bikram Sambat, converted server-side so every
+                                    client shows the same date. */}
+                                {transaction.issued_on_bs
+                                    ? `${transaction.issued_on_bs} BS`
+                                    : formatDateCustom(transaction.created_at || "", { shortMonth: true })}
                             </Typography>
                         ))}
+                        {transaction.issued_on_bs && transaction.created_at && (
+                            row("", (
+                                <Typography variant="caption" sx={{ color: PAPER.muted }}>
+                                    {formatDateCustom(transaction.created_at, { shortMonth: true })} AD
+                                </Typography>
+                            ))
+                        )}
                         {row("Billed To", (
                             <>
                                 <Typography variant="subtitle1" fontWeight={600} className="capitalize">
@@ -447,6 +472,7 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                         {issuerEmail ? ` For any queries, contact ${issuerEmail}.` : ""}
                     </Typography>
                 </Box>
+                ))}
 
                 <Stack direction="row" justifyContent="flex-end" gap={2} mt={3} className="invoice__no-print">
                     <Button variant="outlined" onClick={onClose}>Close</Button>
