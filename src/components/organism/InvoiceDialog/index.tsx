@@ -95,9 +95,6 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
         style.id = PRINT_STYLE_ID;
         style.innerHTML = `
         @page { margin: 12mm; }
-        /* The office copy is for the printed sheet only — showing it in the
-           dialog looked like the invoice had been generated twice. */
-        .invoice__copy--office { display: none; }
         @media print {
             body * { visibility: hidden !important; }
             #${PRINT_AREA_ID}, #${PRINT_AREA_ID} * {
@@ -120,6 +117,8 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                 max-width: ${BILL_WIDTH} !important;
                 margin: 0 auto !important;
             }
+            /* Kept explicit: the office copy must reach the sheet even if a
+               future rule hides it on screen. */
             .invoice__copy--office { display: block !important; }
             .invoice__copy { border: none !important; box-shadow: none !important; }
             .invoice__no-print { display: none !important; }
@@ -282,8 +281,12 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                         width: "100%",
                         maxWidth: BILL_WIDTH,
                         mx: "auto",
-                        // Each copy starts its own sheet when printed.
-                        "@media print": copyIndex === 0 ? {} : { pageBreakBefore: "always" }
+                        // Separated on screen; each copy starts its own sheet
+                        // when printed.
+                        mt: copyIndex === 0 ? 0 : 3,
+                        "@media print": copyIndex === 0
+                            ? {}
+                            : { marginTop: 0, pageBreakBefore: "always" }
                     }}
                 >
                     {/* Issuer — who this receipt is from. Centred masthead. */}
