@@ -7,6 +7,14 @@ import { baseApi } from "./baseApi";
 
 export const transactionApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
+        /**
+         * The next invoice number in the Nepali fiscal-year sequence. Minted by
+         * the server: two admins saving at the same moment would otherwise both
+         * read the same last number and issue duplicate invoices.
+         */
+        getNextInvoiceNumber: builder.query<{ data: { invoice_id: string } }, void>({
+            query: () => ({ url: `/admin/invoice-number`, method: "GET" })
+        }),
         addTransaction: builder.mutation<GlobalResponse, { body: FormData }>({
             query: ({ body }) => ({
                 url: `/admin/transaction`,
@@ -114,6 +122,7 @@ export const transactionApi = baseApi.injectEndpoints({
 })
 
 export const {
+    useLazyGetNextInvoiceNumberQuery,
     useAddTransactionMutation,
     useGetAllTransactionsQuery,
     useGetTransactionByIdQuery,

@@ -21,12 +21,17 @@ const PRINT_STYLE_ID = "invoice-print-style";
  * near-white ink on white paper. Pinning the document's own palette means the
  * preview is exactly what comes out of the printer either way.
  */
+/** A5, the usual size for a Nepali sales bill — two copies fit one A4 sheet. */
+const BILL_WIDTH = "148mm";
+
 const PAPER = {
-    bg: "#FFFFFF",
+    /** Pale yellow, the carbon-copy bill look. Light enough not to tint ink. */
+    bg: "#FEFCE8",
     ink: "#111827",
     muted: "#6B7280",
-    line: "#E5E7EB",
-    panel: "#F9FAFB",
+    /** Warmed to sit on the yellow rather than reading as a grey overlay. */
+    line: "#E4DFC4",
+    panel: "#FBF8DC",
     /** Money taken off the total. */
     deduction: "#DC2626",
     paid: "#047857",
@@ -90,6 +95,9 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
         style.id = PRINT_STYLE_ID;
         style.innerHTML = `
         @page { margin: 12mm; }
+        /* The office copy is for the printed sheet only — showing it in the
+           dialog looked like the invoice had been generated twice. */
+        .invoice__copy--office { display: none; }
         @media print {
             body * { visibility: hidden !important; }
             #${PRINT_AREA_ID}, #${PRINT_AREA_ID} * {
@@ -99,7 +107,7 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                 print-color-adjust: exact !important;
             }
             #${PRINT_AREA_ID} {
-                position: fixed !important;
+                position: absolute !important;
                 top: 0 !important;
                 left: 0 !important;
                 width: 100% !important;
@@ -107,6 +115,13 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                 border: none !important;
                 box-shadow: none !important;
             }
+            .invoice__copy {
+                width: ${BILL_WIDTH} !important;
+                max-width: ${BILL_WIDTH} !important;
+                margin: 0 auto !important;
+            }
+            .invoice__copy--office { display: block !important; }
+            .invoice__copy { border: none !important; box-shadow: none !important; }
             .invoice__no-print { display: none !important; }
         }
     `;
@@ -131,10 +146,22 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
      * come from the transaction rather than being recomputed here, so a rate change
      * never rewrites what an old invoice says was charged.
      */
-    const taxable = toAmount(sold ?? original ?? 0);
+    const soldAmount = toAmount(sold ?? original ?? 0);
     const vatAmount = toAmount(transaction.vat_amount);
     const vatPercentage = toAmount(transaction.vat_percentage);
-    const hasVat = vatAmount > 0;
+    /**
+     * Under inclusive pricing the listed price is the total and the tax sits
+     * inside it, so the taxable base is less than what was sold. The mode is
+     * recorded on the sale rather than guessed from the figures — a zero-rate
+     * sale looks identical either way.
+     */
+    const taxable = transaction.vat_inclusive ? soldAmount - vatAmount : soldAmount;
+    /**
+     * Shown whenever the sale recorded a VAT rate, including a zero one: a tax
+     * invoice that simply omits the line reads as if VAT was never considered.
+     * Only a sale predating VAT entirely — no rate stored — hides it.
+     */
+    const hasVat = transaction.vat_percentage !== null && transaction.vat_percentage !== undefined;
     /**
      * Derived, never read off the row. `total_amount` already exists on the API as an
      * *installment plan* total — 0 on an ordinary sale — so trusting a field by that
@@ -233,10 +260,31 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                     </Alert>
                 )}
 
+                {/**
+                  * Two copies print: the tax invoice for the customer and a
+                  * plain "Invoice" retained by the office. Rendered from one
+                  * function so the two can never drift apart.
+                  */}
+                <Box id={PRINT_AREA_ID}>
+                {(["Tax Invoice", "Invoice"] as const).map((heading, copyIndex) => (
                 <Box
-                    id={PRINT_AREA_ID}
-                    className="rounded-md py-6 px-4"
-                    sx={{ border: `1px solid ${PAPER.line}`, background: PAPER.bg, color: PAPER.ink }}
+                    key={heading}
+                    className={`rounded-md py-6 px-5 invoice__copy${
+                        copyIndex === 0 ? "" : " invoice__copy--office"
+                    }`}
+                    sx={{
+                        border: `1px solid ${PAPER.line}`,
+                        background: PAPER.bg,
+                        color: PAPER.ink,
+                        // Sized as a bill rather than filling the dialog, so
+                        // what is on screen matches what comes out of the
+                        // printer.
+                        width: "100%",
+                        maxWidth: BILL_WIDTH,
+                        mx: "auto",
+                        // Each copy starts its own sheet when printed.
+                        "@media print": copyIndex === 0 ? {} : { pageBreakBefore: "always" }
+                    }}
                 >
                     {/* Issuer — who this receipt is from. Centred masthead. */}
                     <div className="text-center flex flex-col items-center gap-1 mb-4">
@@ -263,7 +311,7 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                     <div className="flex items-center gap-3 mb-4">
                         <Box sx={{ flex: 1, borderTop: `1px solid ${PAPER.line}` }} />
                         <Typography variant="caption" fontWeight={700} sx={{ color: PAPER.muted }} className="uppercase tracking-[0.2em]">
-                            Tax Invoice
+                            {heading}
                         </Typography>
                         <Box sx={{ flex: 1, borderTop: `1px solid ${PAPER.line}` }} />
                     </div>
@@ -279,9 +327,20 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                         </div>
                         {row("Issued On", (
                             <Typography variant="subtitle1" fontWeight={600}>
-                                {formatDateCustom(transaction.created_at || "", { shortMonth: true })}
+                                {/* Bikram Sambat, converted server-side so every
+                                    client shows the same date. */}
+                                {transaction.issued_on_bs
+                                    ? `${transaction.issued_on_bs} BS`
+                                    : formatDateCustom(transaction.created_at || "", { shortMonth: true })}
                             </Typography>
                         ))}
+                        {transaction.issued_on_bs && transaction.created_at && (
+                            row("", (
+                                <Typography variant="caption" sx={{ color: PAPER.muted }}>
+                                    {formatDateCustom(transaction.created_at, { shortMonth: true })} AD
+                                </Typography>
+                            ))
+                        )}
                         {row("Billed To", (
                             <>
                                 <Typography variant="subtitle1" fontWeight={600} className="capitalize">
@@ -446,6 +505,8 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
                         This is a computer-generated invoice and does not require a signature.
                         {issuerEmail ? ` For any queries, contact ${issuerEmail}.` : ""}
                     </Typography>
+                </Box>
+                ))}
                 </Box>
 
                 <Stack direction="row" justifyContent="flex-end" gap={2} mt={3} className="invoice__no-print">

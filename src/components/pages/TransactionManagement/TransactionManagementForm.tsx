@@ -12,7 +12,7 @@ import { useBrandSettings } from "../../../hooks/useBrandSettings";
 import { useGetAllCourseQuery, useGetCourseByIdQuery } from "../../../services/courseApi";
 import { useGetAllBundleQuery, useGetAllIndividualTestQuery } from "../../../services/questionApi";
 import { useGetAllSubscriptionQuery } from "../../../services/subscriptionPlanApi";
-import { useAddTransactionMutation, useGetTransactionByIdQuery, useUpdateTransactionByIdMutation } from "../../../services/transactionApi";
+import { useAddTransactionMutation, useGetTransactionByIdQuery, useLazyGetNextInvoiceNumberQuery, useUpdateTransactionByIdMutation } from "../../../services/transactionApi";
 import { useGetAllUserQuery } from "../../../services/userApi";
 import { showToast } from "../../../slice/toastSlice";
 import { useAppDispatch } from "../../../store/hook";
@@ -160,6 +160,7 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
     ];
 
     const [addTransaction, { isLoading: creatingTransaction }] = useAddTransactionMutation();
+    const [fetchInvoiceNumber] = useLazyGetNextInvoiceNumberQuery();
     const [updateTransaction, { isLoading: updatingTransaction }] = useUpdateTransactionByIdMutation();
 
     const validationSchema = useMemo(() => Yup.object({
@@ -256,6 +257,7 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
             bundle_id: transaction.bundle_id || 0,
             subscription_id: transaction.subscription_id || 0,
             invoice_id: transaction.invoice_id || ``,
+            customer_pan: transaction.customer_pan || ``,
             transaction_id: transaction.transaction_id || "",
             payment_method: transaction.payment_method || "",
             status: transaction.status || "",
@@ -273,6 +275,9 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
 
             formData.append("student_id", String(values.student_id));
             formData.append("invoice_id", values.invoice_id);
+            if (values.customer_pan) {
+                formData.append("customer_pan", values.customer_pan);
+            }
             formData.append("transaction_id", values.transaction_id);
             formData.append("payment_method", values.payment_method);
             formData.append("status", values.status);
@@ -384,8 +389,23 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
         // Wait for brand settings — generating early would bake in the fallback prefix.
         if (loadingBrand) return;
         if (!transactionId && formik.values.student_id > 0 && !formik.values.invoice_id) {
-            const newInvoiceId = generateInvoiceId(brandName, formik.values.student_id);
-            formik.setFieldValue("invoice_id", newInvoiceId);
+            /**
+             * Asked of the server rather than minted here: the fiscal-year
+             * sequence has to be unique across admins, which a client cannot
+             * guarantee. Falls back to the local generator if the request
+             * fails, so recording a sale is never blocked.
+             */
+            fetchInvoiceNumber()
+                .unwrap()
+                .then((res) => {
+                    formik.setFieldValue("invoice_id", res?.data?.invoice_id);
+                })
+                .catch(() => {
+                    formik.setFieldValue(
+                        "invoice_id",
+                        generateInvoiceId(brandName, formik.values.student_id)
+                    );
+                });
         }
     }, [formik.values.student_id, transactionId, loadingBrand, brandName]);
 
@@ -1011,6 +1031,24 @@ export default function TransactionManagementForm({ open, setOpen, transactionId
                                                     : "Optional on an installment plan — the schedule sets what is owed."}
                                             </Typography>
                                         )}
+                                    </div>
+                                </div>
+
+                                <div className="col-span-1">
+                                    <div className="input_field">
+                                        <InputLabel>Customer PAN</InputLabel>
+                                        <OutlinedInput
+                                            fullWidth
+                                            placeholder="Customer PAN (optional)"
+                                            name="customer_pan"
+                                            value={formik.values.customer_pan}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                        />
+                                        <Typography variant="caption" color="text.secondary">
+                                            Printed on the invoice. Taken from the student's profile
+                                            when left blank.
+                                        </Typography>
                                     </div>
                                 </div>
 
