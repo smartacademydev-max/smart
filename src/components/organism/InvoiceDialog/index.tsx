@@ -73,7 +73,7 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
     const theme = useTheme();
     const dispatch = useAppDispatch();
 
-    const { companyName, brandName, tagline, logoUrl, tpin } = useBrandSettings();
+    const { companyName, brandName, tagline, logoUrl, logoDarkUrl, tpin } = useBrandSettings();
     const { data: appSettings } = useGetAppSettingsQuery();
 
     const issuerName = companyName || brandName;
@@ -84,8 +84,13 @@ export default function InvoiceDialog({ transaction, moduleType = "course", onCl
      * dark-inked mark. `/logo-dark.svg` is that one despite the name — `/logo.svg`
      * is solid white and would print invisible here.
      */
-    const invoiceLogo = logoUrl || "/logo-dark.svg";
-    const hasCustomLogo = Boolean(logoUrl);
+    /**
+     * The invoice always prints on pale paper, whatever theme the admin is
+     * viewing in, so it takes the inked mark meant for light surfaces. The
+     * light-surface logo is white artwork and vanished against the page.
+     */
+    const invoiceLogo = logoDarkUrl || logoUrl || "/logo-dark.svg";
+    const hasCustomLogo = Boolean(logoDarkUrl || logoUrl);
 
     // Scoped to the mounted dialog so the rule never leaks into other screens.
     useEffect(() => {
