@@ -1,3 +1,4 @@
+import AppErrorBoundary from "./components/organism/ErrorBoundary/AppErrorBoundary.tsx";
 import i18n from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import HttpApi from "i18next-http-backend";
@@ -40,7 +41,9 @@ createRoot(document.getElementById("root")!).render(
 				<Suspense fallback={<div>Loading...</div>}>
 					<CustomThemeProvider>
 						{/* <ScreenProtectionGate> */}
-						<GlobalRoutes />
+						<AppErrorBoundary>
+							<GlobalRoutes />
+						</AppErrorBoundary>
 						<Toast />
 						<PreviewPDF />
 						{/* </ScreenProtectionGate> */}

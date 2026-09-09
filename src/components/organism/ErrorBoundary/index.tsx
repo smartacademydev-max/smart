@@ -50,9 +50,13 @@ export default class ErrorBoundary extends Component<Props, State> {
                 <Typography variant="subtitle1" fontWeight={600} color="error.main" mb={0.5}>
                     {this.props.title ? `Couldn't display ${this.props.title}` : "Something went wrong"}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" mb={1.5}>
-                    {error.message}
-                </Typography>
+                {/* The raw message is a developer's sentence, not a user's —
+                    in production the section just says it could not render. */}
+                {import.meta.env.DEV ? (
+                    <Typography variant="body2" color="text.secondary" mb={1.5}>
+                        {error.message}
+                    </Typography>
+                ) : null}
                 <Button size="small" variant="outlined" color="error" onClick={() => this.setState({ error: null })}>
                     Try again
                 </Button>
